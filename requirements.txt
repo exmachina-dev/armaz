@@ -1,3 +1,2 @@
-modbus_tk>=0.4
-pyserial>=2.7
+pylibmodbus>=0.4
 pyliblo>=0.9
