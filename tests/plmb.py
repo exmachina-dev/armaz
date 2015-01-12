@@ -3,7 +3,7 @@
 
 from pylibmodbus import ModbusRtu
 
-mb = ModbusRtu()
+mb = ModbusRtu('/dev/ttyACM0')
 mb.connect()
 mb.rtu_set_serial_mode(0)
 nb = 5
