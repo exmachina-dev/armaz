@@ -5,7 +5,7 @@ from pylibmodbus import ModbusRtu
 
 mb = ModbusRtu('/dev/ttyACM0')
 mb.connect()
-mb.rtu_set_serial_mode(0)
+mb.rtu_set_serial_mode(ModbusRtu.RTU_RS232)
 nb = 5
 
 print("W [0, 0, 0, 0, 0]")
