@@ -39,6 +39,15 @@ class ConfigProxy(object):
     def __setattr__(self, name, value):
         setattr(object.__getattribute__(self, "_obj"), name, value)
 
+    #def __getitem__(self, key):
+    #    return object.__getitem__(self, key)
+
+    #def __delitem__(self, key):
+    #    object.__delitem__(self, key)
+
+    #def __setitem__(self, key, value):
+    #    object.__setitem__(self, key, value)
+
 
 def logWorker(sm):
     mq = sm.queue
