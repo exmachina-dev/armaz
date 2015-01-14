@@ -17,6 +17,7 @@ class MainInitializer(object):
     config = manager.Namespace()
 
     configparser = ConfigProxy()
+    configparser.read('default.conf')
 
     def __init__(self):
         self.jobs = []

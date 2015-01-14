@@ -8,7 +8,7 @@ class OSCServer(lo.ServerThread):
         self.config = config
         self.server_port = self.config.get('osc', 'server_port')
         self.client_port = self.config.get('osc', 'client_port')
-        super(OSCServer, self).__init__(port, lo.UDP)
+        super(OSCServer, self).__init__(self.server_port, lo.UDP)
         self.ready = True
 
     def start(self):
