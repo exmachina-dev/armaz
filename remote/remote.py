@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from base import BaseWorker
+from config import ConfigProxy
 from .osc import OSCServer
 
 import time
@@ -11,8 +12,7 @@ class RemoteWorker(BaseWorker):
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
 
-        print(self.mq)
-
+        self.cfpr = ConfigProxy()
         self.osc_server = OSCServer(self.cfpr)
 
         self.run()

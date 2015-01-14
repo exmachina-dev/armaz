@@ -13,7 +13,8 @@ class ConfigWorker(BaseWorker):
     def __init__(self, sm):
         super(ConfigWorker, self).__init__(sm)
 
-        self.configparser.read('default.conf')
+        self.cfpr = ConfigProxy()
+        self.cfpr.read('default.conf')
 
         self.conf = self.sm.dict({'conf': 0})
 
