@@ -12,7 +12,6 @@ class OSCServer(lo.ServerThread):
         self.ready = True
 
     def start(self):
-        self.log.info('Osc thread starting.')
         super(OSCServer, self).start()
 
     def send(self, dst, msg):

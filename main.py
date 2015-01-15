@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import multiprocessing as mp
-import time
-import random
 
 from config import ConfigWorker
 from config import ConfigProxy
