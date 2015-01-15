@@ -29,9 +29,9 @@ class RemoteWorker(BaseWorker):
     def run(self):
         self.osc_server.start()
         while(self.running):
-            self.running_for += 1
-            self.mq.put(self.running_for)
-            self.mq.put(self.cfpr.get('osc', 'server_port'))
+            #self.running_for += 1
+            #self.mq.put(self.running_for)
+            #self.mq.put(self.cfpr.get('osc', 'server_port'))
             time.sleep(1)
 
 

@@ -34,8 +34,8 @@ class MainInitializer(object):
                     args=(self,)),
                 mp.Process(target=remote.RemoteWorker, name='armaz.osc',
                     args=(self,)),
-                mp.Process(target=log_worker, name='armaz.log',
-                    args=(self,)),
+#                mp.Process(target=log_worker, name='armaz.log',
+#                    args=(self,)),
                 ]
 
     def start(self):
