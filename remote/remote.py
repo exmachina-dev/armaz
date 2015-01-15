@@ -20,6 +20,7 @@ class RemoteWorker(BaseWorker):
         self.run()
 
     def run(self):
+        self.osc_server.start()
         while(self.running):
             self.running_for += 1
             self.mq.put(self.running_for)
