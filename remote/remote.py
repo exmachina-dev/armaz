@@ -22,7 +22,6 @@ class RemoteWorker(BaseWorker):
 
         self.running_for = 0
 
-        self.cfpr = ConfigProxy()
         self.osc_server = OSCServer(self.cfpr)
 
         self.run()
