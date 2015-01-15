@@ -11,6 +11,13 @@ import remote
 
 
 class MainInitializer(object):
+    """
+    Main class
+
+    Initialize all master processes such as remote, config and motor.
+    Also initialize a log_worker for debug purposes.
+    """
+
     manager = mp.Manager()
     queue = manager.Queue()
     config = manager.Namespace()

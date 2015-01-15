@@ -9,6 +9,14 @@ import time
 import random
 
 class RemoteWorker(BaseWorker):
+    """
+    Master process that handle all communication instances:
+        - OSCServer
+        - Discret I/Os
+        - Accessories serial bus
+        - LCD display
+    """
+
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
 

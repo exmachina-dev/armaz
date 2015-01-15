@@ -4,7 +4,21 @@
 import liblo as lo
 
 class OSCServer(lo.ServerThread):
+    """
+    Main OSC class herited from liblo.ServerThread
+
+    Provides basic method to init and configure an OSC server working in a
+    RemoteWorker instance.
+
+    Require a ConfigParser object (or a proxy) as init argument.
+    """
+
     def __init__(self, config):
+        """
+        Init OSCServer with a ConfigParser() instance and get server and client
+        port.
+        """
+
         self.config = config
         self.server_port = self.config.get('osc', 'server_port')
         self.client_port = self.config.get('osc', 'client_port')
@@ -12,6 +26,10 @@ class OSCServer(lo.ServerThread):
         self.ready = True
 
     def start(self):
+        """
+        Start the OSC Server thread.
+        """
+
         super(OSCServer, self).start()
 
     def send(self, dst, msg):

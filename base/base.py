@@ -3,6 +3,10 @@
 
 
 class BaseWorker(object):
+    """
+    Base worker for multiprocessing.Manager()
+    """
+
     def __init__(self, sm):
         self.initializer = sm
         self.sm = sm.manager

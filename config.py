@@ -10,6 +10,10 @@ import configparser
 
 
 class ConfigWorker(BaseWorker):
+    """
+    Master process that handle configuration.
+    """
+
     def __init__(self, sm):
         super(ConfigWorker, self).__init__(sm)
 
@@ -28,6 +32,12 @@ class ConfigWorker(BaseWorker):
 
 
 class ConfigProxy(object):
+    """
+    ConfigProxy provides an interface to a single ConfigParser instance.
+
+    Helps sharing a simple config manager accross different processes.
+    """
+
     _obj = configparser.ConfigParser()
 
     def __getattribute__(self, name):
