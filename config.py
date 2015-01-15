@@ -59,7 +59,7 @@ class ConfigProxy(object):
     #    object.__setitem__(self, key, value)
 
 
-def logWorker(sm):
+def log_worker(sm):
     mq = sm.queue
     cf = sm.config
     i = 0
