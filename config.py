@@ -35,7 +35,9 @@ class ConfigProxy(object):
     Helps sharing a simple config manager accross different processes.
     """
 
-    _obj = configparser.ConfigParser()
+    _obj = configparser.ConfigParser(
+        interpolation=configparser.ExtendedInterpolation()
+    )
 
     def __getattribute__(self, name):
         return getattr(object.__getattribute__(self, "_obj"), name)
