@@ -39,6 +39,16 @@ class ConfigProxy(object):
     def __setattr__(self, name, value):
         setattr(object.__getattribute__(self, "_obj"), name, value)
 
+
+    def __nonzero__(self):
+        return bool(object.__getattribute__(self, "_obj"))
+
+    def __str__(self):
+        return str(object.__getattribute__(self, "_obj"))
+
+    def __repr__(self):
+        return repr(object.__getattribute__(self, "_obj"))
+
     #def __getitem__(self, key):
     #    return object.__getitem__(self, key)
 
