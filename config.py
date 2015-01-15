@@ -61,12 +61,18 @@ class ConfigProxy(object):
 
 def log_worker(sm):
     mq = sm.queue
-    cf = sm.config
+    cfpr = ConfigProxy()
     i = 0
+    last_clock = 0
+    inter_clock = 1
     while(True):
+        if time.clock() >= last_clock + inter_clock:
+            last_clock = time.time()
+            print(cfpr.items())
+
         if not mq.empty():
             print(i, mq.get())
-            print(cf)
             i += 1
+        time.sleep(0.01)
 
 
