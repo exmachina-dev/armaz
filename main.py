@@ -7,6 +7,7 @@ import random
 
 from config import ConfigWorker
 from config import ConfigProxy
+from config import log_worker
 
 import remote
 
@@ -27,6 +28,8 @@ class MainInitializer(object):
                 mp.Process(target=ConfigWorker, name='armaz.cnf',
                     args=(self,)),
                 mp.Process(target=remote.RemoteWorker, name='armaz.osc',
+                    args=(self,)),
+                mp.Process(target=log_worker, name='armaz.log',
                     args=(self,)),
                 ]
 
