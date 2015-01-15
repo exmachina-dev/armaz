@@ -19,10 +19,11 @@ class RemoteWorker(BaseWorker):
 
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
+        self.lg.debug("Init of RemoteWorker")
 
         self.running_for = 0
 
-        self.osc_server = OSCServer(self.cfpr)
+        self.osc_server = OSCServer(self.cfpr, self.lg)
 
         self.run()
 

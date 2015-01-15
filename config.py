@@ -8,6 +8,9 @@ import random
 
 import configparser
 
+import logging
+import logging.handlers
+
 
 class ConfigWorker(BaseWorker):
     """
@@ -22,9 +25,8 @@ class ConfigWorker(BaseWorker):
         self.run()
 
     def run(self):
-        while(self.running):
+        while True:
             self.conf['conf'] += 1
-            self.mq.put(self.conf)
             time.sleep(random.random() / 10)
 
 
@@ -68,20 +70,28 @@ class ConfigProxy(object):
     #    object.__setitem__(self, key, value)
 
 
-def log_worker(sm):
-    mq = sm.queue
-    cfpr = ConfigProxy()
-    i = 0
-    last_clock = 0
-    inter_clock = 1
-    while(True):
-        if time.clock() >= last_clock + inter_clock:
-            last_clock = time.time()
-            print(cfpr.items())
+class LogWorker(BaseWorker):
 
-        if not mq.empty():
-            print(i, mq.get())
-            i += 1
-        time.sleep(0.01)
+    def __init__(self, sm):
+        super(LogWorker, self).__init__(sm)
+        #h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 300, 10)
+        #f = logging.Formatter('%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s')
+        #h.setFormatter(f)
+        #root.addHandler(h)
 
+        self.run()
 
+    def run(self):
+        while True:
+            try:
+                record = self.lgq.get()
+                if record is None: # We send this as a sentinel to tell the listener to quit.
+                    break
+                logger = logging.getLogger(record.name)
+                logger.handle(record) # No level or filter logic applied - just do it!
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                import sys, traceback
+                print('Whoops! Problem:', file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)

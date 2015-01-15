@@ -5,7 +5,7 @@ import multiprocessing as mp
 
 from config import ConfigWorker
 from config import ConfigProxy
-from config import log_worker
+from config import LogWorker
 
 import remote
 
@@ -15,11 +15,11 @@ class MainInitializer(object):
     Main class
 
     Initialize all master processes such as remote, config and motor.
-    Also initialize a log_worker for debug purposes.
+    Also initialize a LogWorker for debug purposes.
     """
 
     manager = mp.Manager()
-    queue = manager.Queue()
+    log_queue = manager.Queue()
     config = manager.Namespace()
 
     configparser = ConfigProxy()
@@ -32,10 +32,10 @@ class MainInitializer(object):
         self.jobs = [
                 mp.Process(target=ConfigWorker, name='armaz.cnf',
                     args=(self,)),
-                mp.Process(target=remote.RemoteWorker, name='armaz.osc',
+                mp.Process(target=remote.RemoteWorker, name='armaz.rmt',
                     args=(self,)),
-#                mp.Process(target=log_worker, name='armaz.log',
-#                    args=(self,)),
+                mp.Process(target=LogWorker, name='armaz.log',
+                    args=(self,)),
                 ]
 
     def start(self):
@@ -45,6 +45,7 @@ class MainInitializer(object):
     def join(self):
         for j in self.jobs:
             j.join()
+        self.log_queue.put_nowait(None)
 
 if __name__ == "__main__":
     mi = MainInitializer()

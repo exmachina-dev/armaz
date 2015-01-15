@@ -14,13 +14,14 @@ class OSCServer(lo.ServerThread):
     Require a ConfigParser object (or a proxy) as init argument.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, logger):
         """
         Init OSCServer with a ConfigParser() instance and get server and client
         port.
         """
 
         self.config = config
+        self.log = logger
         self.server_port = self.config.get('osc', 'server_port')
         self.client_port = self.config.get('osc', 'client_port')
         super(OSCServer, self).__init__(self.server_port, lo.UDP)
@@ -32,6 +33,7 @@ class OSCServer(lo.ServerThread):
         """
 
         super(OSCServer, self).start()
+        self.log.debug("OSCServer started")
 
     def send(self, dst, msg):
         super(OSCServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
