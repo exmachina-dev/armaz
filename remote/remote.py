@@ -12,6 +12,8 @@ class RemoteWorker(BaseWorker):
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
 
+        self.running_for = 0
+
         self.cfpr = ConfigProxy()
         self.osc_server = OSCServer(self.cfpr)
 
@@ -19,9 +21,9 @@ class RemoteWorker(BaseWorker):
 
     def run(self):
         while(self.running):
-            self.osc_commands['cmd'] += 1
-            self.cf.osc = self.osc_commands['cmd']
-            self.mq.put(self.osc_commands)
-            time.sleep(random.random() / 10)
+            self.running_for += 1
+            self.mq.put(self.running_for)
+            self.mq.put(self.cfpr.get('osc', 'server_port'))
+            time.sleep(1)
 
 
