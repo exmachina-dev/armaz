@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 
 class BaseWorker(object):
@@ -7,6 +8,7 @@ class BaseWorker(object):
         self.sm = sm.manager
         self.mq = sm.queue
         self.cf = sm.config
+        self.cfpr = sm.configparser
 
         self.running = True
 
