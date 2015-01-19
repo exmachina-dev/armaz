@@ -30,11 +30,11 @@ class MainInitializer(object):
 
     def processes(self):
         self.jobs = [
-                mp.Process(target=ConfigWorker, name='armaz.cnf',
+                mp.Process(target=ConfigWorker, name='ertza.cnf',
                     args=(self,)),
-                mp.Process(target=remote.RemoteWorker, name='armaz.rmt',
+                mp.Process(target=remote.RemoteWorker, name='ertza.rmt',
                     args=(self,)),
-                mp.Process(target=LogWorker, name='armaz.log',
+                mp.Process(target=LogWorker, name='ertza.log',
                     args=(self,)),
                 ]
 

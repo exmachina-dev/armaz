@@ -10,25 +10,25 @@ import codecs
 __version__ = '0.0.1'
 
 packages = [
-    'armazfw',
+    'ertza',
 ]
 
 scripts = [
-    'bin/armazfw',
+    'bin/ertza',
 ]
 
 def file_content(filename):
     return codecs.open(filename, 'r', 'utf-8').read()
 
 setup(
-    name='armazfw',
+    name='ertza',
     version=__version__,
     description="Armaz main program",
     long_description=file_content('README.rst'),
     author="Benoit Rapidel",
     author_email="benoit.rapidel@exmachina.fr",
     url="http://libmodbus.org",
-    keywords="python motor armaz",
+    keywords="python motor",
     packages=packages,
     package_data={'': ['COPYING']},
     include_package_data=True,
