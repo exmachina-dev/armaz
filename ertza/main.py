@@ -3,11 +3,9 @@
 
 import multiprocessing as mp
 
-from config import ConfigWorker
-from config import ConfigProxy
-from config import LogWorker
-
-import remote
+from .config import ConfigWorker
+from .config import ConfigProxy
+from .config import LogWorker
 
 
 class MainInitializer(object):
@@ -32,7 +30,7 @@ class MainInitializer(object):
         self.jobs = [
                 mp.Process(target=ConfigWorker, name='ertza.cnf',
                     args=(self,)),
-                mp.Process(target=remote.RemoteWorker, name='ertza.rmt',
+                mp.Process(target=RemoteWorker, name='ertza.rmt',
                     args=(self,)),
                 mp.Process(target=LogWorker, name='ertza.log',
                     args=(self,)),

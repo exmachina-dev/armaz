@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from base import BaseWorker
-from config import ConfigProxy
 from .osc import OSCServer
 
 import time
