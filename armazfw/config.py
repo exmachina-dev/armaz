@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from base import BaseWorker
+from armazfw import BaseWorker
 
 import time
 import random
@@ -49,6 +49,7 @@ class ConfigProxy(object):
 
     def __setattr__(self, name, value):
         setattr(object.__getattribute__(self, "_obj"), name, value)
+        logging.debug("%s set to %s", name, value)
 
 
     def __nonzero__(self):
