@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from armazfw import BaseWorker
+from .base import BaseWorker
 
 import time
 import random
