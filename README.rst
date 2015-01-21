@@ -1,8 +1,8 @@
-========
-anmaz-fw
-========
+=====
+ertza
+=====
 
-Python program that run Armaz motor bolck.
+Python program that run Armaz motor block.
 This program is tested under Python v3.2 and v3.3
 
 Required packages:
