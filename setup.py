@@ -11,6 +11,8 @@ __version__ = '0.0.1'
 
 packages = [
     'ertza',
+    'ertza.remotes',
+    'ertza.remotes.osc',
 ]
 
 scripts = [

@@ -2,9 +2,10 @@
 
 import multiprocessing as mp
 
-from .config import ConfigWorker
-from .config import ConfigProxy
-from .config import LogWorker
+from ertza.config import ConfigWorker
+from ertza.config import ConfigProxy
+
+from ertza.remotes import RemoteWorker
 
 
 class MainInitializer(object):

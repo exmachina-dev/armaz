@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .base import BaseWorker
+from ertza.base import BaseWorker
 
 import time
 import random

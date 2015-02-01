@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from base import BaseWorker
-from .osc import OSCServer
+from ertza.base import BaseWorker
+from ertza.remotes.osc import OSCServer
 
 import time
 import random
@@ -33,4 +33,4 @@ class RemoteWorker(BaseWorker):
             #self.mq.put(self.cfpr.get('osc', 'server_port'))
             time.sleep(1)
 
-
+__all__ = ['RemoteWorker']
