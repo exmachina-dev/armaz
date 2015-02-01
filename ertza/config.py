@@ -17,6 +17,7 @@ class ConfigWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ConfigWorker, self).__init__(sm)
+        self.get_logger()
 
         self.conf = self.sm.dict({'conf': 0})
 
