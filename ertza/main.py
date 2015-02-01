@@ -4,6 +4,7 @@ import multiprocessing as mp
 
 from ertza.config import ConfigWorker
 from ertza.config import ConfigProxy
+from ertza.utils import LogWorker
 
 from ertza.remotes import RemoteWorker
 
