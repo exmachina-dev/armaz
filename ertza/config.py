@@ -24,7 +24,7 @@ class ConfigWorker(BaseWorker):
         self.run()
 
     def run(self):
-        while True:
+        while self.running:
             self.conf['conf'] += 1
             time.sleep(random.random() / 10)
 

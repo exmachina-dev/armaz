@@ -4,7 +4,6 @@ from ertza.base import BaseWorker
 from ertza.remotes.osc import OSCServer
 
 import time
-import random
 
 class RemoteWorker(BaseWorker):
     """
