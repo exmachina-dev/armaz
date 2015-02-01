@@ -15,13 +15,12 @@ class BaseWorker(object):
         self.cf = sm.config
         self.cfpr = sm.configparser
 
-        self.running = True
-
-    def get_logger(self):
         _h = logging.handlers.QueueHandler(self.lgq) # Just the one handler needed
         self.lg = logging.getLogger(__name__)
         self.lg.addHandler(_h)
         self.lg.setLevel(logging.DEBUG)
+
+        self.running = True
 
     def run(self):
         pass
