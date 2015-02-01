@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 if __name__ == "__main__":
-    from ertza import MainInitializer
+    from ertza import Ertza
 
-    mi = MainInitializer()
+    mi = Ertza()
     mi.processes()
     mi.start()
     mi.join()
