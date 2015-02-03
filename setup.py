@@ -17,7 +17,6 @@ packages = [
 
 scripts = [
     'bin/ertza',
-    'bin/ertzad',
 ]
 
 def file_content(filename):
