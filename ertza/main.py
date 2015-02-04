@@ -22,7 +22,7 @@ class MainInitializer(object):
     config = manager.Namespace()
 
     configparser = ConfigProxy()
-    configparser.read_configs('default.conf')
+    #configparser.read_configs('default.conf')
 
     def __init__(self):
         self.jobs = []
