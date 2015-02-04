@@ -3,11 +3,26 @@
 from ertza.base import BaseWorker
 
 import time
+import os
 import random
 
 import configparser
 
 import logging
+
+user_config_path = os.path.expanduser('~/.ertza')
+_DEFAULTS = {
+        'log': {
+            'log_path': os.path.join(user_config_path, 'logs'),
+            },
+        'osc': {
+            'server_port': 7900,
+            'client_port': 7901,
+            },
+        }
+
+_CONFPATH = ['/etc/ertza/default.conf',
+        os.path.join(user_config_path, 'ertza.conf'),]
 
 
 class ConfigWorker(BaseWorker):
@@ -37,8 +52,10 @@ class ConfigProxy(object):
     """
 
     _obj = configparser.ConfigParser(
-        interpolation=configparser.ExtendedInterpolation()
+            defaults=_DEFAULTS,
+            interpolation=configparser.ExtendedInterpolation()
     )
+    _conf_path = _CONFPATH
 
     def __getattribute__(self, name):
         return getattr(object.__getattribute__(self, "_obj"), name)
@@ -59,6 +76,15 @@ class ConfigProxy(object):
 
     def __repr__(self):
         return repr(object.__getattribute__(self, "_obj"))
+
+    @classmethod
+    def read_configs(cls, path=None):
+        if os.path.exists(path):
+            cls._conf_path.append(path)
+
+        return cls._obj.read(cls._conf_path)
+
+
 
     #def __getitem__(self, key):
     #    return object.__getitem__(self, key)
