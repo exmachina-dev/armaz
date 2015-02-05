@@ -23,7 +23,6 @@ class MainInitializer(object):
     config = manager.Namespace()
 
     configparser = ConfigProxy()
-    #configparser.read_configs('default.conf')
 
     # Some events
     exit_event = manager.Event()
