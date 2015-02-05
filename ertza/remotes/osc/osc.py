@@ -91,8 +91,11 @@ class OSCCommands(OSCServer):
         return 0
 
     @lo.make_method('/setup/get', 'ss')
+    @lo.make_method('/setup/get', 's')
+    @lo.make_method('/setup/get', '')
     def setup_get_callback(self, path, args, types, sender):
         if len(args) != 2:
+            self.setup_reply(sender, "One or more argument is missing.")
             return 1
         setup_section, setup_var = args
         try:
@@ -101,6 +104,11 @@ class OSCCommands(OSCServer):
         except configparser.NoOptionError as err:
             print(sender, err)
             self.setup_reply(sender, setup_section, str(err))
+        return 0
+
+    @lo.make_method(None, None)
+    def fallback_callback(self, path, args, types, sender):
+        self.setup_reply(sender, "Err.")
         return 0
 
     #def setConfig(self, c):
