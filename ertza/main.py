@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import multiprocessing as mp
+import signal
 
 from ertza.config import ConfigWorker
 from ertza.config import ConfigProxy
@@ -50,13 +51,31 @@ class MainInitializer(object):
         for j in self.jobs:
             j.start()
 
+    def exit(self):
+        self.exit_event.set()
+
     def join(self):
         for j in self.jobs:
             j.join()
         self.log_queue.put_nowait(None)
 
 if __name__ == "__main__":
+    # Save a reference to the original signal handler for SIGINT.
+    default_sigint = signal.getsignal(signal.SIGINT)
+
+    # Set signal handling of SIGINT to ignore mode.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
     mi = MainInitializer()
     mi.processes()
     mi.start()
-    mi.join()
+
+    # Since we spawned all the necessary processes already, 
+    # restore default signal handling for the parent process. 
+    signal.signal(signal.SIGINT, default_sigint)
+
+    try:
+        signal.pause()
+    except KeyboardInterrupt:
+        mi.exit()
+        mi.join()
