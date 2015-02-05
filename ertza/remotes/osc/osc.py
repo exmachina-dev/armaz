@@ -3,6 +3,8 @@
 import configparser
 import liblo as lo
 
+import ertza.errors as err
+
 class OSCServer(lo.ServerThread):
     """
     Main OSC class herited from liblo.ServerThread

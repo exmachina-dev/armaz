@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ertza.base import BaseWorker
+import ertza.errors as err
 
 import time
 import os
