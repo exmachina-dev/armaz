@@ -16,7 +16,7 @@ class LogWorker(BaseWorker):
         self.run()
 
     def run(self):
-        while True:
+        while not self.exit_event.is_set():
             try:
                 record = self.lgq.get()
                 if record is None: # We send this as a sentinel to tell the listener to quit.

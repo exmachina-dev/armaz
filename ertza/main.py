@@ -24,6 +24,15 @@ class MainInitializer(object):
     configparser = ConfigProxy()
     #configparser.read_configs('default.conf')
 
+    # Some events
+    exit_event = manager.Event()
+    config_event = manager.Event()
+    blockall_event = manager.Event()
+
+    # Some locks
+    config_lock = manager.Lock()
+    init_lock = manager.Lock()
+
     def __init__(self):
         self.jobs = []
 
