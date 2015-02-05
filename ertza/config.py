@@ -5,7 +5,6 @@ import ertza.errors as err
 
 import time
 import os
-import random
 
 import configparser
 
