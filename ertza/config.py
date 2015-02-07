@@ -8,8 +8,6 @@ import os
 
 import configparser
 
-import logging
-
 user_config_path = os.path.expanduser('~/.ertza')
 _DEFAULTS = {
         'log': {
@@ -21,8 +19,10 @@ _DEFAULTS = {
             },
         }
 
-_CONFPATH = ['/etc/ertza/default.conf',
-        os.path.join(user_config_path, 'ertza.conf'),]
+_CONFPATH = [
+        '/etc/ertza/default.conf',
+        os.path.join(user_config_path, 'ertza.conf'),
+        ]
 
 
 class ConfigWorker(BaseWorker):
