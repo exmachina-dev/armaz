@@ -59,6 +59,7 @@ class ConfigProxy(configparser.ConfigParser):
 
     def __init__(self):
         self._conf_path = _CONFPATH
+        self.save_path = self._conf_path[-1]
         super(ConfigProxy, self).__init__(
                 interpolation=configparser.ExtendedInterpolation()
         )
@@ -77,3 +78,7 @@ class ConfigProxy(configparser.ConfigParser):
     @property
     def configs(self):
         return self._conf_path
+
+    def save(self):
+        with open(self.save_path, 'w') as configfile:
+            super(ConfigProxy, self).write(configfile)
