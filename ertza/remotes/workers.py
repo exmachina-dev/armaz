@@ -21,7 +21,7 @@ class RemoteWorker(BaseWorker):
 
         self.osc_server = OSCServer(self.cfpr, self.lg)
 
-        while not self.config_lock.is_set():
+        while not self.config_event.is_set():
             self.lg.debug('Waiting for config…')
             time.sleep(0.1)
 
