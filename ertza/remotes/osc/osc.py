@@ -124,24 +124,3 @@ class OSCServer(OSCBaseServer):
     def fallback_callback(self, path, args, types, sender):
         self.setup_reply(sender, "Something is wrong…", path, *args)
         return 0
-
-    #def setConfig(self, c):
-    #    for k, l in c:
-    #        if k in ('feedback',):
-    #            if k == 'feedback':
-    #                self.feedback = bool(*l)
-
-    #def getConfig(self):
-    #    rtn = dict()
-    #    rtn.update({'feedback', int(self.feedback), })
-
-    #    return rtn
-
-    #def heartbeat(self, destination, ok=True, src=None):
-    #    if ok:
-    #        state = '/ok'
-    #    else:
-    #        state = '/nok'
-    #    if not src:
-    #        src = 'mother'
-    #    self.send(destination, '/heartbeat' + state + '/' + src)
