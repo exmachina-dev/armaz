@@ -109,6 +109,12 @@ class OSCServer(OSCBaseServer):
             self.setup_reply(sender, setup_section, str(repr(e)))
         return 0
 
+    @lo.make_method('/setup/save', '')
+    def setup_save_callback(self, path, args, types, sender):
+        self.config.save()
+
+        return 0
+
     @lo.make_method('/osc/restart', '')
     def osc_restart_callback(self, path, args, types, sender):
             self.setup_reply(sender, path, "Restarting.")
