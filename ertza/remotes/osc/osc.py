@@ -35,7 +35,7 @@ class OSCBaseServer(lo.ServerThread):
         """
 
         super(OSCServer, self).start()
-        self.log.debug("OSCServer started")
+        self.log.debug("OSCServer started on %s", self.server_port)
 
     def send(self, dst, msg):
         super(OSCServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
@@ -67,7 +67,6 @@ class OSCServer(OSCBaseServer):
     @lo.make_method('/setup/set', 'ssb')
     def setup_set_callback(self, path, args, types, sender):
         setup_sec, setup_opt, args, = args
-        print(self.config.sections())
 
         try:
             self.config.set(setup_sec, setup_opt, str(args))
@@ -79,7 +78,8 @@ class OSCServer(OSCBaseServer):
         except:
             self.setup_reply(sender, str(ValueError))
 
-        print(path, setup_sec, setup_opt, args, types, sender)
+        self.log.debug('Executed %s %s.%s %s (%s) from %s',
+                path, setup_sec, setup_opt, args, types, sender.get_hostname())
         return 0
 
     @lo.make_method('/setup/get', 'ss')
@@ -100,7 +100,7 @@ class OSCServer(OSCBaseServer):
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
-        self.setup_reply(sender, "Err.")
+        self.setup_reply(sender, "Something is wrong…", path, *args)
         return 0
 
     #def setConfig(self, c):
