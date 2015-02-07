@@ -35,12 +35,12 @@ class ConfigWorker(BaseWorker):
         self.get_logger()
 
         try:
-            self.lg.debug('Reading configs…')
+            self.lg.debug('Reading configs: %s', self.cfpr.configs)
             self.cfpr.read_configs()
-            self.lg.debug('Done.')
         except configparser.Error as e:
-            self.lg.warn('Unable to load config: %s', e)
-            raise err.ConfigError(e)
+            error = err.ConfigError(e.message)
+            self.lg.warn(error)
+            raise error
 
         self.run()
 
