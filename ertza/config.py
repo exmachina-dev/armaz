@@ -42,7 +42,9 @@ class ConfigWorker(BaseWorker):
 
         try:
             self.lg.debug('Reading configs: %s', self.cfpr.configs)
-            self.cfpr.read_configs()
+            missing = self.cfpr.read_configs()
+            self.lg.debug('Missing configs: %s', missing)
+            self.lg.debug(self.cfpr.dump())
             self._watchconfig(init=True)
         except configparser.Error as e:
             error = err.ConfigError(e.message)
@@ -71,7 +73,7 @@ Triggering OSC event.
                                 """, v, self.cfpr[s][o])
                                 self.osc_event.set()
                         self.watched_options[s][o] = self.cfpr[s][o]
-                except configparser.Exception as e:
+                except configparser.Error as e:
                     self.lg.debug(repr(e))
 
 
@@ -85,25 +87,48 @@ class ConfigProxy(configparser.ConfigParser):
     def __init__(self):
         self._conf_path = _CONFPATH
         self.save_path = self._conf_path[-1]
+        self.autosave = True
+
         super(ConfigProxy, self).__init__(
                 interpolation=configparser.ExtendedInterpolation()
         )
-        self.read_dict(_DEFAULTS)
 
     def get(self, section, line=None, fallback=None):
         return super(ConfigProxy, self).get(section, line, fallback=fallback)
 
     def set(self, section, option, value=None):
         rtn = super(ConfigProxy, self).set(section, option, value)
-        self.save()
+        if self.autosave:
+            self.save()
 
         return rtn
 
     def read_configs(self, path=None):
+        # Don't auto save when reading config
+        asave = self.autosave
+        self.autosave
+
         if path and os.path.exists(path):
+            path = os.path.expanduser(path)
+            if path in self._conf_path:
+                raise ValueError('%s is already present.' % path)
             self._conf_path.append(path)
 
-        return self.read(self._conf_path)
+        try:
+            rtn = self.read(self._conf_path)
+            missing = set(self._conf_path) - set(rtn)
+            if missing == set(self._conf_path):
+                raise configparser.ParsingError('No config file found.')
+        except configparser.ParsingError as e:
+            self.read_hard_defaults()
+            self.save()
+
+        # Restore previous self.autosave state
+        self.autosave = asave
+        return list(missing)
+
+    def read_hard_defaults(self):
+        return self.read_dict(_DEFAULTS)
 
     @property
     def configs(self):
@@ -112,3 +137,9 @@ class ConfigProxy(configparser.ConfigParser):
     def save(self):
         with open(self.save_path, 'w') as configfile:
             super(ConfigProxy, self).write(configfile)
+
+    def dump(self):
+        for s, o in self.items():
+            print('|— %s' % s)
+            for o, v in o.items():
+                print('|  |— %s: %s' % (o, v))
