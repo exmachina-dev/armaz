@@ -83,10 +83,10 @@ class OSCServer(OSCBaseServer):
         try:
             self.config.set(setup_sec, setup_opt, str(args))
             self.setup_reply(sender, setup_sec, setup_opt, True)
-        except configparser.NoOptionError as err:
-            self.setup_reply(sender, setup_sec, str(err))
-        except configparser.NoSectionError as err:
-            self.setup_reply(sender, str(err))
+        except configparser.NoOptionError as e:
+            self.setup_reply(sender, setup_sec, str(e))
+        except configparser.NoSectionError as e:
+            self.setup_reply(sender, str(e))
         except:
             self.setup_reply(sender, str(ValueError))
 
@@ -105,9 +105,8 @@ class OSCServer(OSCBaseServer):
         try:
             args.append(self.config.get(setup_section, setup_var))
             self.setup_reply(sender, *args)
-        except configparser.NoOptionError as err:
-            print(sender, err)
-            self.setup_reply(sender, setup_section, str(err))
+        except configparser.NoOptionError as e:
+            self.setup_reply(sender, setup_section, str(repr(e)))
         return 0
 
     @lo.make_method('/osc/restart', '')
