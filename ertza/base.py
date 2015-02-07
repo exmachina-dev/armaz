@@ -25,9 +25,9 @@ class BaseWorker(object):
 
         self.running = True
 
-    def get_logger(self):
+    def get_logger(self, name=__name__):
         _h = logging.handlers.QueueHandler(self.lgq) # Just the one handler needed
-        self.lg = logging.getLogger(__name__)
+        self.lg = logging.getLogger(name)
         self.lg.addHandler(_h)
         self.lg.setLevel(logging.DEBUG)
 
