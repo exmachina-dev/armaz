@@ -25,7 +25,7 @@ class OSCBaseServer(lo.ServerThread):
         self.log = logger
         self.server_port = int(self.config.get('osc', 'server_port', 7900))
         self.client_port = int(self.config.get('osc', 'client_port', 7901))
-        super(OSCServer, self).__init__(self.server_port, lo.UDP)
+        super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
 
         self.ready = True
 
@@ -34,11 +34,11 @@ class OSCBaseServer(lo.ServerThread):
         Start the OSC Server thread.
         """
 
-        super(OSCServer, self).start()
+        super(OSCBaseServer, self).start()
         self.log.debug("OSCServer started on %s", self.server_port)
 
     def send(self, dst, msg):
-        super(OSCServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
+        super(OSCBaseServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
 
 class OSCServer(OSCBaseServer):
     """
