@@ -23,17 +23,9 @@ class OSCServer(lo.ServerThread):
 
         self.config = config
         self.log = logger
-        self.log.info(self.config.defaults())
-        try:
-            self.server_port = self.config['osc']['server_port']
-            self.client_port = self.config['osc']['client_port']
-            super(OSCServer, self).__init__(self.server_port, lo.UDP)
-        except KeyError:
-            self.server_port = 7900
-            self.client_port = 7901
-            error = err.ConfigError('Config section not found.')
-            self.log.warn(error)
-            raise error
+        self.server_port = int(self.config.get('osc', 'server_port', 7900))
+        self.client_port = int(self.config.get('osc', 'client_port', 7901))
+        super(OSCServer, self).__init__(self.server_port, lo.UDP)
 
         self.ready = True
 
