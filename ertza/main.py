@@ -27,6 +27,7 @@ class MainInitializer(object):
     # Some events
     exit_event = manager.Event()
     config_event = manager.Event()
+    osc_event = manager.Event()
     blockall_event = manager.Event()
 
     # Some locks

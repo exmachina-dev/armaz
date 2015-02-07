@@ -68,6 +68,16 @@ class ConfigProxy(configparser.ConfigParser):
     def get(self, section, line, fallback=None):
         return super(ConfigProxy, self).get(section, line, fallback=fallback)
 
+    def set(self, section, option, value=None):
+        if section is 'osc' and option is 'server_port':
+            if self['osc']['server_port'] is not value:
+                self.lg.info('OSC server port has changed… Restarting.')
+                self.osc_event.set()
+
+        rtn = super(ConfigProxy, self).set(section, option, value)
+        self.save()
+
+        return rtn
 
     def read_configs(self, path=None):
         if path and os.path.exists(path):

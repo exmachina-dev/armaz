@@ -23,21 +23,27 @@ class RemoteWorker(BaseWorker):
             self.lg.debug('Waiting for config…')
             time.sleep(0.1)
 
-        self.osc_server = OSCServer(self.cfpr, self.lg)
-
         self.run()
 
     def run(self):
         try:
-            self.osc_server.start()
+            self.start_osc_server()
         except SystemError as e:
             self.lg.warn(e)
             self.exit_event.set()
 
         while not self.exit_event.is_set():
-            #self.running_for += 1
-            #self.mq.put(self.running_for)
-            #self.mq.put(self.cfpr.get('osc', 'server_port'))
+            if self.osc_event.is_set():
+                self.start_osc_server(True)
+                self.osc_event.clear()
+
             time.sleep(0.5)
+
+    def start_osc_server(self, restart=False):
+        if restart:
+            del self.osc_server
+        self.osc_server = OSCServer(self.cfpr, self.lg)
+        self.osc_server.start()
+
 
 __all__ = ['RemoteWorker']
