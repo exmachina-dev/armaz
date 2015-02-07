@@ -42,7 +42,7 @@ class RemoteWorker(BaseWorker):
     def start_osc_server(self, restart=False):
         if restart:
             del self.osc_server
-        self.osc_server = OSCServer(self.cfpr, self.lg)
+        self.osc_server = OSCServer(self.cfpr, self.lg, self.osc_event)
         self.osc_server.start()
 
 
