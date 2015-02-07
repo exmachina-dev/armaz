@@ -58,11 +58,11 @@ class ConfigProxy(configparser.ConfigParser):
     """
 
     def __init__(self):
+        self._conf_path = _CONFPATH
         super(ConfigProxy, self).__init__(
-                defaults=_DEFAULTS,
                 interpolation=configparser.ExtendedInterpolation()
         )
-        self._conf_path = _CONFPATH
+        self.read_dict(_DEFAULTS)
 
     def read_configs(self, path=None):
         if path and os.path.exists(path):
