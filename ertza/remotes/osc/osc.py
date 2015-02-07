@@ -98,6 +98,11 @@ class OSCServer(OSCBaseServer):
             self.setup_reply(sender, setup_section, str(err))
         return 0
 
+    @lo.make_method('/osc/restart', '')
+    def osc_restart_callback(self, path, args, types, sender):
+            self.setup_reply(sender, path, "Restarting.")
+            self.restart()
+
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
         self.setup_reply(sender, "Something is wrong…", path, *args)
