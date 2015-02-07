@@ -65,7 +65,7 @@ class ConfigProxy(configparser.ConfigParser):
         )
         self.read_dict(_DEFAULTS)
 
-    def get(self, section, line, fallback=None):
+    def get(self, section, line=None, fallback=None):
         return super(ConfigProxy, self).get(section, line, fallback=fallback)
 
     def set(self, section, option, value=None):
