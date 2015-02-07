@@ -143,3 +143,11 @@ class ConfigProxy(configparser.ConfigParser):
             print('|— %s' % s)
             for o, v in o.items():
                 print('|  |— %s: %s' % (o, v))
+
+
+if __name__ == "__main__":
+    cf = ConfigProxy()
+    cf.read_configs()
+    print(cf.configs)
+    print('Config:')
+    print(cf.dump())
