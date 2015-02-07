@@ -34,6 +34,7 @@ class RemoteWorker(BaseWorker):
 
         while not self.exit_event.is_set():
             if self.osc_event.is_set():
+                self.lg.info('OSC server restarting…')
                 self.start_osc_server(True)
                 self.osc_event.clear()
 

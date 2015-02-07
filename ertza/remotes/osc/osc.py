@@ -22,7 +22,7 @@ class OSCBaseServer(lo.ServerThread):
         """
 
         self.config = config
-        self.log = logger
+        self.lg = logger
         self.osc_event = restart_event
 
         self.server_port = int(self.config.get('osc', 'server_port', 7900))
@@ -37,7 +37,7 @@ class OSCBaseServer(lo.ServerThread):
         """
 
         super(OSCBaseServer, self).start()
-        self.log.debug("OSCServer started on %s", self.server_port)
+        self.lg.debug("OSCServer started on %s", self.server_port)
 
     def restart(self):
         """
@@ -90,7 +90,7 @@ class OSCServer(OSCBaseServer):
         except:
             self.setup_reply(sender, str(ValueError))
 
-        self.log.debug('Executed %s %s.%s %s (%s) from %s',
+        self.lg.debug('Executed %s %s.%s %s (%s) from %s',
                 path, setup_sec, setup_opt, args, types, sender.get_hostname())
         return 0
 
