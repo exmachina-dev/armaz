@@ -19,11 +19,11 @@ class RemoteWorker(BaseWorker):
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
 
-        self.osc_server = OSCServer(self.cfpr, self.lg)
-
         while not self.config_event.is_set():
             self.lg.debug('Waiting for config…')
             time.sleep(0.1)
+
+        self.osc_server = OSCServer(self.cfpr, self.lg)
 
         self.run()
 
