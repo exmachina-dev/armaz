@@ -64,8 +64,16 @@ class ConfigProxy(configparser.ConfigParser):
         )
         self.read_dict(_DEFAULTS)
 
+    def get(self, section, line, fallback=None):
+        return super(ConfigProxy, self).get(section, line, fallback=fallback)
+
+
     def read_configs(self, path=None):
         if path and os.path.exists(path):
             self._conf_path.append(path)
 
         return self.read(self._conf_path)
+
+    @property
+    def configs(self):
+        return self._conf_path
