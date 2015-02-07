@@ -5,7 +5,7 @@ import liblo as lo
 
 import ertza.errors as err
 
-class OSCServer(lo.ServerThread):
+class OSCBaseServer(lo.ServerThread):
     """
     Main OSC class herited from liblo.ServerThread
 
@@ -40,7 +40,7 @@ class OSCServer(lo.ServerThread):
     def send(self, dst, msg):
         super(OSCServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
 
-class OSCCommands(OSCServer):
+class OSCServer(OSCBaseServer):
     """
     OSCCommands contains all commands available thru OSCServer.
     """
