@@ -3,8 +3,9 @@
 import multiprocessing as mp
 import signal
 
+from ertza.config import ConfigParser
 from ertza.config import ConfigWorker
-from ertza.config import ConfigProxy
+
 from ertza.utils import LogWorker
 
 from ertza.remotes import RemoteWorker
@@ -22,7 +23,7 @@ class MainInitializer(object):
     log_queue = manager.Queue()
     config = manager.Namespace()
 
-    configparser = ConfigProxy()
+    configparser = ConfigParser()
 
     # Some events
     exit_event = manager.Event()

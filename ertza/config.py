@@ -77,9 +77,10 @@ Triggering OSC event.
                     self.lg.debug(repr(e))
 
 
-class ConfigProxy(configparser.ConfigParser):
+class BaseConfigParser(configparser.ConfigParser):
     """
-    ConfigProxy provides an interface to a single ConfigParser instance.
+    BaseConfigParser provides some helpers function for
+    configparser.ConfigParser.
 
     Helps sharing a simple config manager accross different processes.
     """
@@ -89,15 +90,12 @@ class ConfigProxy(configparser.ConfigParser):
         self.save_path = self._conf_path[-1]
         self.autosave = True
 
-        super(ConfigProxy, self).__init__(
+        super(BaseConfigParser, self).__init__(
                 interpolation=configparser.ExtendedInterpolation()
         )
 
-    def get(self, section, line=None, fallback=None):
-        return super(ConfigProxy, self).get(section, line, fallback=fallback)
-
     def set(self, section, option, value=None):
-        rtn = super(ConfigProxy, self).set(section, option, value)
+        rtn = super(BaseConfigParser, self).set(section, option, value)
         if self.autosave:
             self.save()
 
@@ -122,6 +120,7 @@ class ConfigProxy(configparser.ConfigParser):
         except configparser.ParsingError as e:
             self.read_hard_defaults()
             self.save()
+            raise e
 
         # Restore previous self.autosave state
         self.autosave = asave
@@ -136,17 +135,72 @@ class ConfigProxy(configparser.ConfigParser):
 
     def save(self):
         with open(self.save_path, 'w') as configfile:
-            super(ConfigProxy, self).write(configfile)
+            super(BaseConfigParser, self).write(configfile)
 
     def dump(self):
+        output = ''
         for s, o in self.items():
-            print('|— %s' % s)
+            output += ('[ %s : ( ' % s)
             for o, v in o.items():
-                print('|  |— %s: %s' % (o, v))
+                output += ('%s: %s — ' % (o, v))
+            output += (']')
+
+        return output
 
 
-if __name__ == "__main__":
-    cf = ConfigProxy()
+class ConfigProxy(BaseConfigParser):
+    """
+    ConfigProxy provides an interface to a single BaseConfigParser instance.
+
+    Helps sharing a simple config manager accross different processes.
+    """
+
+
+    _obj = BaseConfigParser()
+
+#    def __new__(cls):
+#        if cls._obj is None:
+#          i = BaseConfigParser.__new__(cls)
+#          cls._obj = i
+#        else:
+#          i = cls._obj
+#        return i
+
+    def __init__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__init__")(*args, **kw)
+
+    def __getattribute__(self, name):
+        return getattr(object.__getattribute__(self, "_obj"), name)
+
+    def __getitem__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__getitem__")(*args, **kw)
+
+    def __setitem__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__setitem__")(*args, **kw)
+
+    def __delitem__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__delitem__")(*args, **kw)
+
+    def __contains__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__contains__")(*args, **kw)
+
+    def __len__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__len__")(*args, **kw)
+
+    def __iter__(self, *args, **kw):
+        return getattr(object.__getattribute__(self, "_obj"),
+                "__iter__")(*args, **kw)
+
+ConfigParser = BaseConfigParser
+
+if __name__ == '__main__':
+    cf = ConfigParser()
     cf.read_configs()
     print(cf.configs)
     print('Config:')
