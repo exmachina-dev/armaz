@@ -29,9 +29,8 @@ class ConfigError(FatalError):
         FatalError.__init__(self, 'Unable to load config: %s' % (msg,))
 
 
-class ConfigSectionError(ConfigError):
-    """Raised when program cannot load config."""
+class OSCServerError(FatalError):
+    """Raised when program cannot start OSC server."""
 
-    def __init__(self, section=''):
-        ConfigError.__init__(self, 'Cannot find section: %s' % (section,))
-        self.section = section
+    def __init__(self, msg=''):
+        FatalError.__init__(self, 'Cannot start OSC server: %s' % (msg,))
