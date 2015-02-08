@@ -58,7 +58,7 @@ class ConfigWorker(BaseWorker):
         while not self.exit_event.is_set():
             self._watchconfig()
 
-            time.sleep(0.5)
+            time.sleep(self.interval)
 
     def _watchconfig(self, init=None):
         for s, o in self.watched_options.items():

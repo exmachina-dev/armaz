@@ -8,6 +8,8 @@ class BaseWorker(object):
     Base worker for multiprocessing.Manager()
     """
 
+    interval = 0.5
+
     def __init__(self, sm):
         self.initializer = sm
         self.sm = sm.manager

@@ -21,7 +21,7 @@ class RemoteWorker(BaseWorker):
 
         while not self.config_event.is_set():
             self.lg.debug('Waiting for config…')
-            time.sleep(0.1)
+            time.sleep(self.interval)
 
         self.run()
 
