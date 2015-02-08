@@ -44,8 +44,6 @@ class ConfigWorker(BaseWorker):
             self.lg.debug('Reading configs: %s', self.cfpr.configs)
             missing = self.cfpr.read_configs()
             self.lg.debug('Missing configs: %s', missing)
-            self.lg.debug(self.cfpr.dump())
-            self._watchconfig(init=True)
         except configparser.Error as e:
             error = err.ConfigError(e.message)
             self.lg.warn(error)
@@ -54,8 +52,10 @@ class ConfigWorker(BaseWorker):
         self.run()
 
     def run(self):
+        self._watchconfig(init=True)
         self.config_event.set()
         while not self.exit_event.is_set():
+            self.lg.debug('Config worker: config id: %s', id(self.cfpr))
             self._watchconfig()
 
             time.sleep(self.interval)
