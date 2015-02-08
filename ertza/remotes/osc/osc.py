@@ -104,6 +104,7 @@ class OSCServer(OSCBaseServer):
         setup_sec, setup_opt, args, = args
 
         try:
+            self.lg.debug('osc: %s', self.config.dump())
             self.config.set(setup_sec, setup_opt, str(args))
             self.setup_reply(sender, setup_sec, setup_opt, True)
         except configparser.NoOptionError as e:

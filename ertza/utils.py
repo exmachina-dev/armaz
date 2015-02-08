@@ -12,7 +12,7 @@ class LogWorker(BaseWorker):
 
     def __init__(self, sm):
         super(LogWorker, self).__init__(sm)
-        f = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
+        f = '%(asctime)s %(processName)-10s %(levelname)-8s %(message)s'
         root_logger = logging.getLogger()
         logging.basicConfig(format=f)
 

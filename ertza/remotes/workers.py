@@ -9,7 +9,6 @@ import time
 class RemoteWorker(BaseWorker):
     """
     Master process that handle all communication instances:
-        - OSCServer
         - Discret I/Os
         - Accessories serial bus
         - LCD display
