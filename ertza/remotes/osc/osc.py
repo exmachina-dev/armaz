@@ -5,7 +5,7 @@ import liblo as lo
 
 import ertza.errors as err
 
-class OSCBaseServer(lo.ServerThread):
+class OSCBaseServer(lo.Server):
     """
     Main OSC class herited from liblo.ServerThread
 
@@ -17,40 +17,63 @@ class OSCBaseServer(lo.ServerThread):
 
     def __init__(self, config, logger, restart_event):
         """
-        Init OSCServer with a ConfigParser() instance and get server and client
+        Init OSCServer with a ConfigParser instance and get server and client
         port.
         """
+
+        self.running = True
+        self.interval = 0
 
         self.config = config
         self.lg = logger
         self.osc_event = restart_event
 
-        self.server_port = int(self.config.get('osc', 'server_port', 7900))
-        self.client_port = int(self.config.get('osc', 'client_port', 7901))
+        self.server_port = int(self.config.get('osc', 'server_port',
+            fallback=7900))
+        self.client_port = int(self.config.get('osc', 'client_port',
+            fallback=7901))
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
 
         self.ready = True
 
-    def start(self):
+    def run(self, timeout=None):
+        if self.running:
+            self.recv(timeout)
+
+    def start(self, blocking=True):
         """
-        Start the OSC Server thread.
+        Start the OSC Server loop.
         """
 
-        super(OSCBaseServer, self).start()
-        self.lg.debug("OSCServer started on %s", self.server_port)
+        self.running = True
+
+        if self.ready:
+            if blocking:
+                self.lg.debug("OSCServer started on %s", self.server_port)
+                while self.running:
+                    self.run(self.interval)
+            else:
+                self.lg.debug("OSCServer initialized on %s", self.server_port)
+                self.run(0)
+
+    def stop(self):
+        self.running = False
 
     def restart(self):
         """
         Restart the OSC Server thread.
 
         Actually set the restart event. Restarting is handle by the
-        RemoteWorker.
+        OSCWorker.
         """
 
         self.osc_event.set()
 
     def send(self, dst, msg):
         super(OSCBaseServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
+
+    def __del__(self):
+        self.free()
 
 class OSCServer(OSCBaseServer):
     """

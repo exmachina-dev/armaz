@@ -9,6 +9,7 @@ from ertza.config import ConfigWorker
 from ertza.utils import LogWorker
 
 from ertza.remotes import RemoteWorker
+from ertza.remotes import OSCWorker
 
 
 class MainInitializer(object):
@@ -45,6 +46,8 @@ class MainInitializer(object):
                 mp.Process(target=RemoteWorker, name='ertza.rmt',
                     args=(self,)),
                 mp.Process(target=LogWorker, name='ertza.log',
+                    args=(self,)),
+                mp.Process(target=OSCWorker, name='ertza.osc',
                     args=(self,)),
                 ]
 
