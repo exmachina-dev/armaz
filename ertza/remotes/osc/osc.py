@@ -3,7 +3,7 @@
 import configparser
 import liblo as lo
 
-from ertza.confiq import ConfigRequest
+from ertza.config import ConfigRequest
 import ertza.errors as err
 
 
