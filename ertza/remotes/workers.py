@@ -16,7 +16,7 @@ class RemoteWorker(BaseWorker):
 
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
-        self.config_pipe = sm.conf_rmt_pipe[1]
+        self.config_pipe = self.initializer.conf_rmt_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
@@ -46,7 +46,7 @@ class OSCWorker(BaseWorker):
 
     def __init__(self, sm):
         super(OSCWorker, self).__init__(sm)
-        self.config_pipe = sm.conf_osc_pipe[1]
+        self.config_pipe = self.initializer.conf_osc_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
