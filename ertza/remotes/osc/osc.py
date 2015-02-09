@@ -23,22 +23,21 @@ class OSCBaseServer(lo.Server):
         port.
         """
 
-        class _ConfigRequest(ConfigRequest):
-            def __init__(self, method, section, option, value=None):
-                super(ConfigRequest, self).__init__(
-                        self.config, method, section, option, value)
-
-
         self.running = True
         self.interval = 0
 
-        self.config = config
+        self._config = config
         self.lg = logger
         self.osc_event = restart_event
 
-        self.server_port = int(self.config.get('osc', 'server_port',
+        class _ConfigRequest(ConfigRequest):
+            def __init__(self):
+                super(ConfigRequest, self).__init__(self._config)
+
+
+        self.server_port = int(self._ConfigRequest().get('osc', 'server_port',
             fallback=7900))
-        self.client_port = int(self.config.get('osc', 'client_port',
+        self.client_port = int(self._ConfigRequest().get('osc', 'client_port',
             fallback=7901))
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
 
@@ -112,8 +111,8 @@ class OSCServer(OSCBaseServer):
         setup_sec, setup_opt, args, = args
 
         try:
-            self.lg.debug('osc: %s', self.config.dump())
-            self._ConfigRequest('set', setup_sec, setup_opt, str(args))
+            self.lg.debug('osc: %s', self._ConfigRequest().dump())
+            self._ConfigRequest().set(setup_sec, setup_opt, str(args))
             self.setup_reply(sender, setup_sec, setup_opt, True)
         except configparser.NoOptionError as e:
             self.setup_reply(sender, setup_sec, str(e))
@@ -135,7 +134,7 @@ class OSCServer(OSCBaseServer):
             return 1
         setup_section, setup_var = args
         try:
-            args.append(self.config.get(setup_section, setup_var))
+            args.append(self._ConfigRequest().get(setup_section, setup_var))
             self.setup_reply(sender, *args)
         except configparser.NoOptionError as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
@@ -143,7 +142,7 @@ class OSCServer(OSCBaseServer):
 
     @lo.make_method('/setup/save', '')
     def setup_save_callback(self, path, args, types, sender):
-        self.config.save()
+        self._ConfigRequest().save()
 
         return 0
 

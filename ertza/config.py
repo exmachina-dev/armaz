@@ -150,19 +150,41 @@ ConfigParser = BaseConfigParser
 
 
 class BaseCommunicationObject(object):
-    def __init__(self, target, method, section, option, value=None):
+    _methods = {
+            'get': 0x001,
+            'set': 0x001,
+            }
+
+    def __init__(self, target, *args):
         self.target = target
-        self.method = method
-        self.section = section
-        self.option = option
-        self.value = value
+        self.method = None
+
+        if args: self.args=args
+        else: self.args=None
 
     def send(self):
-        self.target.send(self)
+        if self.method:
+            self.target.send(self)
+        else:
+            raise ValueError("Method isn't defined.")
 
 
 class ConfigRequest(BaseCommunicationObject):
-    pass
+    def _check_args(self, *args):
+        if not self.args:
+            self.args = args
+        else:
+            raise ValueError('Arguments for this request are already defined.')
+
+    def get(self, *args):
+        self._check_args(args)
+        self.method = self._methods['get']
+        self.send()
+
+    def set(self, *args):
+        self._check_args(args)
+        self.method = self._methods['set']
+        self.send()
 
 
 class ConfigResponse(BaseCommunicationObject):
