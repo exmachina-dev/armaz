@@ -3,7 +3,9 @@
 import configparser
 import liblo as lo
 
+from ertza.confiq import ConfigRequest
 import ertza.errors as err
+
 
 class OSCBaseServer(lo.Server):
     """
@@ -20,6 +22,12 @@ class OSCBaseServer(lo.Server):
         Init OSCServer with a ConfigParser instance and get server and client
         port.
         """
+
+        class _ConfigRequest(ConfigRequest):
+            def __init__(self, method, section, option, value=None):
+                super(ConfigRequest, self).__init__(
+                        self.config, method, section, option, value)
+
 
         self.running = True
         self.interval = 0
@@ -105,7 +113,7 @@ class OSCServer(OSCBaseServer):
 
         try:
             self.lg.debug('osc: %s', self.config.dump())
-            self.config.set(setup_sec, setup_opt, str(args))
+            self._ConfigRequest('set', setup_sec, setup_opt, str(args))
             self.setup_reply(sender, setup_sec, setup_opt, True)
         except configparser.NoOptionError as e:
             self.setup_reply(sender, setup_sec, str(e))

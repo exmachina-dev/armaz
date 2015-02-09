@@ -12,6 +12,8 @@ class LogWorker(BaseWorker):
 
     def __init__(self, sm):
         super(LogWorker, self).__init__(sm)
+        self.config_pipe = sm.conf_log_pipe[1]
+
         f = '%(asctime)s %(processName)-10s %(levelname)-8s %(message)s'
         root_logger = logging.getLogger()
         logging.basicConfig(format=f)

@@ -25,58 +25,6 @@ _CONFPATH = [
         ]
 
 
-class ConfigWorker(BaseWorker):
-    """
-    Master process that handle configuration.
-    """
-
-    def __init__(self, sm):
-        super(ConfigWorker, self).__init__(sm)
-        self.get_logger()
-
-        self.watched_options = {
-                'osc': {
-                    'server_port': None
-                    },
-                }
-
-        try:
-            self.lg.debug('Reading configs: %s', self.cfpr.configs)
-            missing = self.cfpr.read_configs()
-            self.lg.debug('Missing configs: %s', missing)
-        except configparser.Error as e:
-            error = err.ConfigError(e.message)
-            self.lg.warn(error)
-            raise error
-
-        self.run()
-
-    def run(self):
-        self._watchconfig(init=True)
-        self.config_event.set()
-        while not self.exit_event.is_set():
-            self.lg.debug('Config worker: config id: %s', id(self.cfpr))
-            self._watchconfig()
-
-            time.sleep(self.interval)
-
-    def _watchconfig(self, init=None):
-        for s, o in self.watched_options.items():
-            for o, v in o.items():
-                try:
-                    if self.cfpr[s][o] is not v:
-                        if not init:
-                            if s is 'osc' and o is 'server_port':
-                                self.lg.debug("""
-Server port as changed. Old port: %s. New port: %s
-Triggering OSC event.
-                                """, v, self.cfpr[s][o])
-                                self.osc_event.set()
-                        self.watched_options[s][o] = self.cfpr[s][o]
-                except configparser.Error as e:
-                    self.lg.debug(repr(e))
-
-
 class BaseConfigParser(configparser.ConfigParser):
     """
     BaseConfigParser provides some helpers function for
@@ -197,7 +145,91 @@ class ConfigProxy(BaseConfigParser):
         return getattr(object.__getattribute__(self, "_obj"),
                 "__iter__")(*args, **kw)
 
+
 ConfigParser = BaseConfigParser
+
+
+class BaseCommunicationObject(object):
+    def __init__(self, target, method, section, option, value=None):
+        self.target = target
+        self.method = method
+        self.section = section
+        self.option = option
+        self.value = value
+
+    def send(self):
+        self.target.send(self)
+
+
+class ConfigRequest(BaseCommunicationObject):
+    pass
+
+
+class ConfigResponse(BaseCommunicationObject):
+    pass
+
+
+class ConfigWorker(BaseWorker):
+    """
+    Master process that handle configuration.
+    """
+
+    _config = ConfigParser
+
+    def __init__(self, sm):
+        super(ConfigWorker, self).__init__(sm)
+        self.log_pipe = self.sm.conf_log_pipe[0]
+        self.rmt_pipe = self.sm.conf_rmt_pipe[0]
+        self.osc_pipe = self.sm.conf_osc_pipe[0]
+
+        self
+
+        self.get_logger()
+
+        self.watched_options = {
+                'osc': {
+                    'server_port': None
+                    },
+                }
+
+        try:
+            self.lg.debug('Reading configs: %s', self._config.configs)
+            missing = self._config.read_configs()
+            self.lg.debug('Missing configs: %s', missing)
+        except configparser.Error as e:
+            error = err.ConfigError(e.message)
+            self.lg.warn(error)
+            raise error
+
+        self.run()
+
+    def run(self):
+        self._watchconfig(init=True)
+        self.config_event.set()
+        while not self.exit_event.is_set():
+            self.lg.debug('Config worker: config id: %s', id(self._config))
+            self._watchconfig()
+
+            time.sleep(self.interval)
+
+    def _watchconfig(self, init=None):
+        for s, o in self.watched_options.items():
+            for o, v in o.items():
+                try:
+                    if self._config[s][o] is not v:
+                        if not init:
+                            if s is 'osc' and o is 'server_port':
+                                self.lg.debug("""
+Server port as changed. Old port: %s. New port: %s
+Triggering OSC event.
+                                """, v, self._config[s][o])
+                                self.osc_event.set()
+                        self.watched_options[s][o] = self._config[s][o]
+                except configparser.Error as e:
+                    self.lg.debug(repr(e))
+
+
+__all__ = ['ConfigRequest', 'ConfigResponse', 'ConfigWorker', 'ConfigParser']
 
 if __name__ == '__main__':
     cf = ConfigParser()

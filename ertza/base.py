@@ -14,7 +14,6 @@ class BaseWorker(object):
         self.initializer = sm
         self.sm = sm.manager
         self.lgq = sm.log_queue
-        self.cfpr = sm.configparser
 
         # Some events
         self.exit_event = sm.exit_event

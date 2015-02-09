@@ -16,6 +16,8 @@ class RemoteWorker(BaseWorker):
 
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
+        self.config_pipe = sm.conf_rmt_pipe[1]
+
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
 
@@ -44,6 +46,8 @@ class OSCWorker(BaseWorker):
 
     def __init__(self, sm):
         super(OSCWorker, self).__init__(sm)
+        self.config_pipe = sm.conf_osc_pipe[1]
+
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
 
@@ -73,7 +77,7 @@ class OSCWorker(BaseWorker):
     def init_osc_server(self, restart=False):
         if restart:
             del self.osc_server
-        self.osc_server = OSCServer(self.cfpr, self.lg, self.osc_event)
+        self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event)
         self.osc_server.start(blocking=False)
 
 

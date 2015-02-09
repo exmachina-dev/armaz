@@ -22,9 +22,6 @@ class MainInitializer(object):
 
     manager = mp.Manager()
     log_queue = manager.Queue()
-    config = manager.Namespace()
-
-    configparser = ConfigParser()
 
     # Some events
     exit_event = manager.Event()
@@ -35,6 +32,11 @@ class MainInitializer(object):
     # Some locks
     config_lock = manager.Lock()
     init_lock = manager.Lock()
+
+    # Config pipes
+    conf_log_pipe = manager.Pipe()
+    conf_rmt_pipe = manager.Pipe()
+    conf_osc_pipe = manager.Pipe()
 
     def __init__(self):
         self.jobs = []
