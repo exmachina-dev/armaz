@@ -34,9 +34,9 @@ class MainInitializer(object):
     init_lock = manager.Lock()
 
     # Config pipes
-    conf_log_pipe = manager.Pipe()
-    conf_rmt_pipe = manager.Pipe()
-    conf_osc_pipe = manager.Pipe()
+    conf_log_pipe = mp.Pipe()
+    conf_rmt_pipe = mp.Pipe()
+    conf_osc_pipe = mp.Pipe()
 
     def __init__(self):
         self.jobs = []
