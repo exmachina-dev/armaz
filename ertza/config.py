@@ -232,13 +232,16 @@ class ConfigResponse(BaseCommunicationObject):
             raise ValueError("One or more argument is missing.")
         self.value = self._config.set(str(section), str(option), str(value))
 
-    def handle(self, *args):
+    def handle(self):
+        args = self.request.args
         if self.request.method == self._methods['set']:
             self.set_to_config(*args)
         elif self.request.method == self._methods['get']:
             self.get_from_config(*args)
         else:
             raise ValueError('Unexcepted method: %s', self.request.method)
+
+        return self.value
 
 
 class ConfigWorker(BaseWorker):
