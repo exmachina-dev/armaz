@@ -158,6 +158,7 @@ class BaseCommunicationObject(object):
     def __init__(self, target, *args):
         self.target = target
         self.method = None
+        self.value = None
 
         if args: self.args=args
         else: self.args=None
@@ -180,7 +181,8 @@ class ConfigRequest(BaseCommunicationObject):
     def get(self, *args):
         self._check_args(*args)
         self.method = self._methods['get']
-        self.send()
+        rp = self.send()
+        return rp.value
 
     def set(self, *args):
         self._check_args(*args)
@@ -212,7 +214,7 @@ class ConfigResponse(BaseCommunicationObject):
         elif len(args) == 2:
             section, option = args
             fallback = None
-        self.args = self._config.get(section, option, fallback=fallback)
+        self.value = self._config.get(section, option, fallback=fallback)
 
 
 class ConfigWorker(BaseWorker):
