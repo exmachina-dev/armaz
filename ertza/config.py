@@ -233,12 +233,12 @@ class ConfigResponse(BaseCommunicationObject):
         self.value = self._config.set(str(section), str(option), str(value))
 
     def handle(self, *args):
-        if self.request.method is self.methods['set']:
+        if self.request.method == self._methods['set']:
             self.set_to_config(*args)
-        elif self.request.method is self.methods['get']:
+        elif self.request.method == self._methods['get']:
             self.get_from_config(*args)
         else:
-            raise ValueError('Unexcepted method: %s', self.rquest.method)
+            raise ValueError('Unexcepted method: %s', self.request.method)
 
 
 class ConfigWorker(BaseWorker):
