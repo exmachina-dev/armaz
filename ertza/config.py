@@ -253,7 +253,6 @@ class ConfigWorker(BaseWorker):
         self._watchconfig(init=True)
         self.config_event.set()
         while not self.exit_event.is_set():
-            self.lg.debug('Config worker: config id: %s', id(self._config))
             if self.osc_pipe.poll():
                 rq = self.osc_pipe.recv()
                 if not type(rq) is ConfigRequest:
