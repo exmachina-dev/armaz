@@ -175,10 +175,10 @@ class BaseCommunicationObject(object):
 
 class ConfigRequest(BaseCommunicationObject):
     def _check_args(self, *args):
-        if not self.args:
-            self.args = args
-        else:
-            raise ValueError('Arguments for this request are already defined.')
+        self.args = args
+        if self.args:
+            self.method = None
+            self.value = None
 
     def get(self, *args):
         self._check_args(*args)
