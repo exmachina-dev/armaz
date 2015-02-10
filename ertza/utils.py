@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, os
 from queue import Empty
 
 from ertza.base import BaseWorker
+from ertza.config import ConfigRequest
 
 import logging
 import logging.handlers
@@ -15,8 +16,19 @@ class LogWorker(BaseWorker):
         self.config_pipe = self.initializer.conf_log_pipe[1]
 
         f = '%(asctime)s %(processName)-10s %(levelname)-8s %(message)s'
+        hf = logging.Formatter(f)
         root_logger = logging.getLogger()
+
+        self.wait_for_config()
+
+        self.log_path = ConfigRequest(self._config).get('log', 'log_path')
+        self.log_file = os.path.join(self.log_path, 'ertza.log')
+        h = logging.handlers.RotatingFileHandler(self.log_file, 'a', 300 10)
+
         logging.basicConfig(format=f)
+
+        h.setFormatter(hf)
+        root_logger.addHandler(h)
 
         self.run()
 
