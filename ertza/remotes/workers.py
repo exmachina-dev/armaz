@@ -28,14 +28,7 @@ class RemoteWorker(BaseWorker):
         self.run()
 
     def run(self):
-        try:
-            self.lg.debug('Remote worker: %s', self.cfpr.dump())
-        except Exception as e:
-            self.lg.warn(e)
-            self.exit_event.set()
-
         while not self.exit_event.is_set():
-            self.lg.debug('Remote worker: config id: %s', id(self.cfpr))
             time.sleep(self.interval)
 
 
@@ -71,7 +64,6 @@ class OSCWorker(BaseWorker):
                 self.init_osc_server(True)
                 self.osc_event.clear()
 
-            self.lg.debug('OSC worker: config id: %s', id(self.cfpr))
             time.sleep(self.interval)
 
     def init_osc_server(self, restart=False):
