@@ -230,7 +230,7 @@ class ConfigResponse(BaseCommunicationObject):
             section, option, value = args
         else:
             raise ValueError("One or more argument is missing.")
-        self.value = self._config.set(section, option, value)
+        self.value = self._config.set(str(section), str(option), str(value))
 
     def handle(self, *args):
         if self.request.method is self.methods['set']:
