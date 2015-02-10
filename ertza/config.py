@@ -228,6 +228,8 @@ class ConfigWorker(BaseWorker):
         self.rmt_pipe = self.initializer.conf_rmt_pipe[0]
         self.osc_pipe = self.initializer.conf_osc_pipe[0]
 
+        self.interval = 0.001
+
         self._config = self._config()
 
         self.get_logger()
