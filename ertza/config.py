@@ -254,6 +254,16 @@ class ConfigWorker(BaseWorker):
         self.config_event.set()
         while not self.exit_event.is_set():
             self.lg.debug('Config worker: config id: %s', id(self._config))
+            if self.osc_pipe.poll():
+                rq = self.osc_pipe.recv()
+                if not type(rq) is ConfigRequest:
+                    raise ValueError('Unexcepted type: %s' % type(rq))
+                rs = ConfigResponse(self.osc_pipe, self._config)
+                self.lg.debug(rq.args,)
+                self.lg.debug('%s, %s, %s' % rq.args)
+                rs.get_from_config(*rq.args)
+                rs.send()
+
             self._watchconfig()
 
             time.sleep(self.interval)
