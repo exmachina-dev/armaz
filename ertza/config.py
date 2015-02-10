@@ -160,8 +160,10 @@ class BaseCommunicationObject(object):
         self.method = None
         self.value = None
 
-        if args: self.args=args
-        else: self.args=None
+        if args:
+            self.args = args
+        else:
+            self.args = None
 
     def send(self):
         if self.method:

@@ -3,6 +3,7 @@
 import logging
 import logging.handlers
 
+
 class BaseWorker(object):
     """
     Base worker for multiprocessing.Manager()
@@ -37,5 +38,4 @@ class BaseWorker(object):
 
     def wait_for_config(self):
         while not self.config_event.is_set():
-            self.lg.debug('Waiting for config…')
             time.sleep(self.interval)
