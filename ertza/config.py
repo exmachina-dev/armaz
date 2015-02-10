@@ -198,8 +198,9 @@ class ConfigRequest(BaseCommunicationObject):
 
 
 class ConfigResponse(BaseCommunicationObject):
-    def __init__(self, target, config=None, *args):
+    def __init__(self, target, request, config=None, *args):
         super(ConfigResponse, self).__init__(target, *args)
+        self.request = request
         self._config = config
 
     def get_from_config(self, *args):
@@ -213,6 +214,25 @@ class ConfigResponse(BaseCommunicationObject):
             section, option = args
             fallback = None
         self.value = self._config.get(section, option, fallback=fallback)
+
+    def set_to_config(self, *args):
+        self.method = self._methods['set']
+
+        if not self._config:
+            raise ValueError("Config isn't defined.")
+        if len(args) == 3:
+            section, option, value = args
+        else:
+            raise ValueError("One or more argument is missing.")
+        self.value = self._config.set(section, option, value)
+
+    def handle(self, *args):
+        if self.request.method is self.methods['set']:
+            self.set_to_config(*args)
+        elif self.request.method is self.methods['get']:
+            self.get_from_config(*args)
+        else:
+            raise ValueError('Unexcepted method: %s', self.rquest.method)
 
 
 class ConfigWorker(BaseWorker):
@@ -259,8 +279,8 @@ class ConfigWorker(BaseWorker):
                 rq = self.osc_pipe.recv()
                 if not type(rq) is ConfigRequest:
                     raise ValueError('Unexcepted type: %s' % type(rq))
-                rs = ConfigResponse(self.osc_pipe, self._config)
-                rs.get_from_config(*rq.args)
+                rs = ConfigResponse(self.osc_pipe, rq, self._config)
+                rs.handle(*rq.args)
                 rs.send()
 
             self._watchconfig()
