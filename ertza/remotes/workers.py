@@ -39,6 +39,8 @@ class OSCWorker(BaseWorker):
 
     def __init__(self, sm):
         super(OSCWorker, self).__init__(sm)
+        self.interval = 0.001
+
         self.config_pipe = self.initializer.conf_osc_pipe[1]
 
         self.get_logger()
