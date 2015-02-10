@@ -30,7 +30,6 @@ class OSCBaseServer(lo.Server):
         self.lg = logger
         self.osc_event = restart_event
 
-        self.lg.debug(ConfigRequest(self._config).get('osc', 'server_port', 7900))
         self.server_port = int(ConfigRequest(self._config).get('osc', 'server_port', 7900))
         self.client_port = int(ConfigRequest(self._config).get('osc', 'client_port', 7901))
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)

@@ -191,9 +191,7 @@ class ConfigRequest(BaseCommunicationObject):
 
     def send(self):
         if super(ConfigRequest, self).send():
-            print('waiting')
             rp = self.target.recv()
-            print('done')
             return rp
         else:
             raise ValueError("Method isn't defined.")
@@ -261,8 +259,6 @@ class ConfigWorker(BaseWorker):
                 if not type(rq) is ConfigRequest:
                     raise ValueError('Unexcepted type: %s' % type(rq))
                 rs = ConfigResponse(self.osc_pipe, self._config)
-                self.lg.debug(rq.args,)
-                self.lg.debug('%s, %s, %s' % rq.args)
                 rs.get_from_config(*rq.args)
                 rs.send()
 
