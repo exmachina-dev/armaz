@@ -256,6 +256,7 @@ class ConfigWorker(BaseWorker):
         self.log_pipe = self.initializer.conf_log_pipe[0]
         self.rmt_pipe = self.initializer.conf_rmt_pipe[0]
         self.osc_pipe = self.initializer.conf_osc_pipe[0]
+        self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe
 
         self.interval = 0.001
 
@@ -284,13 +285,14 @@ class ConfigWorker(BaseWorker):
         self._watchconfig(init=True)
         self.config_event.set()
         while not self.exit_event.is_set():
-            if self.osc_pipe.poll():
-                rq = self.osc_pipe.recv()
-                if not type(rq) is ConfigRequest:
-                    raise ValueError('Unexcepted type: %s' % type(rq))
-                rs = ConfigResponse(self.osc_pipe, rq, self._config)
-                rs.handle(*rq.args)
-                rs.send()
+            for pipe in self.pipes:
+                if pipe.poll():
+                    rq = pipe.recv()
+                    if not type(rq) is ConfigRequest:
+                        raise ValueError('Unexcepted type: %s' % type(rq))
+                    rs = ConfigResponse(pipe, rq, self._config)
+                    rs.handle()
+                    rs.send()
 
             self._watchconfig()
 
