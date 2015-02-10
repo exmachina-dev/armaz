@@ -19,9 +19,11 @@ class LogWorker(BaseWorker):
         f = '%(asctime)s %(processName)-10s %(levelname)-8s %(message)s'
         hf = logging.Formatter(f)
         root_logger = logging.getLogger()
+        self.lg = root_logger
 
         self.wait_for_config()
 
+        self.lg.debug(self.config_request.get('log', 'log_path'))
         self.log_path = self.config_request.get('log', 'log_path')
         self.log_file = os.path.join(self.log_path, 'ertza.log')
         h = logging.handlers.RotatingFileHandler(self.log_file, 'a', 300 10)

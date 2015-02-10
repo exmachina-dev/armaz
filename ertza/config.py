@@ -288,10 +288,12 @@ class ConfigWorker(BaseWorker):
             for pipe in self.pipes:
                 if pipe.poll():
                     rq = pipe.recv()
+                    self.lg.debug(rq)
                     if not type(rq) is ConfigRequest:
                         raise ValueError('Unexcepted type: %s' % type(rq))
                     rs = ConfigResponse(pipe, rq, self._config)
                     rs.handle()
+                    self.lg.debug(rs)
                     rs.send()
 
             self._watchconfig()
