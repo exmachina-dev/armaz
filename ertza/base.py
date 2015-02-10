@@ -34,3 +34,8 @@ class BaseWorker(object):
 
     def run(self):
         pass
+
+    def wait_for_config(self):
+        while not self.config_event.is_set():
+            self.lg.debug('Waiting for config…')
+            time.sleep(self.interval)

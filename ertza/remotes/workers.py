@@ -21,9 +21,7 @@ class RemoteWorker(BaseWorker):
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
 
-        while not self.config_event.is_set():
-            self.lg.debug('Waiting for config…')
-            time.sleep(self.interval)
+        self.wait_for_config()
 
         self.run()
 
@@ -46,10 +44,7 @@ class OSCWorker(BaseWorker):
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
 
-        while not self.config_event.is_set():
-            self.lg.debug('Waiting for config…')
-            time.sleep(self.interval)
-
+        self.wait_for_config()
         self.run()
 
     def run(self):
