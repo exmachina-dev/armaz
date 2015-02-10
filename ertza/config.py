@@ -178,12 +178,12 @@ class ConfigRequest(BaseCommunicationObject):
             raise ValueError('Arguments for this request are already defined.')
 
     def get(self, *args):
-        self._check_args(args)
+        self._check_args(*args)
         self.method = self._methods['get']
         self.send()
 
     def set(self, *args):
-        self._check_args(args)
+        self._check_args(*args)
         self.method = self._methods['set']
         self.send()
 
