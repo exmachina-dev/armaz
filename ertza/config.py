@@ -152,7 +152,7 @@ ConfigParser = BaseConfigParser
 class BaseCommunicationObject(object):
     _methods = {
             'get': 0x001,
-            'set': 0x001,
+            'set': 0x002,
             }
 
     def __init__(self, target, *args):
