@@ -26,7 +26,12 @@ class LogWorker(BaseWorker):
         self.lg.debug(self.config_request.get('log', 'log_path'))
         self.log_path = self.config_request.get('log', 'log_path')
         self.log_file = os.path.join(self.log_path, 'ertza.log')
-        h = logging.handlers.RotatingFileHandler(self.log_file, 'a', 300 10)
+        self.max_size = int(self.config_request.get('log', 'max_size',
+            1048576))
+        self.backup_count = int(self.config_request.get('log', 'backup_count',
+            10))
+        h = logging.handlers.RotatingFileHandler(self.log_file,
+                maxBytes=self.max_size, backupCount=self.backup_count)
 
         logging.basicConfig(format=f)
 
