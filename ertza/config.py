@@ -165,6 +165,7 @@ class BaseCommunicationObject(object):
     def send(self):
         if self.method:
             self.target.send(self)
+            return True
         else:
             raise ValueError("Method isn't defined.")
 
@@ -185,6 +186,15 @@ class ConfigRequest(BaseCommunicationObject):
         self._check_args(args)
         self.method = self._methods['set']
         self.send()
+
+    def send(self):
+        if super(ConfigRequest, self).send():
+            print('waiting')
+            rp = self.target.recv()
+            print('done')
+            return rp
+        else:
+            raise ValueError("Method isn't defined.")
 
 
 class ConfigResponse(BaseCommunicationObject):
