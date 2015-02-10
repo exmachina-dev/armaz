@@ -30,8 +30,9 @@ class OSCBaseServer(lo.Server):
         self.lg = logger
         self.osc_event = restart_event
 
-        self.server_port = int(ConfigRequest(self._config).get('osc', 'server_port', 7900))
-        self.client_port = int(ConfigRequest(self._config).get('osc', 'client_port', 7901))
+        self.config_request = ConfigRequest(self._config)
+        self.server_port = int(self.config_request.get('osc', 'server_port', 7900))
+        self.client_port = int(self.config_request.get('osc', 'client_port', 7901))
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
 
         self.ready = True
@@ -104,8 +105,8 @@ class OSCServer(OSCBaseServer):
         setup_sec, setup_opt, args, = args
 
         try:
-            self.lg.debug('osc: %s', self._ConfigRequest().dump())
-            self._ConfigRequest().set(setup_sec, setup_opt, str(args))
+            self.lg.debug('osc: %s', self.config_request.dump())
+            self.config_request.set(setup_sec, setup_opt, str(args))
             self.setup_reply(sender, setup_sec, setup_opt, True)
         except configparser.NoOptionError as e:
             self.setup_reply(sender, setup_sec, str(e))
@@ -127,7 +128,7 @@ class OSCServer(OSCBaseServer):
             return 1
         setup_section, setup_var = args
         try:
-            args.append(self._ConfigRequest().get(setup_section, setup_var))
+            args.append(self.config_request.get(setup_section, setup_var, None))
             self.setup_reply(sender, *args)
         except configparser.NoOptionError as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
@@ -135,7 +136,7 @@ class OSCServer(OSCBaseServer):
 
     @lo.make_method('/setup/save', '')
     def setup_save_callback(self, path, args, types, sender):
-        self._ConfigRequest().save()
+        self.config_request.save()
 
         return 0
 
