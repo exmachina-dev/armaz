@@ -198,7 +198,21 @@ class ConfigRequest(BaseCommunicationObject):
 
 
 class ConfigResponse(BaseCommunicationObject):
-    pass
+    def __init__(self, target, config=None, *args):
+        super(ConfigResponse, self).__init__(target, *args)
+        self._config = config
+
+    def get_from_config(self, *args):
+        self.method = self._methods['get']
+
+        if not self._config:
+            raise ValueError("Config isn't defined.")
+        if len(args) == 3:
+            section, option, fallback = args
+        elif len(args) == 2:
+            section, option = args
+            fallback = None
+        self.args = self._config.get(section, option, fallback=fallback)
 
 
 class ConfigWorker(BaseWorker):
