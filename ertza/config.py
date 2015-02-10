@@ -198,11 +198,9 @@ class ConfigRequest(BaseCommunicationObject):
         self.send()
 
     def send(self):
-        if super(ConfigRequest, self).send():
-            rp = self.target.recv()
-            return rp
-        else:
-            raise ValueError("Method isn't defined.")
+        super(ConfigRequest, self).send()
+        rp = self.target.recv()
+        return rp
 
 
 class ConfigResponse(BaseCommunicationObject):
