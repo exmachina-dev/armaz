@@ -172,6 +172,12 @@ class BaseCommunicationObject(object):
         else:
             raise ValueError("Method isn't defined.")
 
+    def __str__(self):
+        return '%s %s %s' % (self.method, self.args, self.value)
+
+    __repr__ = __str__
+
+
 
 class ConfigRequest(BaseCommunicationObject):
     def _check_args(self, *args):
