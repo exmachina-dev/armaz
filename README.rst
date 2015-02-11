@@ -1,6 +1,8 @@
 =====
 ertza
 =====
+.. image:: https://travis-ci.org/exmachina-dev/ertza.svg?branch=beaglebone
+    :target: https://travis-ci.org/exmachina-dev/ertza
 
 Python program that run Armaz motor block.
 This program is tested under Python v3.2 and v3.3
