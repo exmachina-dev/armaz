@@ -1,3 +1,27 @@
+  Dim nAxis As Integer
+  nAxis = 0
+  
+  Dim nCommand As Integer
+  
+  COMMS(1) = 100
+  COMMS(1) = 1
+  
+  Loop
+  
+    'See if Controller 1 has given us a new command
+    nCommand = COMMS(1)
+  
+    If nCommand <> 0 Then
+      'Determine which command has been sent
+      If nCommand = 1 Then SPEED(nAxis) = COMMS(10)
+      If nCommand = 2 Then MOVER(nAxis) = COMMS(10) : GO(nAxis)
+      If nCommand = 3 Then MOVEA(nAxis) = COMMS(10) : GO(nAxis)
+      'Send ack back to host
+      COMMS(1) = 0
+    End If
+  End Loop
+End
+
 Startup
   Auto
   
@@ -9,3 +33,4 @@ Startup
   MODBUSPARAMETER(_busSERIAL1, _mpREGISTER_MAPPING) = _rmCOMMS_ARRAY  'Use Comms array for data exchange
   MODBUSPARAMETER(_busSERIAL1, _mpENABLE) = 1                         'Finally enable Modbus RTU communication
 End Startup
+
