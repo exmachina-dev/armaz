@@ -1,0 +1,11 @@
+Startup
+  Auto
+  
+  BUSNODE(_busSERIAL1) = 2                                            'MicroFlex e100 is node 2 on RTU network
+  SERIALBAUD(_TERM1) = 57600                                          'Running at 57.6kbaud (default)
+
+  MODBUSPARAMETER(_busSERIAL1, _mpBYTE_ORDER) = 0                     'Use big endian byte order (default)
+  MODBUSPARAMETER(_busSERIAL1, _mpWORD_ORDER) = 1                     'Use little endian word order (default)
+  MODBUSPARAMETER(_busSERIAL1, _mpREGISTER_MAPPING) = _rmCOMMS_ARRAY  'Use Comms array for data exchange
+  MODBUSPARAMETER(_busSERIAL1, _mpENABLE) = 1                         'Finally enable Modbus RTU communication
+End Startup
