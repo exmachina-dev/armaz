@@ -12,4 +12,4 @@ install:
   - "pip install ."
   - "pip install pyliblo"
 # command to run tests
-script: nosetests
+script: py.test
