@@ -132,6 +132,8 @@ if __name__ == "__main__":
     from ertza.utils import FakeConfig
 
     mb = ModbusBackend(FakeConfig(), None, None, None)
+    mb.device = '~/COM2'
+    mb.baudrate = 9600
     print(mb.dump_config())
     mb.connect()
     mb.read_comm(1)
