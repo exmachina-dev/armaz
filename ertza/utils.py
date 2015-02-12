@@ -4,7 +4,7 @@ import sys, os
 from queue import Empty
 
 from ertza.base import BaseWorker
-from ertza.config import ConfigRequest
+from ertza.config import ConfigRequest, ConfigResponse
 
 import logging
 import logging.handlers
@@ -56,3 +56,13 @@ class LogWorker(BaseWorker):
                 import traceback
                 print('FATAL:', file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
+
+
+class FakeConfig(object):
+    def recv(self, *args):
+        rp = ConfigResponse(self, self.rq)
+        rp.value = self.rq.args[2]
+        return rp
+
+    def send(self, rq):
+        self.rq = rq
