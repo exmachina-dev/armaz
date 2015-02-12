@@ -31,7 +31,9 @@ class ModbusBackend(object):
     def connect(self):
         self.end = Modbus(self.device, self.baudrate,
                 self.parity, self.data_bit, self.stop_bit)
+        print(self.end.rtu_get_serial_mode())
         self.end.rtu_set_serial_mode(Modbus.RTU_RS485)
+        self.end.connect()
 
     def get_config(self):
         try:
@@ -111,6 +113,8 @@ if __name__ == "__main__":
     from ertza.utils import FakeConfig
 
     mb = ModbusBackend(FakeConfig(), None, None, None)
+    # Override serial port
+    mb.device = '/home/willykaze/COM1'
     print(mb.dump_config())
     mb.connect()
     mb.read_comm(1)
