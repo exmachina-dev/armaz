@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from pylibmodbus import ModbusRtu
-Modbus = ModbusRtu
+from pymodbus.client.sync import ModbusSerialClient
+Modbus = ModbusSerialClient
+
+from pymodbus.register_read_message import *
+from pymodbus.register_write_message import *
+from pymodbus.other_message import *
+from pymodbus.mei_message import *
+from pymodbus.pdu import *
 
 from ertza.config import ConfigRequest
 import ertza.errors as err
@@ -29,9 +35,17 @@ class ModbusBackend(object):
 
 
     def connect(self):
-        self.end = Modbus(self.device, self.baudrate,
-                self.parity, self.data_bit, self.stop_bit)
-        self.end.rtu_set_serial_mode(Modbus.RTU_RS485)
+        self.end = Modbus(method='rtu', port=self.device,
+                baudrate=self.baudrate, parity=self.parity, 
+                bytesize=self.data_bit, stopbits=self.stop_bit)
+
+    def close(self):
+        self.end.close()
+
+    def reconnect(self):
+        self.close()
+        self.get_config()
+        self.connect()
 
     def get_config(self):
         try:
@@ -102,9 +116,16 @@ world_lenght: %s, reg_by_comms: %s' % \
     def read_comm(self, comms):
         if self.min_comms <= comms <= self.max_comms:
             start = comms * self.nb_reg_by_comms
-            return self.end.read_registers(start, self.nb_reg_by_comms)
+            return self._read_holding_registers(start, self.nb_reg_by_comms)
         else:
             raise ValueError('Comms number exceed limits.')
+
+    def _read_holding_registers(self, address, count):
+            rq = ReadHoldingRegistersRequest(
+                    address, count, unit_id=self.node_id)
+            return self._rq(rq)
+    def _rq(self, rq):
+        self.end.execute(rq)
 
 
 if __name__ == "__main__":
