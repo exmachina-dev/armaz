@@ -13,6 +13,7 @@ packages = [
     'ertza',
     'ertza.remotes',
     'ertza.remotes.osc',
+    'ertza.remotes.modbus',
 ]
 
 scripts = [
