@@ -124,6 +124,32 @@ world_lenght: %s, reg_by_comms: %s' % \
             rq = ReadHoldingRegistersRequest(
                     address, count, unit_id=self.node_id)
             return self._rq(rq)
+
+    def _read_input_registers(self, address, count):
+            rq = ReadInputRegistersRequest(
+                    address, count, unit_id=self.node_id)
+
+    def _write_single_register(self, address, value):
+            rq = WriteSingleRegisterRequest(
+                    address, value, unit_id=self.node_id)
+            return self._rq(rq)
+
+    def _write_multiple_registers(self, address, value):
+            rq = WriteMultipleRegistersRequest(
+                    address, value, unit_id=self.node_id)
+
+    def _read_write_multiple_registers(self, address, value):
+            rq = ReadWriteMultipleRegistersRequest(
+                    address, value, unit_id=self.node_id)
+            return self._rq(rq)
+
+    # Shortcuts
+    rhr = _read_holding_registers
+    rir = _read_input_registers
+    wsr = _write_single_register
+    wmr = _write_multiple_registers
+    rwmr = _read_write_multiple_registers
+
     def _rq(self, rq):
         self.end.execute(rq)
 
