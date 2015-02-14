@@ -4,7 +4,7 @@ import sys, os
 from queue import Empty
 
 from ertza.base import BaseWorker
-from ertza.config import ConfigRequest, ConfigResponse
+from ertza.config import ConfigRequest, ConfigResponse, ConfigParser
 
 import logging
 import logging.handlers
@@ -58,10 +58,23 @@ class LogWorker(BaseWorker):
                 traceback.print_exc(file=sys.stderr)
 
 
+class FakeConfigParser(ConfigParser):
+    def __init__(self):
+        super(FakeConfigParser, self).__init__()
+
+        self._conf_path = None
+        self.save_path = None
+        self.autosave = False
+        self.read_hard_defaults()
+
+
 class FakeConfig(object):
     def recv(self, *args):
-        rp = ConfigResponse(self, self.rq)
-        rp.value = self.rq.args[2]
+        rp = ConfigResponse(self, self.rq, FakeConfigParser())
+
+        rp.handle()
+        rp.send()
+
         return rp
 
     def send(self, rq):
