@@ -52,7 +52,7 @@ class BaseConfigParser(configparser.ConfigParser):
     def read_configs(self, path=None):
         # Don't auto save when reading config
         asave = self.autosave
-        self.autosave
+        self.autosave = False
 
         if path and os.path.exists(path):
             path = os.path.expanduser(path)
