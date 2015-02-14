@@ -1,7 +1,7 @@
 =====
 ertza
 =====
-.. image:: https://travis-ci.org/exmachina-dev/ertza.svg?branch=beaglebone
+.. image:: https://travis-ci.org/exmachina-dev/ertza.svg?branch=pymodbus
     :target: https://travis-ci.org/exmachina-dev/ertza
 
 Python program that run Armaz motor block.
