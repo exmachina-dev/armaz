@@ -1,2 +1,2 @@
-pylibmodbus>=0.4
+pymodbus3>=1.2.0
 pyliblo>=0.9
