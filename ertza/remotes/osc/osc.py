@@ -94,6 +94,7 @@ class OSCServer(OSCBaseServer):
     def setup_reply(self, sender, *args):
         _msg = lo.Message('/setup/return', *args)
         self.send(sender, _msg)
+        return _msg
 
     @lo.make_method('/setup/set', 'ssi')
     @lo.make_method('/setup/set', 'ssh')
