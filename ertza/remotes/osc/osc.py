@@ -79,7 +79,8 @@ class OSCBaseServer(lo.Server):
             self.lg.warn('No restart event was supplied at init.')
 
     def send(self, dst, msg):
-        super(OSCBaseServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
+        super(OSCBaseServer, self).send(
+                lo.Address(dst.get_hostname(), self.client_port), msg)
 
     def __del__(self):
         self.free()
@@ -150,8 +151,8 @@ class OSCServer(OSCBaseServer):
 
     @lo.make_method('/osc/restart', '')
     def osc_restart_callback(self, path, args, types, sender):
-            self.setup_reply(sender, path, "Restarting.")
-            self.restart()
+        self.setup_reply(sender, path, "Restarting.")
+        self.restart()
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
