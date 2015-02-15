@@ -92,7 +92,11 @@ class OSCServer(OSCBaseServer):
     }
 
     def setup_reply(self, sender, *args):
-        _msg = lo.Message('/setup/return', *args)
+        if args[0][0] == '/':
+            args = list(args)
+            _msg = lo.Message(args.pop(0), *args)
+        else:
+            _msg = lo.Message('/setup/return', *args)
         self.send(sender, _msg)
         return _msg
 
@@ -140,16 +144,16 @@ class OSCServer(OSCBaseServer):
         except configparser.NoOptionError as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
 
-    @lo.make_method('/setup/save', '')
+    @lo.make_method('/setup/save', None)
     def setup_save_callback(self, path, args, types, sender):
         self.config_request.save()
 
 
-    @lo.make_method('/osc/restart', '')
+    @lo.make_method('/osc/restart', None)
     def osc_restart_callback(self, path, args, types, sender):
         self.setup_reply(sender, path, "Restarting.")
         self.restart()
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
-        self.setup_reply(sender, "Something is wrong.", path, types, *args)
+        self.setup_reply(sender, "/status/wrong_osc_command", path, types, *args)
