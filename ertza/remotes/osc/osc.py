@@ -82,8 +82,6 @@ class OSCBaseServer(lo.Server):
         super(OSCBaseServer, self).send(
                 lo.Address(dst.get_hostname(), self.client_port), msg)
 
-    def __del__(self):
-        self.free()
 
 class OSCServer(OSCBaseServer):
     """
