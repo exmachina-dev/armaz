@@ -17,7 +17,7 @@ class OSCBaseServer(lo.Server):
     Require a ConfigParser object (or a proxy) as init argument.
     """
 
-    def __init__(self, config, logger, restart_event):
+    def __init__(self, config, logger=None, restart_event=None):
         """
         Init OSCServer with a ConfigParser instance and get server and client
         port.
@@ -27,7 +27,12 @@ class OSCBaseServer(lo.Server):
         self.interval = 0
 
         self._config = config
-        self.lg = logger
+        if logger:
+            self.lg = logger
+        else:
+            import logging
+            self.lg = logging.getLogger()
+
         self.osc_event = restart_event
 
         self.config_request = ConfigRequest(self._config)
@@ -68,7 +73,10 @@ class OSCBaseServer(lo.Server):
         OSCWorker.
         """
 
-        self.osc_event.set()
+        try:
+            self.osc_event.set()
+        except AttributeError:
+            self.lg.warn('No restart event was supplied at init.')
 
     def send(self, dst, msg):
         super(OSCBaseServer, self).send(lo.Address(dst.get_hostname(), self.client_port), msg)
