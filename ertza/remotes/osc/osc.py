@@ -152,4 +152,4 @@ class OSCServer(OSCBaseServer):
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
-        self.setup_reply(sender, "Something is wrong…", path, *args)
+        self.setup_reply(sender, "Something is wrong.", path, types, *args)
