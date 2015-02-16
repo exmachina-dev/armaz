@@ -121,10 +121,10 @@ class OSCServer(OSCBaseServer):
 
         try:
             self.lg.debug('osc: %s', self.config_request.dump())
-            self.config_request.set(setup_sec, setup_opt, str(args))
-            self.setup_reply(sender, setup_sec, setup_opt, True)
+            _value = self.config_request.set(setup_sec, setup_opt, str(args))
+            self.setup_reply(sender, path, setup_sec, setup_opt, _value)
         except configparser.NoOptionError as e:
-            self.setup_reply(sender, setup_sec, str(e))
+            self.setup_reply(sender, path, setup_sec, str(e))
         except configparser.NoSectionError as e:
             self.setup_reply(sender, str(e))
         except:
