@@ -43,11 +43,11 @@ class BaseConfigParser(configparser.ConfigParser):
         )
 
     def set(self, section, option, value=None):
-        rtn = super(BaseConfigParser, self).set(section, option, value)
+        super(BaseConfigParser, self).set(section, option, value)
         if self.autosave:
             self.save()
 
-        return rtn
+        return super(BaseConfigParser, self).get(section, option)
 
     def read_configs(self, path=None):
         # Don't auto save when reading config
@@ -167,8 +167,7 @@ class BaseCommunicationObject(object):
 
     def send(self):
         if self.method:
-            self.target.send(self)
-            return True
+            return self.target.send(self)
         else:
             raise ValueError("Method isn't defined.")
 
@@ -195,7 +194,7 @@ class ConfigRequest(BaseCommunicationObject):
     def set(self, *args):
         self._check_args(*args)
         self.method = self._methods['set']
-        self.send()
+        return self.send().value
 
     def send(self):
         super(ConfigRequest, self).send()
