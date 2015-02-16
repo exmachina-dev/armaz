@@ -142,9 +142,9 @@ class OSCServer(OSCBaseServer):
             return 1
         setup_section, setup_var = args
         try:
-            args.append(self.config_request.get(setup_section, setup_var, None))
-            self.setup_reply(sender, *args)
-        except configparser.NoOptionError as e:
+            args.append(self.config_request.get(setup_section, setup_var))
+            self.setup_reply(sender, path, *args)
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
 
     @lo.make_method('/setup/save', None)
