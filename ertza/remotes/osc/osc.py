@@ -127,8 +127,6 @@ class OSCServer(OSCBaseServer):
             self.setup_reply(sender, path, setup_sec, str(e))
         except configparser.NoSectionError as e:
             self.setup_reply(sender, str(e))
-        except:
-            self.setup_reply(sender, str(ValueError))
 
         self.lg.debug('Executed %s %s.%s %s (%s) from %s',
                 path, setup_sec, setup_opt, args, types, sender.get_hostname())
@@ -139,7 +137,6 @@ class OSCServer(OSCBaseServer):
     def setup_get_callback(self, path, args, types, sender):
         if len(args) != 2:
             self.setup_reply(sender, "One or more argument is missing.")
-            return 1
         setup_section, setup_var = args
         try:
             args.append(self.config_request.get(setup_section, setup_var))
@@ -147,12 +144,12 @@ class OSCServer(OSCBaseServer):
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
 
-    @lo.make_method('/setup/save', None)
+    @lo.make_method('/setup/save', '')
     def setup_save_callback(self, path, args, types, sender):
         self.config_request.save()
 
 
-    @lo.make_method('/osc/restart', None)
+    @lo.make_method('/osc/restart', '')
     def osc_restart_callback(self, path, args, types, sender):
         self.setup_reply(sender, path, "Restarting.")
         self.restart()
