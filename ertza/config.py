@@ -215,10 +215,10 @@ class ConfigResponse(BaseCommunicationObject):
             raise ValueError("Config isn't defined.")
         if len(args) == 3:
             section, option, fallback = args
+            self.value = self._config.get(section, option, fallback=fallback)
         elif len(args) == 2:
             section, option = args
-            fallback = None
-        self.value = self._config.get(section, option, fallback=fallback)
+            self.value = self._config.get(section, option)
 
     def set_to_config(self, *args):
         self.method = self._methods['set']

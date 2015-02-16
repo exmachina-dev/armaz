@@ -14,7 +14,9 @@ class Test_ConfigRequest(object):
         assert int(self.rq.get('osc', 'server_port', 0)) == \
                 _DEFAULTS['osc']['server_port']
 
-        assert self.rq.get('fake_section', 'fake_option') == None
+        with pytest.raises(configparser.NoSectionError):
+            self.rq.get('fake_section', 'fake_option')
+
         assert self.rq.get('fake_section', 'fake_option', 1234) == 1234
 
     def test_set(self):
