@@ -92,10 +92,13 @@ class OSCServer(OSCBaseServer):
     }
 
     def setup_reply(self, sender, *args):
-        if args[0][0] == '/':
-            args = list(args)
-            _msg = lo.Message(args.pop(0), *args)
-        else:
+        try:
+            if args[0][0] == '/':
+                args = list(args)
+                _msg = lo.Message(args.pop(0), *args)
+            else:
+                _msg = lo.Message('/setup/return', *args)
+        except TypeError:
             _msg = lo.Message('/setup/return', *args)
         self.send(sender, _msg)
         return _msg
