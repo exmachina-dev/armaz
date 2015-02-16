@@ -85,7 +85,7 @@ class BaseConfigParser(configparser.ConfigParser):
         with open(self.save_path, 'w') as configfile:
             super(BaseConfigParser, self).write(configfile)
 
-    def dump(self):
+    def dump(self, section=None):
         output = ''
         for s, o in self.items():
             output += ('[ %s : ( ' % s)
@@ -153,6 +153,7 @@ class BaseCommunicationObject(object):
     _methods = {
             'get': 0x001,
             'set': 0x002,
+            'dump': 0x003,
             }
 
     def __init__(self, target, *args):
@@ -196,6 +197,11 @@ class ConfigRequest(BaseCommunicationObject):
         self.method = self._methods['set']
         return self.send().value
 
+    def dump(self, *args):
+        self._check_args(*args)
+        self.method = self._methods['dump']
+        return self.send().value
+
     def send(self):
         super(ConfigRequest, self).send()
         rp = self.target.recv()
@@ -231,12 +237,25 @@ class ConfigResponse(BaseCommunicationObject):
             raise ValueError("One or more argument is missing.")
         self.value = self._config.set(str(section), str(option), str(value))
 
+    def dump_config(self, *args):
+        self.method = self._methods['dump']
+
+        if not self._config:
+            raise ValueError("Config isn't defined.")
+        if len(args) == 1:
+            section, = args
+        else:
+            section = None
+        self.value = self._config.dump(str(section))
+
     def handle(self):
         args = self.request.args
         if self.request.method == self._methods['set']:
             self.set_to_config(*args)
         elif self.request.method == self._methods['get']:
             self.get_from_config(*args)
+        elif self.request.method == self._methods['dump']:
+            self.dump_config(*args)
         else:
             raise ValueError('Unexcepted method: %s', self.request.method)
 
