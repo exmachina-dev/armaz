@@ -1,15 +1,17 @@
 language: python
 python:
-  - "3.3"
-  - "3.4"
+    - "3.3"
+    - "3.4"
+cache:
+    apt
 before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y liblo7
-  - sudo apt-get install -y liblo-dev
+    - sudo apt-get update -qq
+    - sudo apt-get install -y liblo7
+    - sudo apt-get install -y liblo-dev
 
 # command to install dependencies
 install:
-  - "pip install ."
-  - "pip install pyliblo"
+    - "pip install ."
+    - "pip install pyliblo"
 # command to run tests
 script: py.test
