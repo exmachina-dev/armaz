@@ -18,6 +18,7 @@ packages = [
 
 scripts = [
     'bin/ertza',
+    'bin/modbus_rw',
 ]
 
 def file_content(filename):
