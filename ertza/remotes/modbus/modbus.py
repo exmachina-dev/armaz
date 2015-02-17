@@ -139,6 +139,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     def _read_input_registers(self, address, count):
             rq = ReadInputRegistersRequest(
                     address, count, unit_id=self.node_id)
+            return self._rq(rq)
 
     def _write_single_register(self, address, value):
             rq = WriteSingleRegisterRequest(
@@ -148,6 +149,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     def _write_multiple_registers(self, address, value):
             rq = WriteMultipleRegistersRequest(
                     address, value, unit_id=self.node_id)
+            return self._rq(rq)
 
     def _read_write_multiple_registers(self, address, value):
             rq = ReadWriteMultipleRegistersRequest(
@@ -162,7 +164,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     rwmr = _read_write_multiple_registers
 
     def _rq(self, rq):
-        self.end.execute(rq)
+        return self.end.execute(rq)
 
 
 if __name__ == "__main__":
