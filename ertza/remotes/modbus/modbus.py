@@ -49,7 +49,7 @@ class ModbusBackend(object):
     def get_config(self):
         try:
             self.device = self.config_request.get(
-                'modbus', 'device', '/dev/ttyS0')
+                'modbus', 'device', '/dev/ttyO5')
             if self.device:
                 self.device = str(self.device)
             else:
