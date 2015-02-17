@@ -10,10 +10,15 @@ def main():
 
     print(mb.dump_config())
     mb.connect()
-    mb.write_comm(1, 1)
-    mb.write_comm(2, 10)
-    for i in range(1, 6):
-        print(mb.read_comm(i))
+    mb.write_comm(1, (0, 1,))
+    mb.write_comm(4, (0, 10,))
+
+    print(mb.read_comm(1))
+    print(mb.read_comm(2))
+    print(mb.read_comm(3))
+    print(mb.read_comm(4))
+    print(mb.read_comm(10))
+    print(mb.read_comm(50))
 
 if __name__ == "__main__":
     main()
