@@ -113,11 +113,16 @@ world_lenght: %s, reg_by_comms: %s' % \
         return cf
 
     def read_comm(self, comms):
+        self._check_comms(comms)
+        start = comms * self.nb_reg_by_comms
+
+        return self.rhr(start, self.nb_reg_by_comms)
+
+    def _check_comms(self, comms):
         if self.min_comms <= comms <= self.max_comms:
-            start = comms * self.nb_reg_by_comms
-            return self.rhr(start, self.nb_reg_by_comms)
-        else:
-            raise ValueError('Comms number exceed limits.')
+            return None
+
+        raise ValueError('Comms number exceed limits.')
 
     def _read_holding_registers(self, address, count):
             rq = ReadHoldingRegistersRequest(
