@@ -37,6 +37,7 @@ class ModbusBackend(object):
         self.end = ModbusClient(method='rtu', port=self.device,
                 baudrate=self.baudrate, parity=self.parity,
                 bytesize=self.data_bit, stopbits=self.stop_bit)
+        self.end.connect()
 
     def close(self):
         self.end.close()
