@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from pymodbus.client.sync import ModbusSerialClient
-Modbus = ModbusSerialClient
+from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 
 from pymodbus.register_read_message import *
 from pymodbus.register_write_message import *
@@ -35,8 +34,8 @@ class ModbusBackend(object):
 
 
     def connect(self):
-        self.end = Modbus(method='rtu', port=self.device,
-                baudrate=self.baudrate, parity=self.parity, 
+        self.end = ModbusClient(method='rtu', port=self.device,
+                baudrate=self.baudrate, parity=self.parity,
                 bytesize=self.data_bit, stopbits=self.stop_bit)
 
     def close(self):
