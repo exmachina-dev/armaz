@@ -112,6 +112,12 @@ world_lenght: %s, reg_by_comms: %s' % \
                 self.word_lenght, self.nb_reg_by_comms)
         return cf
 
+    def write_comm(self, comms, value):
+        self._check_comms(comms)
+        start = comms * self.nb_reg_by_comms
+
+        return self.wmr(start, value)
+
     def read_comm(self, comms):
         self._check_comms(comms)
         start = comms * self.nb_reg_by_comms
