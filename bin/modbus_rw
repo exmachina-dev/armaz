@@ -6,7 +6,6 @@ from ertza.utils import FakeConfig
 
 def main():
     mb = ModbusBackend(FakeConfig(), None, None, None)
-    mb.device = '/dev/ttyO5'
 
     print(mb.dump_config())
     mb.connect()
@@ -14,7 +13,9 @@ def main():
     mb.write_comm(4, (0, 10,))
 
     print(mb.read_comm(1))
+    print(mb.get_command())
     print(mb.read_comm(2))
+    print(mb.get_status())
     print(mb.read_comm(3))
     print(mb.read_comm(4))
     print(mb.read_comm(10))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from pymodbus.client.sync import ModbusSerialClient as ModbusClient
+from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 
 from pymodbus.register_read_message import *
 from pymodbus.register_write_message import *
@@ -8,12 +8,16 @@ from pymodbus.other_message import *
 from pymodbus.mei_message import *
 from pymodbus.pdu import *
 
+import bitstring
+
 from ertza.config import ConfigRequest
 import ertza.errors as err
 
 
 class ModbusBackend(object):
     def __init__(self, config, logger, restart_event, block_event):
+        self.status = {}
+        self.command = {}
         self.end = None
 
         self._config = config
@@ -34,9 +38,7 @@ class ModbusBackend(object):
 
 
     def connect(self):
-        self.end = ModbusClient(method='rtu', port=self.device,
-                baudrate=self.baudrate, parity=self.parity,
-                bytesize=self.data_bit, stopbits=self.stop_bit)
+        self.end = ModbusClient(host=self.device, port=self.port)
         self.end.connect()
 
     def close(self):
@@ -50,35 +52,19 @@ class ModbusBackend(object):
     def get_config(self):
         try:
             self.device = self.config_request.get(
-                'modbus', 'device', '/dev/ttyO5')
+                'modbus', 'device', '192.168.100.2')
             if self.device:
                 self.device = str(self.device)
             else:
-                raise ValueError('Serial device must be a string.')
+                raise ValueError('Network device must be a string.')
         except ValueError as e:
-            raise err.ConfigError('Serial device must be a string.') from e
+            raise err.ConfigError('Network device must be a string.') from e
 
         try:
-            self.baudrate = int(self.config_request.get(
-                'modbus', 'baudrate', 57600))
-            if not self.baudrate in (4800, 9600, 19200, 38400, 57600, 115200):
-                raise err.ConfigError('Incorrect baudrate: %s' % self.baurate)
+            self.port = int(self.config_request.get(
+                'modbus', 'port', 502))
         except ValueError as e:
-            raise err.ConfigError('Baudrate must be an int.') from e
-
-        try:
-            self.parity = self.config_request.get(
-                'modbus', 'parity', 'N')
-            if not self.parity in ('N', 'E', 'O'):
-                raise err.ConfigError('Incorrect parity: %s' % self.parity)
-        except ValueError as e:
-            raise err.ConfigError('Parity must be a string.') from e
-
-        try:
-            self.stop_bit = int(self.config_request.get(
-                'modbus', 'stop_bit', 1))
-        except ValueError as e:
-            raise err.ConfigError('Stop bit must be an int.') from e
+            raise err.ConfigError('Port must be an int.') from e
 
         try:
             self.node_id = int(self.config_request.get(
@@ -104,12 +90,37 @@ class ModbusBackend(object):
             raise ValueError('%s must be divided by %s' % (
                 self.word_lenght, self.data_bit)) from e
 
+    def get_command(self):
+        command = self.read_comm(0x01)
+
+        keys = ('driveEnable', 'stop', 'releaseBrake',)
+
+        command = self._to_bools(command[0]+command[1])
+        command.reverse()
+
+        for k, v in zip(keys, command):
+            self.command[k] = bool(int(v))
+
+        return self.command
+
+    def get_status(self):
+        status = self.read_comm(0x02)
+
+        keys = ('driveEnableReady', 'driveEnable',
+                'driveEnableInput', 'motorBrake',)
+
+        status = self._to_bools(status[0]+status[1])
+        status.reverse()
+
+        for k, v in zip(keys, status):
+            self.status[k] = bool(int(v))
+
+        return self.status
 
     def dump_config(self):
-        cf = 'dev: %s, baud: %s, parity: %s, data_bit: %s, stop_bit: %s, \
+        cf = 'dev: %s, port: %s, data_bit: %s, \
 world_lenght: %s, reg_by_comms: %s' % \
-                (self.device, self.baudrate, self.parity,
-                self.data_bit, self.stop_bit,
+                (self.device, self.port, self.data_bit,
                 self.word_lenght, self.nb_reg_by_comms)
         return cf
 
@@ -130,6 +141,14 @@ world_lenght: %s, reg_by_comms: %s' % \
             return None
 
         raise ValueError('Comms number exceed limits.')
+
+    def _to_bools(self, bits):
+        bits = bitstring.Bits(bin=bits)
+        l = list()
+        for b in bits:
+            l.append(b)
+
+        return l
 
     def _read_holding_registers(self, address, count):
             rq = ReadHoldingRegistersRequest(
