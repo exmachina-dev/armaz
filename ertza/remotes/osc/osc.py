@@ -171,6 +171,10 @@ class OSCServer(OSCBaseServer):
         self.setup_reply(sender, path, "Restarting.")
         self.restart()
 
+    @lo.make_method('/drive/status', '')
+    def drive_status_callback(self, path, args, types, sender):
+        self.status_reply(sender, path, str(self.mdb_request.status()))
+
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
         self.setup_reply(sender, "/status/wrong_osc_command", path, types, *args)
