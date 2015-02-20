@@ -10,6 +10,7 @@ from ertza.utils import LogWorker
 
 from ertza.remotes import RemoteWorker
 from ertza.remotes import OSCWorker
+from ertza.remotes import ModbusWorker
 
 
 class MainInitializer(object):
@@ -27,6 +28,7 @@ class MainInitializer(object):
     exit_event = manager.Event()
     config_event = manager.Event()
     osc_event = manager.Event()
+    modbus_event = manager.Event()
     blockall_event = manager.Event()
 
     # Some locks
@@ -37,6 +39,7 @@ class MainInitializer(object):
     conf_log_pipe = mp.Pipe()
     conf_rmt_pipe = mp.Pipe()
     conf_osc_pipe = mp.Pipe()
+    conf_mdb_pipe = mp.Pipe()
 
     def __init__(self):
         self.jobs = []
@@ -50,6 +53,8 @@ class MainInitializer(object):
                 mp.Process(target=RemoteWorker, name='ertza.rmt',
                     args=(self,)),
                 mp.Process(target=OSCWorker, name='ertza.osc',
+                    args=(self,)),
+                mp.Process(target=ModbusWorker, name='ertza.mdb',
                     args=(self,)),
                 ]
 

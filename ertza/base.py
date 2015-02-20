@@ -21,6 +21,7 @@ class BaseWorker(object):
         self.exit_event = sm.exit_event
         self.config_event = sm.config_event
         self.osc_event = sm.osc_event
+        self.modbus_event = sm.modbus_event
         self.blockall_event = sm.blockall_event
 
         self.config_lock = sm.config_lock

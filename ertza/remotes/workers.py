@@ -2,6 +2,7 @@
 
 from ertza.base import BaseWorker
 from ertza.remotes.osc import OSCServer
+from ertza.remotes.modbus import ModbusMaster
 import ertza.errors as err
 
 import time
@@ -70,4 +71,45 @@ class OSCWorker(BaseWorker):
         self.osc_server.start(blocking=False)
 
 
-__all__ = ['RemoteWorker', 'OSCWorker']
+class ModbusWorker(BaseWorker):
+    """
+    Master process that handle ModbusBackend:
+    """
+
+    def __init__(self, sm):
+        super(ModbusWorker, self).__init__(sm)
+        self.interval = 0.001
+
+        self.config_pipe = self.initializer.conf_mdb_pipe[1]
+
+        self.get_logger()
+        self.lg.debug("Init of ModbusWorker")
+
+        self.wait_for_config()
+        self.run()
+
+    def run(self):
+        try:
+            self.init_modbus()
+        except err.ModbusMasterError as e:
+            self.lg.warn(e)
+            self.exit_event.set()
+
+        while not self.exit_event.is_set():
+            self.modbus_master.run()
+            if self.modbus_event.is_set():
+                self.lg.info('Modbus master restarting…')
+                self.init_modbus(True)
+                self.modbus_event.clear()
+
+            time.sleep(self.interval)
+
+    def init_modbus(self, restart=False):
+        if restart:
+            del self.modbus_backend
+        self.modbus_master = ModbusMaster(self.config_pipe, self.lg,
+                self.modbus_event, self.blockall_event)
+        self.modbus_master.start()
+
+
+__all__ = ['RemoteWorker', 'OSCWorker', 'ModbusWorker']
