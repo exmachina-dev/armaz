@@ -208,6 +208,10 @@ class ConfigWorker(BaseWorker):
                 'osc': {
                     'server_port': self.osc_event.set
                     },
+                'modbus': {
+                    'device': self.modbus_event.set,
+                    'node_id': self.modbus_event.set,
+                    },
                 }
 
         try:
