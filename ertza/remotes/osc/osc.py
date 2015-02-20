@@ -104,10 +104,10 @@ class OSCServer(OSCBaseServer):
     }
 
     def setup_reply(self, sender, *args):
-        return self.reply('/setup/return/', sender, *args)
+        return self.reply('/setup/return', sender, *args)
 
     def status_reply(self, sender, *args):
-        return self.reply('/status/', sender, *args)
+        return self.reply('/status', sender, *args)
 
     def reply(self, default_path, sender, *args):
         try:
