@@ -212,7 +212,7 @@ class ConfigWorker(BaseWorker):
         try:
             self.lg.debug('Reading configs: %s', self._config.configs)
             missing = self._config.read_configs()
-            self.lg.debug('Missing configs: %s', missing)
+            self.lg.info('Missing configs: %s', missing)
         except configparser.Error as e:
             error = err.ConfigError(e.message)
             self.lg.warn(error)

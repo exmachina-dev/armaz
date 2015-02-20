@@ -38,6 +38,8 @@ class ModbusBackend(object):
 
 
     def connect(self):
+        self.lg.debug("Initiated Modbus connection to %s:%s" % \
+                (self.device, self.port,))
         self.end = ModbusClient(host=self.device, port=self.port)
         self.end.connect()
 
