@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ertza.base import BaseWorker
+from ertza.base import BaseWorker, BaseResponse, BaseRequest
 import ertza.errors as err
 
 import time
@@ -154,37 +154,7 @@ class ConfigProxy(BaseConfigParser):
 ConfigParser = BaseConfigParser
 
 
-class BaseCommunicationObject(object):
-    _methods = {
-            'get': 0x001,
-            'set': 0x002,
-            'dump': 0x003,
-            }
-
-    def __init__(self, target, *args):
-        self.target = target
-        self.method = None
-        self.value = None
-
-        if args:
-            self.args = args
-        else:
-            self.args = None
-
-    def send(self):
-        if self.method:
-            return self.target.send(self)
-        else:
-            raise ValueError("Method isn't defined.")
-
-    def __str__(self):
-        return '%s %s %s' % (self.method, self.args, self.value)
-
-    __repr__ = __str__
-
-
-
-class ConfigRequest(BaseCommunicationObject):
+class ConfigRequest(BaseRequest):
     def _check_args(self, *args):
         self.args = args
         if self.args:
@@ -207,13 +177,8 @@ class ConfigRequest(BaseCommunicationObject):
         self.method = self._methods['dump']
         return self.send().value
 
-    def send(self):
-        super(ConfigRequest, self).send()
-        rp = self.target.recv()
-        return rp
 
-
-class ConfigResponse(BaseCommunicationObject):
+class ConfigResponse(BaseResponse):
     def __init__(self, target, request, config=None, *args):
         super(ConfigResponse, self).__init__(target, *args)
         self.request = request

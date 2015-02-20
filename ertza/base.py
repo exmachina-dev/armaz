@@ -41,3 +41,45 @@ class BaseWorker(object):
     def wait_for_config(self):
         while not self.config_event.is_set():
             time.sleep(self.interval)
+
+
+class BaseCommunicationObject(object):
+    _methods = {
+            'get': 0x001,
+            'set': 0x002,
+            'dump': 0x003,
+            'get_status': 0x004,
+            'get_command': 0x005,
+            'set_command': 0x006,
+            }
+
+    def __init__(self, target, *args):
+        self.target = target
+        self.method = None
+        self.value = None
+
+        if args:
+            self.args = args
+        else:
+            self.args = None
+
+    def send(self):
+        if self.method:
+            return self.target.send(self)
+        else:
+            raise ValueError("Method isn't defined.")
+
+    def __str__(self):
+        return '%s %s %s' % (self.method, self.args, self.value)
+
+    __repr__ = __str__
+
+
+class BaseRequest(BaseCommunicationObject):
+    def send(self):
+        super(BaseRequest, self).send()
+        rp = self.target.recv()
+        return rp
+
+class BaseResponse(BaseCommunicationObject):
+    pass
