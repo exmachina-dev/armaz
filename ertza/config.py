@@ -101,56 +101,6 @@ class BaseConfigParser(configparser.ConfigParser):
         return output
 
 
-class ConfigProxy(BaseConfigParser):
-    """
-    ConfigProxy provides an interface to a single BaseConfigParser instance.
-
-    Helps sharing a simple config manager accross different processes.
-    """
-
-
-    _obj = BaseConfigParser()
-
-#    def __new__(cls):
-#        if cls._obj is None:
-#          i = BaseConfigParser.__new__(cls)
-#          cls._obj = i
-#        else:
-#          i = cls._obj
-#        return i
-
-    def __init__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__init__")(*args, **kw)
-
-    def __getattribute__(self, name):
-        return getattr(object.__getattribute__(self, "_obj"), name)
-
-    def __getitem__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__getitem__")(*args, **kw)
-
-    def __setitem__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__setitem__")(*args, **kw)
-
-    def __delitem__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__delitem__")(*args, **kw)
-
-    def __contains__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__contains__")(*args, **kw)
-
-    def __len__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__len__")(*args, **kw)
-
-    def __iter__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__iter__")(*args, **kw)
-
-
 ConfigParser = BaseConfigParser
 
 
