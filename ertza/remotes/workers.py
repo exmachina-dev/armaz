@@ -80,7 +80,7 @@ class ModbusWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ModbusWorker, self).__init__(sm)
-        self.interval = 0.001
+        self.interval = 0.01
 
         self.config_pipe = self.initializer.cnf_mdb_pipe[1]
         self.osc_pipe = self.initializer.mdb_osc_pipe[0]
