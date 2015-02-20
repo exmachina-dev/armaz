@@ -2,7 +2,7 @@
 
 from ertza.base import BaseWorker
 from ertza.remotes.osc import OSCServer
-from ertza.remotes.modbus import ModbusMaster
+from ertza.remotes.modbus import ModbusMaster, ModbusRequest, ModbusResponse
 import ertza.errors as err
 
 import time
@@ -68,7 +68,8 @@ class OSCWorker(BaseWorker):
     def init_osc_server(self, restart=False):
         if restart:
             del self.osc_server
-        self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event)
+        self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event,
+                modbus=self.modbus_pipe)
         self.osc_server.start(blocking=False)
 
 
@@ -83,6 +84,7 @@ class ModbusWorker(BaseWorker):
 
         self.config_pipe = self.initializer.cnf_mdb_pipe[1]
         self.osc_pipe = self.initializer.mdb_osc_pipe[0]
+        self.pipes = (self.osc_pipe,)
 
         self.get_logger()
         self.lg.debug("Init of ModbusWorker")
@@ -103,6 +105,15 @@ class ModbusWorker(BaseWorker):
                 self.lg.info('Modbus master restarting…')
                 self.init_modbus(True)
                 self.modbus_event.clear()
+            else:
+                for pipe in self.pipes:
+                    if pipe.poll():
+                        rq = pipe.recv()
+                        if not type(rq) is ModbusRequest:
+                            raise ValueError('Unexcepted type: %s' % type(rq))
+                        rs = ModbusResponse(pipe, rq, self.modbus_master.back)
+                        rs.handle()
+                        rs.send()
 
             time.sleep(self.interval)
 

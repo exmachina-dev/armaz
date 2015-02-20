@@ -4,6 +4,7 @@ import configparser
 import liblo as lo
 
 from ertza.config import ConfigRequest
+from ertza.remotes.modbus import ModbusRequest
 import ertza.errors as err
 
 
@@ -17,7 +18,7 @@ class OSCBaseServer(lo.Server):
     Require a ConfigParser object (or a proxy) as init argument.
     """
 
-    def __init__(self, config, logger=None, restart_event=None):
+    def __init__(self, config, logger=None, restart_event=None, **kwargs):
         """
         Init OSCServer with a ConfigParser instance and get server and client
         port.
@@ -27,6 +28,11 @@ class OSCBaseServer(lo.Server):
         self.interval = 0
 
         self._config = config
+        if 'modbus' in kwargs:
+            self._modbus = kwargs['modbus']
+        else:
+            self._modbus = None
+
         if logger:
             self.lg = logger
         else:
