@@ -205,7 +205,7 @@ class ConfigWorker(BaseWorker):
 
         self.watched_options = {
                 'osc': {
-                    'server_port': None
+                    'server_port': self.osc_event.set
                     },
                 }
 
@@ -221,39 +221,30 @@ class ConfigWorker(BaseWorker):
         self.run()
 
     def run(self):
-        self._watchconfig(init=True)
         self.config_event.set()
         while not self.exit_event.is_set():
             for pipe in self.pipes:
                 if pipe.poll():
                     rq = pipe.recv()
-                    self.lg.debug(rq)
                     if not type(rq) is ConfigRequest:
                         raise ValueError('Unexcepted type: %s' % type(rq))
                     rs = ConfigResponse(pipe, rq, self._config)
                     rs.handle()
-                    self.lg.debug(rs)
+                    self._watchconfig(rs)
                     rs.send()
 
-            self._watchconfig()
 
             time.sleep(self.interval)
 
-    def _watchconfig(self, init=None):
-        for s, o in self.watched_options.items():
-            for o, v in o.items():
-                try:
-                    if self._config[s][o] is not v:
-                        if not init:
-                            if s is 'osc' and o is 'server_port':
-                                self.lg.debug("""
-Server port as changed. Old port: %s. New port: %s
-Triggering OSC event.
-                                """, v, self._config[s][o])
-                                self.osc_event.set()
-                        self.watched_options[s][o] = self._config[s][o]
-                except configparser.Error as e:
-                    self.lg.debug(repr(e))
+    def _watchconfig(self, response):
+        if not response.method == ConfigResponse._methods['set']:
+            return None
+        if response.request.args[0] in self.watched_options:
+            section = response.request.args[0]
+            if response.request.args[1] in self.watched_options[section]:
+                option = response.request.args[1]
+                self.lg.debug('Watched item changed: %s.%s' % (section, option,))
+                self.watched_options[section][option]()
 
 
 __all__ = ['ConfigRequest', 'ConfigResponse', 'ConfigWorker', 'ConfigParser']
