@@ -11,6 +11,6 @@ before_install:
 install:
   - "pip install ."
   - "pip install pyliblo"
-  - "pip install pymodbus"
+  - "pip install pymodbus3"
 # command to run tests
 script: py.test
