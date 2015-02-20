@@ -17,6 +17,11 @@ _DEFAULTS = {
             'server_port': 7900,
             'client_port': 7901,
             },
+        'modbus': {
+            'device': '192.168.100.2',
+            'node_id' : 2,
+            'port': 502,
+            },
         }
 
 _CONFPATH = [
