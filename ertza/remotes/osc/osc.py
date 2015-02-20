@@ -41,6 +41,8 @@ class OSCBaseServer(lo.Server):
             'osc', 'server_port', 7900))
         self.client_port = int(self.config_request.get(
             'osc', 'client_port', 7901))
+        self.broadcast_address = self.config_request.get(
+            'osc', 'broadcast', None)
 
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
 
