@@ -17,7 +17,7 @@ class RemoteWorker(BaseWorker):
 
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
-        self.config_pipe = self.initializer.conf_rmt_pipe[1]
+        self.config_pipe = self.initializer.cnf_rmt_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
@@ -40,7 +40,7 @@ class OSCWorker(BaseWorker):
         super(OSCWorker, self).__init__(sm)
         self.interval = 0.001
 
-        self.config_pipe = self.initializer.conf_osc_pipe[1]
+        self.config_pipe = self.initializer.cnf_osc_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
@@ -80,7 +80,7 @@ class ModbusWorker(BaseWorker):
         super(ModbusWorker, self).__init__(sm)
         self.interval = 0.001
 
-        self.config_pipe = self.initializer.conf_mdb_pipe[1]
+        self.config_pipe = self.initializer.cnf_mdb_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of ModbusWorker")

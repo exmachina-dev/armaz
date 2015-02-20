@@ -191,9 +191,9 @@ class ConfigWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ConfigWorker, self).__init__(sm)
-        self.log_pipe = self.initializer.conf_log_pipe[0]
-        self.rmt_pipe = self.initializer.conf_rmt_pipe[0]
-        self.osc_pipe = self.initializer.conf_osc_pipe[0]
+        self.log_pipe = self.initializer.cnf_log_pipe[0]
+        self.rmt_pipe = self.initializer.cnf_rmt_pipe[0]
+        self.osc_pipe = self.initializer.cnf_osc_pipe[0]
         self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe
 
         self.interval = 0.001

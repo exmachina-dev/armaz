@@ -13,7 +13,7 @@ class LogWorker(BaseWorker):
 
     def __init__(self, sm):
         super(LogWorker, self).__init__(sm)
-        self.config_pipe = self.initializer.conf_log_pipe[1]
+        self.config_pipe = self.initializer.cnf_log_pipe[1]
         self.config_request = ConfigRequest(self.config_pipe)
 
         f = '%(asctime)s %(processName)-10s %(levelname)-8s %(message)s'
