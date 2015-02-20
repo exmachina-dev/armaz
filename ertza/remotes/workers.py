@@ -41,6 +41,7 @@ class OSCWorker(BaseWorker):
         self.interval = 0.001
 
         self.config_pipe = self.initializer.cnf_osc_pipe[1]
+        self.modbus_pipe = self.initializer.mdb_osc_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
@@ -81,6 +82,7 @@ class ModbusWorker(BaseWorker):
         self.interval = 0.001
 
         self.config_pipe = self.initializer.cnf_mdb_pipe[1]
+        self.osc_pipe = self.initializer.mdb_osc_pipe[0]
 
         self.get_logger()
         self.lg.debug("Init of ModbusWorker")

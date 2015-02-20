@@ -36,6 +36,7 @@ class OSCBaseServer(lo.Server):
         self.osc_event = restart_event
 
         self.config_request = ConfigRequest(self._config)
+        self.mdb_request = ModbusRequest(self._modbus)
         self.server_port = int(self.config_request.get('osc', 'server_port', 7900))
         self.client_port = int(self.config_request.get('osc', 'client_port', 7901))
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)

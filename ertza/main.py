@@ -41,6 +41,8 @@ class MainInitializer(object):
     cnf_osc_pipe = mp.Pipe()
     cnf_mdb_pipe = mp.Pipe()
 
+    mdb_osc_pipe = mp.Pipe()
+
     def __init__(self):
         self.jobs = []
 

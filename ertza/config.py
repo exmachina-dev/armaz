@@ -194,7 +194,8 @@ class ConfigWorker(BaseWorker):
         self.log_pipe = self.initializer.cnf_log_pipe[0]
         self.rmt_pipe = self.initializer.cnf_rmt_pipe[0]
         self.osc_pipe = self.initializer.cnf_osc_pipe[0]
-        self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe
+        self.mdb_pipe = self.initializer.cnf_mdb_pipe[0]
+        self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe, self.mdb_pipe
 
         self.interval = 0.001
 
