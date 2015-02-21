@@ -111,7 +111,7 @@ class OSCServer(OSCBaseServer):
 
     def reply(self, default_path, sender, *args):
         try:
-            if args[0][0] == '/':
+            if type(args[0]) == str and args[0][0] == '/':
                 args = list(args)
                 _msg = lo.Message(args.pop(0), *args)
             else:
