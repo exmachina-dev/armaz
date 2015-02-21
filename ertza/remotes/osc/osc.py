@@ -171,9 +171,14 @@ class OSCServer(OSCBaseServer):
         self.setup_reply(sender, path, "Restarting.")
         self.restart()
 
-    @lo.make_method('/drive/status', '')
+    @lo.make_method('/motor/status', '')
     def drive_status_callback(self, path, args, types, sender):
-        self.status_reply(sender, path, str(self.mdb_request.status()))
+        status = self.mdb_request.status()
+        self.status_reply(sender, path + '/brake', status['motorBrake'])
+        self.status_reply(sender, path + '/ready', status['driveEnableReady'])
+        self.status_reply(sender, path + '/enable', status['driveEnable'])
+        self.status_reply(sender, path + '/enable_input',
+                status['driveEnableInput'])
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
