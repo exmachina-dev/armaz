@@ -1,3 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from .osc import OSCServer
+from .server import OSCBaseServer
+from .commands import OSCCommands as OSCServer
