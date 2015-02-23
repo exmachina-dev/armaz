@@ -85,12 +85,11 @@ class OSCCommands(OSCBaseServer):
 
     @lo.make_method('/motor/status', '')
     def drive_status_callback(self, path, args, types, sender):
+        base = 'motor/'
         status = self.mdb_request.status()
-        self.status_reply(sender, path + '/brake', status['motorBrake'])
-        self.status_reply(sender, path + '/ready', status['driveEnableReady'])
-        self.status_reply(sender, path + '/enable', status['driveEnable'])
-        self.status_reply(sender, path + '/enable_input',
-                status['driveEnableInput'])
+        for k, v in status.items():
+            path = base + k.split('_', maxsplit=1)
+            self.status_reply(sender, path, v)
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
