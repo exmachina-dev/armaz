@@ -3,7 +3,6 @@
 import multiprocessing as mp
 import signal
 
-from ertza.config import ConfigParser
 from ertza.config import ConfigWorker
 
 from ertza.utils import LogWorker
