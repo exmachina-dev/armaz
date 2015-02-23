@@ -14,9 +14,9 @@ Bitfield CommandNetData
 End Bitfield
 
 Const _axis = 0
+Dim nbCommand As Integer
   
 Loop
-    NETINTEGER(50) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
     NETFLOAT(10) = ENCODERVEL(1)
     Status
 End Loop
@@ -33,9 +33,13 @@ Sub Status()
     stData.motor_brake = ~MOTORBRAKESTATUS(_axis)
 
     NETINTEGER(2) = stData.all
+    NETINTEGER(50) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
 End Sub
 
 Event NETDATA1
+    nbCommand = nbCommand + 1
+    NETINTEGER(20) = nbCommand
+    
     Dim prevCommand As CommandNetData
     Dim command As CommandNetData
     prevCommand = command
@@ -70,7 +74,7 @@ End Event
     
 Event NETDATA5
     Dim cmdSpeed As Float
-    cmdSpeed = NETFLOAT(5)
+    cmdSpeed = NETINTEGER(5)
     
     If cmdSpeed <> 0 Then
         JOG(_axis) = cmdSpeed
