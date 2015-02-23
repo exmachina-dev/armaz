@@ -71,6 +71,7 @@ class OSCWorker(BaseWorker):
         self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event,
                 modbus=self.modbus_pipe)
         self.osc_server.start(blocking=False)
+        self.osc_server.announce()
 
 
 class ModbusWorker(BaseWorker):
