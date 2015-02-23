@@ -36,8 +36,8 @@ class OSCServerError(FatalError):
         FatalError.__init__(self, 'Cannot start OSC server: %s' % (msg,))
 
 
-class ModbusMasterError(FatalError):
+class ModbusMasterError(Error):
     """Raised when program cannot start Modbus master."""
 
     def __init__(self, msg=''):
-        FatalError.__init__(self, 'Cannot start Modbus master: %s' % (msg,))
+        Error.__init__(self, 'Cannot start Modbus master: %s' % (msg,))
