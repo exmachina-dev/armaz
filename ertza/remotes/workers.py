@@ -71,6 +71,7 @@ class OSCWorker(BaseWorker):
         self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event,
                 modbus=self.modbus_pipe)
         self.osc_server.start(blocking=False)
+        self.osc_server.announce()
 
 
 class ModbusWorker(BaseWorker):
@@ -97,7 +98,6 @@ class ModbusWorker(BaseWorker):
             self.init_modbus()
         except err.ModbusMasterError as e:
             self.lg.warn(e)
-            self.exit_event.set()
 
         while not self.exit_event.is_set():
             self.modbus_master.run()

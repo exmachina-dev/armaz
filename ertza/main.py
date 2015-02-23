@@ -3,7 +3,6 @@
 import multiprocessing as mp
 import signal
 
-from ertza.config import ConfigParser
 from ertza.config import ConfigWorker
 
 from ertza.utils import LogWorker
@@ -72,20 +71,25 @@ class MainInitializer(object):
             j.join()
         self.log_queue.put_nowait(None)
 
-if __name__ == "__main__":
-    # Save a reference to the original signal handler for SIGINT.
-    default_sigint = signal.getsignal(signal.SIGINT)
+    def ignore_sigint(self):
+        # Save a reference to the original signal handler for SIGINT.
+        self._default_sigint = signal.getsignal(signal.SIGINT)
 
-    # Set signal handling of SIGINT to ignore mode.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # Set signal handling of SIGINT to ignore mode.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    def restore_sigint(self):
+        # Since we spawned all the necessary processes already, 
+        # restore default signal handling for the parent process. 
+        signal.signal(signal.SIGINT, self._default_sigint)
+
+if __name__ == "__main__":
 
     mi = MainInitializer()
+    mi.ignore_sigint()
     mi.processes()
     mi.start()
-
-    # Since we spawned all the necessary processes already, 
-    # restore default signal handling for the parent process. 
-    signal.signal(signal.SIGINT, default_sigint)
+    mi.restore_sigint()
 
     try:
         signal.pause()

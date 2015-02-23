@@ -46,7 +46,7 @@ class OSCBaseServer(lo.Server):
         self.client_port = int(self.config_request.get(
             'osc', 'client_port', 7901))
         self.broadcast_address = self.config_request.get(
-            'osc', 'broadcast', None)
+            'osc', 'broadcast', '192.168.1.255')
 
         super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
 
@@ -72,6 +72,11 @@ class OSCBaseServer(lo.Server):
                 self.lg.debug("OSCServer initialized on %s", self.server_port)
                 self.run(0)
 
+    def announce(self):
+        address = lo.Address(self.broadcast_address, self.client_port)
+        msg = lo.Message('/status/online', self.server_port)
+        return self.send(address, msg)
+
     def stop(self):
         self.running = False
 
@@ -89,5 +94,5 @@ class OSCBaseServer(lo.Server):
             self.lg.warn('No restart event was supplied at init.')
 
     def send(self, dst, msg):
-        super(OSCBaseServer, self).send(
+        return super(OSCBaseServer, self).send(
                 lo.Address(dst.get_hostname(), self.client_port), msg)

@@ -24,12 +24,15 @@ class LogWorker(BaseWorker):
         self.wait_for_config()
 
         self.lg.debug(self.config_request.get('log', 'log_path'))
-        self.log_path = self.config_request.get('log', 'log_path')
+        self.log_path = self.config_request.get('log', 'log_path', 
+                os.path.expanduser('~/.ertza/'))
+        if not os.path.exists(self.log_path):
+            self.exit('Log path must exist.')
         self.log_file = os.path.join(self.log_path, 'ertza.log')
         self.max_size = int(self.config_request.get('log', 'max_size',
-            1048576))
+                1048576))
         self.backup_count = int(self.config_request.get('log', 'backup_count',
-            10))
+                10))
         h = logging.handlers.RotatingFileHandler(self.log_file,
                 maxBytes=self.max_size, backupCount=self.backup_count)
 
