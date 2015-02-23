@@ -42,6 +42,11 @@ class BaseWorker(object):
         while not self.config_event.is_set():
             time.sleep(self.interval)
 
+    def exit(self, reason=None):
+        if reason:
+            self.lg.warn('Exit with: %s', reason)
+        self.exit_event.set()
+
 
 class BaseCommunicationObject(object):
     _methods = {
