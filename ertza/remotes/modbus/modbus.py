@@ -7,6 +7,7 @@ from pymodbus.register_write_message import *
 from pymodbus.other_message import *
 from pymodbus.mei_message import *
 from pymodbus.pdu import *
+import pymodbus.exceptions as pmde
 
 import bitstring
 
@@ -19,6 +20,9 @@ class ModbusBackend(object):
         self.status = {}
         self.command = {}
         self.end = None
+        self.connected = False
+        self.max_retry = 5
+        self.retry = self.max_retry
 
         self._config = config
         self.lg = logger
@@ -45,16 +49,25 @@ class ModbusBackend(object):
 
 
     def connect(self):
-        self.lg.debug("Initiated Modbus connection to %s:%s" % \
-                (self.device, self.port,))
-        self.end = ModbusClient(host=self.device, port=self.port)
-        self.end.connect()
+        if not self.connected:
+            self.lg.debug("Initiated Modbus connection to %s:%s" % \
+                    (self.device, self.port,))
+            try:
+                self.end = ModbusClient(host=self.device, port=self.port)
+                self.end.connect()
+                self.connected = True
+                self.retry = self.max_retry
+            except pmde.ConnectionException as e:
+                self.connected = False
+                raise err.ModbusMasterError('Unable to connect to slave')
 
     def close(self):
         self.end.close()
+        self.connected = False
 
     def reconnect(self):
-        self.close()
+        if self.connected:
+            self.close()
         self.get_config()
         self.connect()
 
@@ -189,18 +202,33 @@ world_lenght: %s, reg_by_comms: %s' % \
     rwmr = _read_write_multiple_registers
 
     def _rq(self, rq):
-        response = self.end.execute(rq)
-        rpt = type(response)
-        if rpt == ExceptionResponse:
-            return repr(response)
-        elif rpt == WriteMultipleRegistersResponse:
-            return repr(response)
-        elif rpt == ReadHoldingRegistersResponse:
-            regs = list()
-            fmt = "{:0>"+str(self.word_lenght)+"b}"
-            for i in range(self.nb_reg_by_comms):
-                regs.append(fmt.format(response.getRegister(i)))
-            return regs
+        try:
+            if not self.connected:
+                self.connect()
+            response = self.end.execute(rq)
+            rpt = type(response)
+            if rpt == ExceptionResponse:
+                return repr(response)
+            elif rpt == WriteMultipleRegistersResponse:
+                return repr(response)
+            elif rpt == ReadHoldingRegistersResponse:
+                regs = list()
+                fmt = "{:0>"+str(self.word_lenght)+"b}"
+                for i in range(self.nb_reg_by_comms):
+                    regs.append(fmt.format(response.getRegister(i)))
+                return regs
+        except pmde.ConnectionException as e:
+            self.connected = False
+            self.retry -= 1
+            if self.retry <= 0:
+                try:
+                    self._rq(rq)
+                except pmde.ConnectionError:
+                    self.lg.warn(
+                            'Unable to connect to slave. Retrying (%s/%s)',
+                            (self.retry, self.retry_max))
+            else:
+                raise err.ModbusMasterError('Unable to connect to slave')
 
 
 if __name__ == "__main__":
