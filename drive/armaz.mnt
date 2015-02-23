@@ -1,36 +1,154 @@
-  Dim nAxis As Integer
-  nAxis = 0
+Bitfield StatusNetData
+    all As 0 To 7
+    drive_ready As 0 To 0
+    drive_enable As 1 To 1
+    drive_input As 2 To 2
+    motor_brake As 3 To 3
+End Bitfield
+
+Bitfield CommandNetData
+    all As 0 To 7
+    drive_enable As 0 To 0
+    drive_cancel As 1 To 1
+    motor_brake_release As 2 To 2
+End Bitfield
+
+Const _axis = 0
+Dim nbCommand As Integer
   
-  Dim nCommand As Integer
-  
-  COMMS(1) = 100
-  COMMS(1) = 1
-  
-  Loop
-  
-    'See if Controller 1 has given us a new command
-    nCommand = COMMS(1)
-  
-    If nCommand <> 0 Then
-      'Determine which command has been sent
-      If nCommand = 1 Then SPEED(nAxis) = COMMS(10)
-      If nCommand = 2 Then MOVER(nAxis) = COMMS(10) : GO(nAxis)
-      If nCommand = 3 Then MOVEA(nAxis) = COMMS(10) : GO(nAxis)
-      'Send ack back to host
-      COMMS(1) = 0
-    End If
-  End Loop
+Loop
+    NETFLOAT(10) = ENCODERVEL(1)
+    Status
+End Loop
+
 End
 
+Sub Status()
+    Dim stData As StatusNetData
+    stData.all = 0
+    
+    stData.drive_ready = DRIVEENABLEREADY(_axis)
+    stData.drive_enable = DRIVEENABLE(_axis)
+    stData.drive_input = DRIVEENABLESWITCH(_axis)
+    stData.motor_brake = ~MOTORBRAKESTATUS(_axis)
+
+    NETINTEGER(2) = stData.all
+    NETINTEGER(50) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
+End Sub
+
+Event NETDATA1
+    nbCommand = nbCommand + 1
+    NETINTEGER(20) = nbCommand
+    
+    Dim prevCommand As CommandNetData
+    Dim command As CommandNetData
+    prevCommand = command
+    command.all = NETINTEGER(1)
+    
+    If command.drive_enable = 1 AndAlso prevCommand.drive_enable = 0 Then
+        If DRIVEENABLEREADY(_axis) Then
+            DRIVEENABLE(_axis) = 1
+        Else
+            command.drive_enable = 0
+        End If
+    ElseIf prevCommand.drive_enable = 1 AndAlso command.drive_enable = 0 Then
+        DRIVEENABLE(_axis) = 0
+    End If
+    
+    If command.drive_cancel = 1 AndAlso prevCommand.drive_cancel = 0 Then
+        CANCEL(_axis)
+    End If
+    
+    If command.motor_brake_release = 1 Then
+        If DRIVEENABLE(_axis) Then
+            OUTX(0) = 1
+        Else
+            command.motor_brake_release = 0
+        End If
+     Else
+        OUTX(0) = 0
+    End If
+    
+    NETINTEGER(1) = command.all
+End Event
+    
+Event NETDATA5
+    Dim cmdSpeed As Float
+    cmdSpeed = NETINTEGER(5)
+    
+    If cmdSpeed <> 0 Then
+        JOG(_axis) = cmdSpeed
+    Else
+        STOP(_axis)
+    End If
+    
+End Event
+
+Event ONERROR
+    Dim nAxis As Integer
+
+    'Read the next error and handle accordingly
+    If ERRORREADNEXT(_egALL, -1) Then 
+        nAxis = ERRDATA(1)
+        NETINTEGER(3) = ERRCODE
+
+        'If we have an axis error or warning
+        If ( ERRCODE >= 10000 ) And ( ERRCODE < 30000 ) Then
+            Select Case ERRCODE
+            Case _ecERROR_INPUT 
+                'Handle error input
+
+            Case _ecFWD_HARD_LIMIT, _ecREV_HARD_LIMIT
+                CANCEL(_axis)
+        'Handle limits
+
+            Case _ecKINT_LIMIT
+        'Handle integrator windup
+
+            Case Else
+                OUTX(0) = 0
+        'All other errors and warnings handled here
+
+            End Select
+            Exit Event
+        End If
+
+        If ERRCODE = _ecTABLE_ERROR Then
+      'Inform user there is no table data
+            Exit Event
+        End If
+
+    'All other errors halt program
+        Print #_TERM2, "Error code: ", ERRCODE
+        Print #_TERM2, "Description: ", ERRSTRING
+        Print #_TERM2, "Axis (if applicable): ", ERRDATA(1)
+        Print #_TERM2, "Line number (if applicable): ", ERRLINE
+        Print #_TERM2, "Time: ", ERRTIME
+
+    'Stop all motion and exit program
+
+        ABORT
+        End
+    End If
+End Event
+
 Startup
-  Auto
+    Auto
+    
+    Const _bus = _busETHERNET
   
-  BUSNODE(_busSERIAL1) = 2                                            'MicroFlex e100 is node 2 on RTU network
-  SERIALBAUD(_TERM1) = 57600                                          'Running at 57.6kbaud (default)
+    If _bus = _busSERIAL1 Then
+        BUSNODE(_bus) = 2                                            'MicroFlex e100 is node 2 on RTU network
+        SERIALBAUD(_TERM1) = 57600                                   'Running at 57.6kbaud (default)
+    End If
 
-  MODBUSPARAMETER(_busSERIAL1, _mpBYTE_ORDER) = 0                     'Use big endian byte order (default)
-  MODBUSPARAMETER(_busSERIAL1, _mpWORD_ORDER) = 1                     'Use little endian word order (default)
-  MODBUSPARAMETER(_busSERIAL1, _mpREGISTER_MAPPING) = _rmCOMMS_ARRAY  'Use Comms array for data exchange
-  MODBUSPARAMETER(_busSERIAL1, _mpENABLE) = 1                         'Finally enable Modbus RTU communication
+    MODBUSPARAMETER(_bus, _mpBYTE_ORDER) = 0                         'Use big endian byte order (default)
+    MODBUSPARAMETER(_bus, _mpWORD_ORDER) = 0                         'Use little endian word order (default)
+    MODBUSPARAMETER(_bus, _mpREGISTER_MAPPING) = _rmNET_DATA         'Use Net data for data exchange
+    MODBUSPARAMETER(_bus, _mpENABLE) = 1                             'Finally enable Modbus TCP communication
+    
+    NETINTEGER(1) = 0
+    NETINTEGER(2) = 0
+    NETINTEGER(3) = 0
+
 End Startup
-
