@@ -26,6 +26,10 @@ class OSCCommands(OSCBaseServer):
             if type(args[0]) == str and args[0][0] == '/':
                 args = list(args)
                 _msg = lo.Message(args.pop(0), *args)
+            elif len(args) >= 2:
+                args = list(args)
+                path = args.pop(0)
+                _msg = lo.Message(default_path+'/'+path, *args)
             else:
                 _msg = lo.Message(default_path, *args)
         except (TypeError, KeyError):
@@ -88,7 +92,7 @@ class OSCCommands(OSCBaseServer):
         base = 'motor/'
         status = self.mdb_request.status()
         for k, v in status.items():
-            path = base + k.split('_', maxsplit=1)
+            path = base + k.split('_', maxsplit=1)[1]
             self.status_reply(sender, path, v)
 
     @lo.make_method(None, None)
