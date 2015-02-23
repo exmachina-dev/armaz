@@ -32,6 +32,13 @@ class ModbusBackend(object):
                 23,     # Read/write multiple registers
                 ]
 
+        self.status_keys = (
+                'drive_enable_ready',
+                'drive_enable',
+                'drive_enable_input',
+                'motor_brake',
+                )
+
         self.get_config()
         self.min_comms = 1
         self.max_comms = 99
@@ -108,13 +115,10 @@ class ModbusBackend(object):
     def get_status(self):
         status = self.read_comm(0x02)
 
-        keys = ('driveEnableReady', 'driveEnable',
-                'driveEnableInput', 'motorBrake',)
-
         status = self._to_bools(status[0]+status[1])
         status.reverse()
 
-        for k, v in zip(keys, status):
+        for k, v in zip(self.status_keys, status):
             self.status[k] = bool(int(v))
 
         return self.status
