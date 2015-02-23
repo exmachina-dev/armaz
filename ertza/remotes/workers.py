@@ -98,7 +98,6 @@ class ModbusWorker(BaseWorker):
             self.init_modbus()
         except err.ModbusMasterError as e:
             self.lg.warn(e)
-            self.exit_event.set()
 
         while not self.exit_event.is_set():
             self.modbus_master.run()
