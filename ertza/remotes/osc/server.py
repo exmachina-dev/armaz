@@ -94,5 +94,5 @@ class OSCBaseServer(lo.Server):
             self.lg.warn('No restart event was supplied at init.')
 
     def send(self, dst, msg):
-        super(OSCBaseServer, self).send(
+        return super(OSCBaseServer, self).send(
                 lo.Address(dst.get_hostname(), self.client_port), msg)
