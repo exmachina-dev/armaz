@@ -51,13 +51,13 @@ class ModbusResponse(BaseResponse):
         if not self._end:
             raise ValueError("Modbus isn't defined.")
 
-        if self.request.method & self._methods['get_status']:
+        if self.request.method == self._methods['get_status']:
             self.method = self._methods['get_status']
             self.value = self._end.get_status()
-        elif self.request.method & self._methods['get_command']:
+        elif self.request.method == self._methods['get_command']:
             self.method = self._methods['get_command']
             self.value = self._end.get_command()
-        elif self.request.method & self._methods['get_errorcode']:
+        elif self.request.method == self._methods['get_errorcode']:
             self.method = self._methods['get_errorcode']
             self.value = self._end.get_errorcode()
 
