@@ -22,6 +22,13 @@ class FatalError(Error):
         sys.exit(repr(self))
 
 
+class TimeoutError(Error):
+    """Raised on a function timeout."""
+
+    def __init__(self, msg=''):
+        Error.__init__(self, 'Timeout: %s' % (msg,))
+
+
 class ConfigError(FatalError):
     """Raised when program cannot load config."""
 
