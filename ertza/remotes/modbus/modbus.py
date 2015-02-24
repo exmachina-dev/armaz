@@ -61,8 +61,10 @@ class ModbusBackend(object):
                 self.connected = True
                 self.retry = self.max_retry
             except pmde.ConnectionException as e:
+                self.lg.warn(repr(err.ModbusMasterError(
+                        'Unable to connect to slave: %s' % e)))
+            finally:
                 self.connected = False
-                raise err.ModbusMasterError('Unable to connect to slave')
 
     def close(self):
         self.end.close()
