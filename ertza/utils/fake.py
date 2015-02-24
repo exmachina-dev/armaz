@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from ..config import ConfigParser
-from ..remotes.modbus import ModbusMaster
+from ..config import ConfigParser, ConfigResponse
+from ..remotes.modbus import ModbusMaster, ModbusResponse
 
 
 class FakeConfigParser(ConfigParser):
@@ -22,7 +22,6 @@ class FakeModbusMaster(ModbusMaster):
 
 class FakeConfig(object):
     def recv(self, *args):
-        from ertza.config import ConfigResponse
         rp = ConfigResponse(self, self.rq, FakeConfigParser())
 
         rp.handle()
@@ -36,7 +35,6 @@ class FakeConfig(object):
 
 class FakeModbus(object):
     def recv(self, *args):
-        from ertza.remotes.modbus import ModbusResponse
         rp = ModbusResponse(self, self.rq, FakeModbusMaster())
 
         rp.handle()
