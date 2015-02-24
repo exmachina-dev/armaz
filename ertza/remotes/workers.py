@@ -83,6 +83,11 @@ class ModbusWorker(BaseWorker):
         super(ModbusWorker, self).__init__(sm)
         self.interval = 0.01
 
+        try:
+            self.fake_modbus = self.cmd_args.without_modbus
+        except AttributeError:
+            self.fake_modbus = False
+
         self.config_pipe = self.initializer.cnf_mdb_pipe[1]
         self.osc_pipe = self.initializer.mdb_osc_pipe[0]
         self.pipes = (self.osc_pipe,)
@@ -121,7 +126,7 @@ class ModbusWorker(BaseWorker):
         if restart:
             del self.modbus_backend
         self.modbus_master = ModbusMaster(self.config_pipe, self.lg,
-                self.modbus_event, self.blockall_event)
+                self.modbus_event, self.blockall_event, self.fake_modbus)
         self.modbus_master.start()
 
 

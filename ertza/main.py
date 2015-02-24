@@ -23,6 +23,8 @@ class MainInitializer(object):
     manager = mp.Manager()
     log_queue = manager.Queue()
 
+    cmd_args = None
+
     # Some events
     exit_event = manager.Event()
     config_event = manager.Event()
