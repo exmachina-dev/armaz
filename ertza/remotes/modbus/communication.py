@@ -42,13 +42,11 @@ class ModbusResponse(BaseResponse):
         if not self._end:
             raise ValueError("Modbus isn't defined.")
 
-        if self.request.method == self._methods['get_status']:
+        if self.request.method & self._methods['get_status']:
             self.method = self._methods['get_status']
-
             self.value = self._end.get_status()
-        elif self.request.method == self._methods['get_command']:
+        elif self.request.method & self._methods['get_command']:
             self.method = self._methods['get_command']
-
             self.value = self._end.get_command()
 
     def set_to_device(self, *args):
@@ -75,13 +73,11 @@ class ModbusResponse(BaseResponse):
 
     def handle(self):
         args = self.request.args
-        if self.request.method == self._methods['set_command']:
+        if self.request.method & self._methods['set']:
             self.set_to_config(*args)
-        elif self.request.method == self._methods['get_status']:
+        elif self.request.method & self._methods['get']:
             self.get_from_device(*args)
-        elif self.request.method == self._methods['get_command']:
-            self.get_from_device(*args, command=True)
-        elif self.request.method == self._methods['dump']:
+        elif self.request.method & self._methods['dump']:
             self.dump_config(*args)
         else:
             raise ValueError('Unexcepted method: %s', self.request.method)
