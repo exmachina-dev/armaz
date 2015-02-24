@@ -87,13 +87,18 @@ class ModbusResponse(BaseResponse):
 
     def handle(self):
         args = self.request.args
-        if self.request.method & self._methods['set']:
-            self.set_to_config(*args)
-        elif self.request.method & self._methods['get']:
-            self.get_from_device(*args)
-        elif self.request.method & self._methods['dump']:
-            self.dump_config(*args)
-        else:
-            raise ValueError('Unexcepted method: %s', self.request.method)
+        try:
+            if self.request.method & self._methods['set']:
+                self.set_to_config(*args)
+            elif self.request.method & self._methods['get']:
+                self.get_from_device(*args)
+            elif self.request.method & self._methods['dump']:
+                self.dump_config(*args)
+            else:
+                raise ValueError('Unexcepted method: %s', self.request.method)
 
-        return self.value
+            return self.value
+        except err.TimeoutError as e:
+            raise e
+        finally:
+            return None
