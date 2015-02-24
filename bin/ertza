@@ -5,6 +5,8 @@ if __name__ == "__main__":
     from ertza import Ertza
 
     mi = Ertza()
+    mi.ignore_sigint()
     mi.processes()
     mi.start()
+    mi.restore_sigint()
     mi.join()
