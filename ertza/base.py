@@ -52,12 +52,13 @@ class BaseWorker(object):
 
 class BaseCommunicationObject(object):
     _methods = {
-            'get': 0x001,
-            'set': 0x002,
-            'dump': 0x003,
-            'get_status': 0x004,
-            'get_command': 0x005,
-            'set_command': 0x006,
+            'get':              0b00000001,
+            'set':              0b00000010,
+            'dump':             0b00000100,
+            'get_status':       0b00010001,
+            'get_command':      0b00100001,
+            'set_command':      0b00100010,
+            'get_errorcode':    0b01000001,
             }
 
     def __init__(self, target, *args):
