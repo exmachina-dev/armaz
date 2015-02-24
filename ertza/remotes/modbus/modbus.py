@@ -173,11 +173,13 @@ world_lenght: %s, reg_by_comms: %s' % \
 
         raise ValueError('Comms number exceed limits.')
 
-    def _to_int(self, bits):
+    @staticmethod
+    def _to_int(bits):
         bits = bitstring.Bits(bin=bits)
         return bits.int
 
-    def _to_bools(self, bits):
+    @staticmethod
+    def _to_bools(bits):
         bits = bitstring.Bits(bin=bits)
         l = list()
         for b in bits:
