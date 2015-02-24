@@ -143,8 +143,7 @@ class ModbusBackend(object):
 
     def get_errorcode(self):
         errorcode = self.read_comm(0x03)
-        errorcode = self._to_int(errorcode[0]+errorcode[1])
-        self.errorcode
+        self.errorcode = self._to_int(errorcode[0]+errorcode[1])
 
         return self.errorcode
 
