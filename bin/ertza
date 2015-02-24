@@ -4,7 +4,13 @@
 if __name__ == "__main__":
     from ertza import Ertza
 
-    mi = Ertza()
+    import argparse
+    parser = argparse.ArgumentParser(prog='ertza')
+    parser.add_argument('--without-modbus', action='store_true',
+            help='start ertza without the modbus backend')
+    args = parser.parse_args()
+
+    mi = Ertza(args)
     mi.ignore_sigint()
     mi.processes()
     mi.start()

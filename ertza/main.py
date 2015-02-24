@@ -42,8 +42,11 @@ class MainInitializer(object):
 
     mdb_osc_pipe = mp.Pipe()
 
-    def __init__(self):
+    def __init__(self, args=None):
         self.jobs = []
+
+        if args:
+            self.cmd_args = args
 
     def processes(self):
         self.jobs = [

@@ -17,6 +17,8 @@ class BaseWorker(object):
         self.sm = sm.manager
         self.lgq = sm.log_queue
 
+        self.cmd_args = sm.cmd_args
+
         # Some events
         self.exit_event = sm.exit_event
         self.config_event = sm.config_event
