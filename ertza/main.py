@@ -3,13 +3,13 @@
 import multiprocessing as mp
 import signal
 
-from ertza.config import ConfigWorker
+from .config import ConfigWorker
 
-from ertza.utils import LogWorker
+from .utils import LogWorker
 
-from ertza.remotes import RemoteWorker
-from ertza.remotes import OSCWorker
-from ertza.remotes import ModbusWorker
+from .remotes import RemoteWorker
+from .remotes import OSCWorker
+from .remotes import ModbusWorker
 
 
 class MainInitializer(object):

@@ -2,8 +2,8 @@
 
 import liblo as lo
 
-from ertza.config import ConfigRequest
-from ertza.remotes.modbus import ModbusRequest
+from ...config import ConfigRequest
+from ..modbus import ModbusRequest
 
 
 class OSCBaseServer(lo.Server):

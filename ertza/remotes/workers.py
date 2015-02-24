@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from ertza.base import BaseWorker
-from ertza.remotes.osc import OSCServer
-from ertza.remotes.modbus import ModbusMaster, ModbusRequest, ModbusResponse
-import ertza.errors as err
+from ..base import BaseWorker
+from .osc import OSCServer
+from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
+from ..errors import OSCServerError, ModbusMasterError
 
 import time
 
@@ -53,7 +53,7 @@ class OSCWorker(BaseWorker):
     def run(self):
         try:
             self.init_osc_server()
-        except err.OSCServerError as e:
+        except OSCServerError as e:
             self.lg.warn(e)
             self.exit_event.set()
 
@@ -102,7 +102,7 @@ class ModbusWorker(BaseWorker):
     def run(self):
         try:
             self.init_modbus()
-        except err.ModbusMasterError as e:
+        except ModbusMasterError as e:
             self.lg.warn(e)
 
         while not self.exit_event.is_set():
