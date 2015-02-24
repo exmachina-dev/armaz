@@ -4,7 +4,7 @@ import pytest
 import configparser
 
 from ertza.config import ConfigRequest, _DEFAULTS
-from ertza.utils import FakeConfig
+from ertza.utils.fake import FakeConfig
 
 class Test_ConfigRequest(object):
     def setup_class(self):
