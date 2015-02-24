@@ -18,6 +18,7 @@ class RemoteWorker(BaseWorker):
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
         self.config_pipe = self.initializer.cnf_rmt_pipe[1]
+        self.interval = 0.01
 
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
