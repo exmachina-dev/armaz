@@ -220,8 +220,6 @@ world_lenght: %s, reg_by_comms: %s' % \
     @retry(ModbusMasterError, tries=3, delay=1)
     def _rq(self, rq):
         try:
-            if not self.connected:
-                self.connect()
             response = self.end.execute(rq)
             rpt = type(response)
             if rpt == ExceptionResponse:
