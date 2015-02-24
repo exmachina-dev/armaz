@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from ertza.base import BaseResponse, BaseRequest
+import ertza.errors as err
+from ertza.utils import timeout
 
 class ModbusRequest(BaseRequest):
     def _check_args(self, *args):
@@ -44,6 +46,7 @@ class ModbusResponse(BaseResponse):
         self.request = request
         self._end = end
 
+    @timeout(1, "Slave didn't respond.")
     def get_from_device(self, *args):
         if not self._end:
             raise ValueError("Modbus isn't defined.")
@@ -58,6 +61,7 @@ class ModbusResponse(BaseResponse):
             self.method = self._methods['get_errorcode']
             self.value = self._end.get_errorcode()
 
+    @timeout(1, "Slave didn't respond.")
     def set_to_device(self, *args):
         self.method = self._methods['set']
 
@@ -69,6 +73,7 @@ class ModbusResponse(BaseResponse):
             raise ValueError("One or more argument is missing.")
         self.value = self._end.set(str(section), str(option), str(value))
 
+    @timeout(1, "Slave didn't respond.")
     def dump_config(self, *args):
         self.method = self._methods['dump']
 

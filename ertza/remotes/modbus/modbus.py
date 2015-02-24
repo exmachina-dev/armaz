@@ -13,6 +13,7 @@ import bitstring
 
 from ertza.config import ConfigRequest
 import ertza.errors as err
+from ertza.utils import retry
 
 
 class ModbusBackend(object):
@@ -49,6 +50,7 @@ class ModbusBackend(object):
         self.max_comms = 99
 
 
+    @retry(err.ModbusMasterError, tries=3, delay=1)
     def connect(self):
         if not self.connected:
             self.lg.debug("Initiated Modbus connection to %s:%s" % \
@@ -213,6 +215,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     wmr = _write_multiple_registers
     rwmr = _read_write_multiple_registers
 
+    @retry(err.ModbusMasterError, tries=3, delay=1)
     def _rq(self, rq):
         try:
             if not self.connected:
@@ -230,17 +233,7 @@ world_lenght: %s, reg_by_comms: %s' % \
                     regs.append(fmt.format(response.getRegister(i)))
                 return regs
         except pmde.ConnectionException as e:
-            self.connected = False
-            self.retry -= 1
-            if self.retry <= 0:
-                try:
-                    self._rq(rq)
-                except pmde.ConnectionError:
-                    self.lg.warn(
-                            'Unable to connect to slave. Retrying (%s/%s)',
-                            (self.retry, self.retry_max))
-            else:
-                raise err.ModbusMasterError('Unable to connect to slave')
+            raise err.ModbusMasterError('Unable to connect to slave')
 
 
 if __name__ == "__main__":
