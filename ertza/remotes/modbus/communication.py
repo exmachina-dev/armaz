@@ -9,9 +9,15 @@ class ModbusRequest(BaseRequest):
             self.method = None
             self.value = None
 
-    def status(self, *args):
+    def get_status(self, *args):
         self._check_args(*args)
         self.method = self._methods['get_status']
+        rp = self.send()
+        return rp.value
+
+    def get_errorcode(self, *args):
+        self._check_args(*args)
+        self.method = self._methods['get_errorcode']
         rp = self.send()
         return rp.value
 
@@ -48,6 +54,9 @@ class ModbusResponse(BaseResponse):
         elif self.request.method & self._methods['get_command']:
             self.method = self._methods['get_command']
             self.value = self._end.get_command()
+        elif self.request.method & self._methods['get_errorcode']:
+            self.method = self._methods['get_errorcode']
+            self.value = self._end.get_errorcode()
 
     def set_to_device(self, *args):
         self.method = self._methods['set']

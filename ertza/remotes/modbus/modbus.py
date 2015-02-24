@@ -19,6 +19,7 @@ class ModbusBackend(object):
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
         self.command = {}
+        self.errorcode = None
         self.end = None
         self.connected = False
         self.max_retry = 5
@@ -136,6 +137,13 @@ class ModbusBackend(object):
 
         return self.status
 
+    def get_errorcode(self):
+        errorcode = self.read_comm(0x03)
+        errorcode = self._to_int(errorcode[0]+errorcode[1])
+        self.errorcode
+
+        return self.errorcode
+
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
 world_lenght: %s, reg_by_comms: %s' % \
@@ -160,6 +168,10 @@ world_lenght: %s, reg_by_comms: %s' % \
             return None
 
         raise ValueError('Comms number exceed limits.')
+
+    def _to_int(self, bits):
+        bits = bitstring.Bits(bin=bits)
+        return bits.int
 
     def _to_bools(self, bits):
         bits = bitstring.Bits(bin=bits)
