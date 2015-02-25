@@ -108,6 +108,10 @@ class OSCCommands(OSCBaseServer):
             self.status_reply(sender, base + 'timeout', repr(e))
             pass
 
+    @lo.make_method('/request/announce', '')
+    def request_announce_callback(self, path, args, types, sender):
+        self.announce()
+
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
         self.setup_reply(sender, "/status/wrong_osc_command", path, types, *args)
