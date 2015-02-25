@@ -1,4 +1,4 @@
-#N canvas 142 157 1366 736 10;
+#N canvas 2121 187 1366 736 10;
 #X declare -lib mrpeach/packOSC;
 #X declare -lib mrpeach/udpsend;
 #X declare -lib mrpeach/udpreceive;
@@ -36,7 +36,7 @@
 #X obj 106 143 bng 16 250 50 0 conf_dev_disconnect _null_s Disconnect
 17 7 0 10 -261234 -258113 -1;
 #X obj 400 121 tgl 30 0 _null_snd conf_dev_status empty 17 7 0 10 -24198
--225271 -262144 1 1;
+-225271 -262144 0 1;
 #X floatatom 238 183 7 0 230400 1 - conf_dev_bs _null_snd;
 #X floatatom 358 183 7 0 230400 0 - conf_dev_sb _null_snd;
 #X text 432 121 Device;
@@ -168,6 +168,15 @@
 #X obj 593 39 r motor_enable_input;
 #X obj 627 67 s motor_enable_input_r;
 #X msg 582 173 \; motor_enable_input_r color \$1 \$2 22;
+#X floatatom 5 178 5 0 0 2 Error_code motor_errorcode_r motor_errorcode_s
+;
+#X obj 372 552 + 10;
+#X obj 372 572 pack f f;
+#X obj 383 499 * 3;
+#X obj 383 519 + 3;
+#X obj 383 459 r motor_errorcode;
+#X obj 417 488 s motor_errorcode_r;
+#X msg 372 593 \; motor_errorcode_r color \$1 \$2 22;
 #X connect 6 0 7 0;
 #X connect 7 0 9 0;
 #X connect 8 0 10 0;
@@ -196,6 +205,13 @@
 #X connect 30 0 29 0;
 #X connect 31 0 23 0;
 #X connect 31 0 32 0;
+#X connect 35 0 36 0;
+#X connect 36 0 41 0;
+#X connect 37 0 38 0;
+#X connect 38 0 35 0;
+#X connect 38 0 36 1;
+#X connect 39 0 37 0;
+#X connect 39 0 40 0;
 #X coords 0 -1 1 1 200 200 1 0 100;
 #X restore 419 -8933 pd motor_status;
 #N canvas 2242 183 1366 720 dispatch 0;
@@ -221,24 +237,25 @@
 #X obj 0 13 routeOSC /setup /status;
 #X obj 64 34 routeOSC /motor;
 #X obj 291 98 s motor_enable_ready;
-#X msg 304 -117 \; motor_brake_r color 13 3 22 \; motor_enable_r color
-13 3 22 \; motor_validate_r color 13 3 22;
-#X obj 64 55 routeOSC /brake /enable /enable_input /enable_ready;
-#X msg 304 -47 \; motor_brake_r color 13 3 22 \; motor_ready_r color
-13 3 22 \; motor_enable_r color 13 3 22 \; motor_enable_input_r color
-13 3 22 \; motor_enable_ready_r color 13 3 22;
 #X obj 624 231 unpack f;
 #X obj 624 211 f;
 #X obj 639 191 r cf_osc_server_port_s;
 #X obj 624 171 r cf_osc_update;
+#X msg 304 -47 \; motor_brake_r color 13 3 22 \; motor_enable_r color
+13 3 22 \; motor_enable_input_r color 13 3 22 \; motor_enable_ready_r
+color 13 3 22;
+#X msg 303 -117 \; motor_validate_r color 13 3 22;
+#X obj 64 55 routeOSC /brake /enable /enable_input /enable_ready;
+#X obj 367 118 routeOSC /error_code;
+#X obj 367 138 s motor_error_code;
 #X connect 1 0 3 0;
 #X connect 2 0 3 1;
 #X connect 3 0 0 0;
 #X connect 5 0 1 0;
 #X connect 6 0 13 0;
 #X connect 6 0 19 0;
-#X connect 7 0 22 0;
-#X connect 7 0 24 0;
+#X connect 7 0 27 0;
+#X connect 7 0 26 0;
 #X connect 9 0 8 0;
 #X connect 11 0 4 0;
 #X connect 12 0 4 0;
@@ -246,15 +263,17 @@
 #X connect 18 0 14 0;
 #X connect 19 0 10 0;
 #X connect 19 1 20 0;
-#X connect 20 0 23 0;
-#X connect 23 0 15 0;
-#X connect 23 1 16 0;
-#X connect 23 2 17 0;
-#X connect 23 3 21 0;
-#X connect 25 0 12 0;
-#X connect 26 0 25 0;
-#X connect 27 0 26 1;
-#X connect 28 0 26 0;
+#X connect 20 0 28 0;
+#X connect 22 0 12 0;
+#X connect 23 0 22 0;
+#X connect 24 0 23 1;
+#X connect 25 0 23 0;
+#X connect 28 0 15 0;
+#X connect 28 1 16 0;
+#X connect 28 2 17 0;
+#X connect 28 3 21 0;
+#X connect 28 4 29 0;
+#X connect 29 0 30 0;
 #X coords 0 -1 1 1 170 210 2 -190 100;
 #X restore 439 -9183 pd dispatch;
 #X msg 227 -9200 192.168.1.12;
