@@ -97,9 +97,13 @@ class OSCCommands(OSCBaseServer):
         base = 'motor/'
         try:
             status = self.mdb_request.get_status()
-            for k, v in status.items():
-                path = base + k.split('_', maxsplit=1)[1]
-                self.status_reply(sender, path, v)
+            try:
+                for k, v in status.items():
+                    path = base + k.split('_', maxsplit=1)[1]
+                    self.status_reply(sender, path, v)
+            except AttributeError:
+                self.status_reply(sender, base + 'error',
+                        'Unable to get status')
 
             errcode = self.mdb_request.get_errorcode()
             self.lg.debug(errcode)
