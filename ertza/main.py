@@ -3,13 +3,13 @@
 import multiprocessing as mp
 import signal
 
-from ertza.config import ConfigWorker
+from .config import ConfigWorker
 
-from ertza.utils import LogWorker
+from .utils import LogWorker
 
-from ertza.remotes import RemoteWorker
-from ertza.remotes import OSCWorker
-from ertza.remotes import ModbusWorker
+from .remotes import RemoteWorker
+from .remotes import OSCWorker
+from .remotes import ModbusWorker
 
 
 class MainInitializer(object):
@@ -22,6 +22,8 @@ class MainInitializer(object):
 
     manager = mp.Manager()
     log_queue = manager.Queue()
+
+    cmd_args = None
 
     # Some events
     exit_event = manager.Event()
@@ -42,8 +44,11 @@ class MainInitializer(object):
 
     mdb_osc_pipe = mp.Pipe()
 
-    def __init__(self):
+    def __init__(self, args=None):
         self.jobs = []
+
+        if args:
+            self.cmd_args = args
 
     def processes(self):
         self.jobs = [

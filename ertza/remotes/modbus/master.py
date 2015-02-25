@@ -5,8 +5,10 @@ import ertza.errors as err
 
 
 class ModbusMaster(object):
-    def __init__(self, config, logger, restart_event, block_event):
+    def __init__(self, config, logger, restart_event, block_event,
+            fake_master=False):
         self.config = config
+        self.fake = fake_master
         if logger:
             self.lg = logger
         else:
@@ -16,15 +18,19 @@ class ModbusMaster(object):
         self.back = ModbusBackend(config, self.lg, restart_event, block_event)
 
     def start(self):
-        self.back.connect()
+        if not self.fake:
+            self.back.connect()
 
     def run(self):
-        self.back.get_status()
-        self.back.get_command()
+        if not self.fake:
+            self.back.get_status()
+            self.back.get_command()
 
     def stop(self):
-        self.back.close()
+        if not self.fake:
+            self.back.close()
 
     def restart(self):
-        self.back.reconnect()
+        if not self.fake:
+            self.back.reconnect()
 

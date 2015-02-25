@@ -11,14 +11,16 @@ import pymodbus.exceptions as pmde
 
 import bitstring
 
-from ertza.config import ConfigRequest
-import ertza.errors as err
+from ...config import ConfigRequest
+from ...errors import ConfigError, ModbusMasterError
+from ...utils import retry
 
 
 class ModbusBackend(object):
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
         self.command = {}
+        self.errorcode = None
         self.end = None
         self.connected = False
         self.max_retry = 5
@@ -48,6 +50,7 @@ class ModbusBackend(object):
         self.max_comms = 99
 
 
+    @retry(ModbusMasterError, tries=3, delay=1)
     def connect(self):
         if not self.connected:
             self.lg.debug("Initiated Modbus connection to %s:%s" % \
@@ -58,8 +61,10 @@ class ModbusBackend(object):
                 self.connected = True
                 self.retry = self.max_retry
             except pmde.ConnectionException as e:
+                self.lg.warn(repr(ModbusMasterError(
+                        'Unable to connect to slave: %s' % e)))
+            else:
                 self.connected = False
-                raise err.ModbusMasterError('Unable to connect to slave')
 
     def close(self):
         self.end.close()
@@ -80,31 +85,31 @@ class ModbusBackend(object):
             else:
                 raise ValueError('Network device must be a string.')
         except ValueError as e:
-            raise err.ConfigError('Network device must be a string.') from e
+            raise ConfigError('Network device must be a string.') from e
 
         try:
             self.port = int(self.config_request.get(
                 'modbus', 'port', 502))
         except ValueError as e:
-            raise err.ConfigError('Port must be an int.') from e
+            raise ConfigError('Port must be an int.') from e
 
         try:
             self.node_id = int(self.config_request.get(
                 'modbus', 'node_id', 2))
         except ValueError as e:
-            raise err.ConfigError('Node id must be an int.') from e
+            raise ConfigError('Node id must be an int.') from e
 
         try:
             self.word_lenght = int(self.config_request.get(
                 'modbus', 'word_lenght', 16))
         except ValueError as e:
-            raise err.ConfigError('Word lenght must be an int.') from e
+            raise ConfigError('Word lenght must be an int.') from e
 
         try:
             self.data_bit = int(self.config_request.get(
                 'modbus', 'data_bit', 8))
         except ValueError as e:
-            raise err.ConfigError('Data bit must be an int.') from e
+            raise ConfigError('Data bit must be an int.') from e
 
         try:
             self.nb_reg_by_comms = int(self.word_lenght / self.data_bit)
@@ -136,6 +141,12 @@ class ModbusBackend(object):
 
         return self.status
 
+    def get_errorcode(self):
+        errorcode = self.read_comm(0x03)
+        self.errorcode = self._to_int(errorcode[0]+errorcode[1])
+
+        return self.errorcode
+
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
 world_lenght: %s, reg_by_comms: %s' % \
@@ -161,7 +172,13 @@ world_lenght: %s, reg_by_comms: %s' % \
 
         raise ValueError('Comms number exceed limits.')
 
-    def _to_bools(self, bits):
+    @staticmethod
+    def _to_int(bits):
+        bits = bitstring.Bits(bin=bits)
+        return bits.int
+
+    @staticmethod
+    def _to_bools(bits):
         bits = bitstring.Bits(bin=bits)
         l = list()
         for b in bits:
@@ -201,10 +218,9 @@ world_lenght: %s, reg_by_comms: %s' % \
     wmr = _write_multiple_registers
     rwmr = _read_write_multiple_registers
 
+    @retry(ModbusMasterError, tries=3, delay=1)
     def _rq(self, rq):
         try:
-            if not self.connected:
-                self.connect()
             response = self.end.execute(rq)
             rpt = type(response)
             if rpt == ExceptionResponse:
@@ -218,17 +234,7 @@ world_lenght: %s, reg_by_comms: %s' % \
                     regs.append(fmt.format(response.getRegister(i)))
                 return regs
         except pmde.ConnectionException as e:
-            self.connected = False
-            self.retry -= 1
-            if self.retry <= 0:
-                try:
-                    self._rq(rq)
-                except pmde.ConnectionError:
-                    self.lg.warn(
-                            'Unable to connect to slave. Retrying (%s/%s)',
-                            (self.retry, self.retry_max))
-            else:
-                raise err.ModbusMasterError('Unable to connect to slave')
+            raise ModbusMasterError('Unable to connect to slave')
 
 
 if __name__ == "__main__":

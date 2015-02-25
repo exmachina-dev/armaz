@@ -2,7 +2,7 @@
 
 from ertza.remotes.osc import OSCServer
 from ertza.config import ConfigRequest
-from ertza.utils import FakeConfig
+from ertza.utils.fake import FakeConfig
 
 import liblo
 

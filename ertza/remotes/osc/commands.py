@@ -19,14 +19,19 @@ class OSCCommands(OSCBaseServer):
         return self.reply('/setup/return', sender, *args)
 
     def status_reply(self, sender, *args):
-        return self.reply('/status', sender, *args)
+        return self.reply('/status', sender, *args, merge=True)
 
-    def reply(self, default_path, sender, *args):
+    def reply(self, default_path, sender, *args, **kwargs):
+        if kwargs and 'merge' in kwargs.keys():
+            kwargs['merge'] = True
+        else:
+            kwargs['merge'] = False
+
         try:
             if type(args[0]) == str and args[0][0] == '/':
                 args = list(args)
                 _msg = lo.Message(args.pop(0), *args)
-            elif len(args) >= 2:
+            elif len(args) >= 2 and kwargs['merge']:
                 args = list(args)
                 path = args.pop(0)
                 _msg = lo.Message(default_path+'/'+path, *args)
@@ -90,10 +95,18 @@ class OSCCommands(OSCBaseServer):
     @lo.make_method('/motor/status', '')
     def drive_status_callback(self, path, args, types, sender):
         base = 'motor/'
-        status = self.mdb_request.status()
-        for k, v in status.items():
-            path = base + k.split('_', maxsplit=1)[1]
-            self.status_reply(sender, path, v)
+        try:
+            status = self.mdb_request.get_status()
+            for k, v in status.items():
+                path = base + k.split('_', maxsplit=1)[1]
+                self.status_reply(sender, path, v)
+
+            errcode = self.mdb_request.get_errorcode()
+            self.lg.debug(errcode)
+            self.status_reply(sender, base + 'error_code', errcode)
+        except err.TimeoutError as e:
+            self.status_reply(sender, base + 'timeout', repr(e))
+            pass
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
