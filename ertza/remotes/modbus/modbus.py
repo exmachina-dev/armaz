@@ -198,6 +198,11 @@ world_lenght: %s, reg_by_comms: %s' % \
         return bits.int
 
     @staticmethod
+    def _to_float(bits):
+        bits = bitstring.Bits(bin=bits)
+        return bits.float
+
+    @staticmethod
     def _to_bools(bits):
         bits = bitstring.Bits(bin=bits)
         l = list()
