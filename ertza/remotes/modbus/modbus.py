@@ -34,6 +34,7 @@ class ModbusBackend(object):
             'drive_enable',
             'drive_enable_input',
             'motor_brake',
+            'command_timeout',
             )
 
 
