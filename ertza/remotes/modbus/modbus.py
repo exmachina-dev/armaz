@@ -155,11 +155,11 @@ class ModbusBackend(object):
 
         return self.status
 
-    def get_errorcode(self):
-        errorcode = self.read_comm(self.netdata['error_code'])
-        self.errorcode = self._to_int(errorcode[0]+errorcode[1])
+    def get_error_code(self):
+        error = self.read_comm(self.netdata['error_code'])
+        self.error_code = self._to_int(error[0]+error[1])
 
-        return self.errorcode
+        return self.error_code
 
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
