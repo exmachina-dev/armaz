@@ -29,7 +29,7 @@ class LogWorker(BaseWorker):
         self.log_path = self.config_request.get('log', 'log_path', 
                 os.path.expanduser('~/.ertza/'))
         if not os.path.exists(self.log_path):
-            self.exit('Log path must exist.')
+            self.exit('Log path must exist: %s' % self.log_path)
         self.log_file = os.path.join(self.log_path, 'ertza.log')
         self.max_size = int(self.config_request.get('log', 'max_size',
                 1048576))
