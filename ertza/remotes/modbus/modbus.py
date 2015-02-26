@@ -161,6 +161,12 @@ class ModbusBackend(object):
 
         return self.error_code
 
+    def get_drive_temperature(self):
+        temp = self.read_comm(self.netdata['drive_temperature'])
+        self.drive_temperature = self._to_float(temp[0]+temp[1])
+
+        return self.drive_temperature
+
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
 world_lenght: %s, reg_by_comms: %s' % \
