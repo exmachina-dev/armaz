@@ -17,6 +17,18 @@ from ...utils import retry
 
 
 class ModbusBackend(object):
+    netdata = {
+            'command':              1,
+            'status':               2,
+            'error_code':           3,
+            'speed':                4,
+            'encoder_velocity':     10,
+            'encoder_position':     11,
+            'command_number':       20,
+            'drive_temperature':    21,
+            'dropped_frames':       50,
+            }
+
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
         self.command = {}
@@ -118,7 +130,7 @@ class ModbusBackend(object):
                 self.word_lenght, self.data_bit)) from e
 
     def get_command(self):
-        command = self.read_comm(0x01)
+        command = self.read_comm(self.netdata['command'])
 
         keys = ('driveEnable', 'stop', 'releaseBrake',)
 
@@ -131,7 +143,7 @@ class ModbusBackend(object):
         return self.command
 
     def get_status(self):
-        status = self.read_comm(0x02)
+        status = self.read_comm(self.netdata['status'])
 
         status = self._to_bools(status[0]+status[1])
         status.reverse()
@@ -142,7 +154,7 @@ class ModbusBackend(object):
         return self.status
 
     def get_errorcode(self):
-        errorcode = self.read_comm(0x03)
+        errorcode = self.read_comm(self.netdata['error_code'])
         self.errorcode = self._to_int(errorcode[0]+errorcode[1])
 
         return self.errorcode
