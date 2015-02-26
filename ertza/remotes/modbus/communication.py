@@ -60,6 +60,9 @@ class ModbusResponse(BaseResponse):
         elif self.request.method == self._methods['get_error_code']:
             self.method = self._methods['get_error_code']
             self.value = self._end.get_error_code()
+        elif self.request.method == self._methods['get_drive_temperature']:
+            self.method = self._methods['get_drive_temperature']
+            self.value = self._end.get_drive_temperature()
 
     @timeout(1, "Slave didn't respond.")
     def set_to_device(self, *args):
