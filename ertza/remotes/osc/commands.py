@@ -114,6 +114,7 @@ class OSCCommands(OSCBaseServer):
 
     @lo.make_method('/request/announce', '')
     def request_announce_callback(self, path, args, types, sender):
+        self.lg.debug('Received announce request. Replying.')
         self.announce()
 
     @lo.make_method(None, None)
