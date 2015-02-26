@@ -29,6 +29,14 @@ class ModbusBackend(object):
             'dropped_frames':       50,
             }
 
+    status_keys = (
+            'drive_enable_ready',
+            'drive_enable',
+            'drive_enable_input',
+            'motor_brake',
+            )
+
+
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
         self.command = {}
@@ -49,13 +57,6 @@ class ModbusBackend(object):
                 16,     # Write multiples registers
                 23,     # Read/write multiple registers
                 ]
-
-        self.status_keys = (
-                'drive_enable_ready',
-                'drive_enable',
-                'drive_enable_input',
-                'motor_brake',
-                )
 
         self.get_config()
         self.min_comms = 1
