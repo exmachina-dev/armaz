@@ -105,9 +105,11 @@ class OSCCommands(OSCBaseServer):
                 self.status_reply(sender, base + 'error',
                         'Unable to get status')
 
-            errcode = self.mdb_request.get_errorcode()
+            errcode = self.mdb_request.get_error_code()
+            temp = self.mdb_request.get_drive_temperature()
             self.lg.debug(errcode)
             self.status_reply(sender, base + 'error_code', errcode)
+            self.status_reply(sender, base + 'drive_temperature', temp)
         except err.TimeoutError as e:
             self.status_reply(sender, base + 'timeout', repr(e))
             pass
