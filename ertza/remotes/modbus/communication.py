@@ -17,7 +17,7 @@ class ModbusRequest(BaseRequest):
         rp = self.send()
         return rp.value
 
-    def get_errorcode(self, *args):
+    def get_error_code(self, *args):
         self._check_args(*args)
         self.method = self._methods['get_errorcode']
         rp = self.send()
@@ -57,9 +57,9 @@ class ModbusResponse(BaseResponse):
         elif self.request.method == self._methods['get_command']:
             self.method = self._methods['get_command']
             self.value = self._end.get_command()
-        elif self.request.method == self._methods['get_errorcode']:
-            self.method = self._methods['get_errorcode']
-            self.value = self._end.get_errorcode()
+        elif self.request.method == self._methods['get_error_code']:
+            self.method = self._methods['get_error_code']
+            self.value = self._end.get_error_code()
 
     @timeout(1, "Slave didn't respond.")
     def set_to_device(self, *args):
