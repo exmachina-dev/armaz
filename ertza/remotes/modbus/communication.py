@@ -10,24 +10,20 @@ class ModbusRequest(BaseRequest):
         if self.args:
             self.method = None
             self.value = None
+    def _build_rq(self, method, *args):
+        self._check_args(*args)
+        self.method = self._methods[method]
+        rp = self.send()
+        return rp.value
 
     def get_status(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['get_status']
-        rp = self.send()
-        return rp.value
+        return self._build_rq('get_status', *args)
 
     def get_error_code(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['get_error_code']
-        rp = self.send()
-        return rp.value
+        return self._build_rq('get_error_code', *args)
 
     def get_command(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['get_command']
-        rp = self.send()
-        return rp.value
+        return self._build_rq('get_command', *args)
 
     def set_command(self, *args):
         self._check_args(*args)
