@@ -3,16 +3,16 @@
 import pytest
 import configparser
 
-from ertza.config import ConfigRequest, _DEFAULTS
-from ertza.utils.fake import FakeConfig
+from ertza.remotes.modbus import ModbusRequest
+from ertza.utils.fake import FakeModbus
 
-class Test_ConfigRequest(object):
+class Test_ModbusRequest(object):
     def setup_class(self):
-        self.rq = ConfigRequest(FakeConfig())
+        self.rq = ModbusRequest(FakeModbus())
 
     def test_get(self):
-        assert int(self.rq.get('osc', 'server_port', 0)) == \
-                _DEFAULTS['osc']['server_port']
+        assert self.rq.get_status() == \
+                None
 
         with pytest.raises(configparser.NoSectionError):
             self.rq.get('fake_section', 'fake_option')

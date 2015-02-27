@@ -17,10 +17,13 @@ class BaseWorker(object):
         self.sm = sm.manager
         self.lgq = sm.log_queue
 
+        self.cmd_args = sm.cmd_args
+
         # Some events
         self.exit_event = sm.exit_event
         self.config_event = sm.config_event
         self.osc_event = sm.osc_event
+        self.modbus_event = sm.modbus_event
         self.blockall_event = sm.blockall_event
 
         self.config_lock = sm.config_lock
@@ -40,3 +43,52 @@ class BaseWorker(object):
     def wait_for_config(self):
         while not self.config_event.is_set():
             time.sleep(self.interval)
+
+    def exit(self, reason=None):
+        if reason:
+            self.lg.warn('Exit with: %s', reason)
+        self.exit_event.set()
+
+
+class BaseCommunicationObject(object):
+    _methods = {
+            'get':                      0b00000001,
+            'set':                      0b00000010,
+            'dump':                     0b00000100,
+            'get_status':               0b00010001,
+            'get_command':              0b00100001,
+            'set_command':              0b00100010,
+            'get_error_code':           0b00110001,
+            'get_drive_temperature':    0b01000001,
+            }
+
+    def __init__(self, target, *args):
+        self.target = target
+        self.method = None
+        self.value = None
+
+        if args:
+            self.args = args
+        else:
+            self.args = None
+
+    def send(self):
+        if self.method:
+            return self.target.send(self)
+        else:
+            raise ValueError("Method isn't defined.")
+
+    def __str__(self):
+        return '%s %s %s' % (self.method, self.args, self.value)
+
+    __repr__ = __str__
+
+
+class BaseRequest(BaseCommunicationObject):
+    def send(self):
+        super(BaseRequest, self).send()
+        rp = self.target.recv()
+        return rp
+
+class BaseResponse(BaseCommunicationObject):
+    pass

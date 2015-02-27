@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ertza.base import BaseWorker
+from ertza.base import BaseWorker, BaseResponse, BaseRequest
 import ertza.errors as err
 
 import time
@@ -11,11 +11,17 @@ import configparser
 user_config_path = os.path.expanduser('~/.ertza')
 _DEFAULTS = {
         'log': {
-            'log_path': os.path.join(user_config_path, 'logs'),
+            'log_path': user_config_path,
             },
         'osc': {
             'server_port': 7900,
             'client_port': 7901,
+            'broadcast': '192.168.1.255',
+            },
+        'modbus': {
+            'device': '192.168.100.2',
+            'node_id' : 2,
+            'port': 502,
             },
         }
 
@@ -96,90 +102,10 @@ class BaseConfigParser(configparser.ConfigParser):
         return output
 
 
-class ConfigProxy(BaseConfigParser):
-    """
-    ConfigProxy provides an interface to a single BaseConfigParser instance.
-
-    Helps sharing a simple config manager accross different processes.
-    """
-
-
-    _obj = BaseConfigParser()
-
-#    def __new__(cls):
-#        if cls._obj is None:
-#          i = BaseConfigParser.__new__(cls)
-#          cls._obj = i
-#        else:
-#          i = cls._obj
-#        return i
-
-    def __init__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__init__")(*args, **kw)
-
-    def __getattribute__(self, name):
-        return getattr(object.__getattribute__(self, "_obj"), name)
-
-    def __getitem__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__getitem__")(*args, **kw)
-
-    def __setitem__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__setitem__")(*args, **kw)
-
-    def __delitem__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__delitem__")(*args, **kw)
-
-    def __contains__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__contains__")(*args, **kw)
-
-    def __len__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__len__")(*args, **kw)
-
-    def __iter__(self, *args, **kw):
-        return getattr(object.__getattribute__(self, "_obj"),
-                "__iter__")(*args, **kw)
-
-
 ConfigParser = BaseConfigParser
 
 
-class BaseCommunicationObject(object):
-    _methods = {
-            'get': 0x001,
-            'set': 0x002,
-            'dump': 0x003,
-            }
-
-    def __init__(self, target, *args):
-        self.target = target
-        self.method = None
-        self.value = None
-
-        if args:
-            self.args = args
-        else:
-            self.args = None
-
-    def send(self):
-        if self.method:
-            return self.target.send(self)
-        else:
-            raise ValueError("Method isn't defined.")
-
-    def __str__(self):
-        return '%s %s %s' % (self.method, self.args, self.value)
-
-    __repr__ = __str__
-
-
-
-class ConfigRequest(BaseCommunicationObject):
+class ConfigRequest(BaseRequest):
     def _check_args(self, *args):
         self.args = args
         if self.args:
@@ -202,13 +128,8 @@ class ConfigRequest(BaseCommunicationObject):
         self.method = self._methods['dump']
         return self.send().value
 
-    def send(self):
-        super(ConfigRequest, self).send()
-        rp = self.target.recv()
-        return rp
 
-
-class ConfigResponse(BaseCommunicationObject):
+class ConfigResponse(BaseResponse):
     def __init__(self, target, request, config=None, *args):
         super(ConfigResponse, self).__init__(target, *args)
         self.request = request
@@ -271,10 +192,11 @@ class ConfigWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ConfigWorker, self).__init__(sm)
-        self.log_pipe = self.initializer.conf_log_pipe[0]
-        self.rmt_pipe = self.initializer.conf_rmt_pipe[0]
-        self.osc_pipe = self.initializer.conf_osc_pipe[0]
-        self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe
+        self.log_pipe = self.initializer.cnf_log_pipe[0]
+        self.rmt_pipe = self.initializer.cnf_rmt_pipe[0]
+        self.osc_pipe = self.initializer.cnf_osc_pipe[0]
+        self.mdb_pipe = self.initializer.cnf_mdb_pipe[0]
+        self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe, self.mdb_pipe
 
         self.interval = 0.001
 
@@ -284,14 +206,18 @@ class ConfigWorker(BaseWorker):
 
         self.watched_options = {
                 'osc': {
-                    'server_port': None
+                    'server_port': self.osc_event.set
+                    },
+                'modbus': {
+                    'device': self.modbus_event.set,
+                    'node_id': self.modbus_event.set,
                     },
                 }
 
         try:
             self.lg.debug('Reading configs: %s', self._config.configs)
             missing = self._config.read_configs()
-            self.lg.debug('Missing configs: %s', missing)
+            self.lg.info('Missing configs: %s', missing)
         except configparser.Error as e:
             error = err.ConfigError(e.message)
             self.lg.warn(error)
@@ -300,39 +226,30 @@ class ConfigWorker(BaseWorker):
         self.run()
 
     def run(self):
-        self._watchconfig(init=True)
         self.config_event.set()
         while not self.exit_event.is_set():
             for pipe in self.pipes:
                 if pipe.poll():
                     rq = pipe.recv()
-                    self.lg.debug(rq)
                     if not type(rq) is ConfigRequest:
                         raise ValueError('Unexcepted type: %s' % type(rq))
                     rs = ConfigResponse(pipe, rq, self._config)
                     rs.handle()
-                    self.lg.debug(rs)
+                    self._watchconfig(rs)
                     rs.send()
 
-            self._watchconfig()
 
             time.sleep(self.interval)
 
-    def _watchconfig(self, init=None):
-        for s, o in self.watched_options.items():
-            for o, v in o.items():
-                try:
-                    if self._config[s][o] is not v:
-                        if not init:
-                            if s is 'osc' and o is 'server_port':
-                                self.lg.debug("""
-Server port as changed. Old port: %s. New port: %s
-Triggering OSC event.
-                                """, v, self._config[s][o])
-                                self.osc_event.set()
-                        self.watched_options[s][o] = self._config[s][o]
-                except configparser.Error as e:
-                    self.lg.debug(repr(e))
+    def _watchconfig(self, response):
+        if not response.method == ConfigResponse._methods['set']:
+            return None
+        if response.request.args[0] in self.watched_options:
+            section = response.request.args[0]
+            if response.request.args[1] in self.watched_options[section]:
+                option = response.request.args[1]
+                self.lg.debug('Watched item changed: %s.%s' % (section, option,))
+                self.watched_options[section][option]()
 
 
 __all__ = ['ConfigRequest', 'ConfigResponse', 'ConfigWorker', 'ConfigParser']

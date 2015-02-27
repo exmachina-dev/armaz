@@ -11,12 +11,15 @@ __version__ = '0.0.1'
 
 packages = [
     'ertza',
+    'ertza.utils',
     'ertza.remotes',
     'ertza.remotes.osc',
+    'ertza.remotes.modbus',
 ]
 
 scripts = [
     'bin/ertza',
+    'bin/modbus_rw',
 ]
 
 def file_content(filename):
