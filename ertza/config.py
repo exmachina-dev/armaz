@@ -11,7 +11,7 @@ import configparser
 user_config_path = os.path.expanduser('~/.ertza')
 _DEFAULTS = {
         'log': {
-            'log_path': os.path.join(user_config_path, 'logs'),
+            'log_path': user_config_path,
             },
         'osc': {
             'server_port': 7900,
