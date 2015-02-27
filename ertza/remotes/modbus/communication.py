@@ -19,7 +19,7 @@ class ModbusRequest(BaseRequest):
 
     def get_error_code(self, *args):
         self._check_args(*args)
-        self.method = self._methods['get_errorcode']
+        self.method = self._methods['get_error_code']
         rp = self.send()
         return rp.value
 
