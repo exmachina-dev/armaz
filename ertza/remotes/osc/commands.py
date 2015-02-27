@@ -3,8 +3,8 @@
 import configparser
 import liblo as lo
 
-from ertza.remotes.osc import OSCBaseServer
-import ertza.errors as err
+from .osc import OSCBaseServer
+from ..errors import TimeoutError
 
 
 class OSCCommands(OSCBaseServer):
@@ -110,7 +110,7 @@ class OSCCommands(OSCBaseServer):
             self.lg.debug(errcode)
             self.status_reply(sender, base + 'error_code', errcode)
             self.status_reply(sender, base + 'drive_temperature', temp)
-        except err.TimeoutError as e:
+        except TimeoutError as e:
             self.status_reply(sender, base + 'timeout', repr(e))
             pass
 
