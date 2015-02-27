@@ -3,87 +3,11 @@
 import configparser
 import liblo as lo
 
-from ertza.config import ConfigRequest
+from ertza.remotes.osc import OSCBaseServer
 import ertza.errors as err
 
 
-class OSCBaseServer(lo.Server):
-    """
-    Main OSC class herited from liblo.ServerThread
-
-    Provides basic method to init and configure an OSC server working in a
-    RemoteWorker instance.
-
-    Require a ConfigParser object (or a proxy) as init argument.
-    """
-
-    def __init__(self, config, logger=None, restart_event=None):
-        """
-        Init OSCServer with a ConfigParser instance and get server and client
-        port.
-        """
-
-        self.running = True
-        self.interval = 0
-
-        self._config = config
-        if logger:
-            self.lg = logger
-        else:
-            import logging
-            self.lg = logging.getLogger()
-
-        self.osc_event = restart_event
-
-        self.config_request = ConfigRequest(self._config)
-        self.server_port = int(self.config_request.get('osc', 'server_port', 7900))
-        self.client_port = int(self.config_request.get('osc', 'client_port', 7901))
-        super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
-
-        self.ready = True
-
-    def run(self, timeout=None):
-        if self.running:
-            self.recv(timeout)
-
-    def start(self, blocking=True):
-        """
-        Start the OSC Server loop.
-        """
-
-        self.running = True
-
-        if self.ready:
-            if blocking:
-                self.lg.debug("OSCServer started on %s", self.server_port)
-                while self.running:
-                    self.run(self.interval)
-            else:
-                self.lg.debug("OSCServer initialized on %s", self.server_port)
-                self.run(0)
-
-    def stop(self):
-        self.running = False
-
-    def restart(self):
-        """
-        Restart the OSC Server thread.
-
-        Actually set the restart event. Restarting is handle by the
-        OSCWorker.
-        """
-
-        try:
-            self.osc_event.set()
-        except AttributeError:
-            self.lg.warn('No restart event was supplied at init.')
-
-    def send(self, dst, msg):
-        super(OSCBaseServer, self).send(
-                lo.Address(dst.get_hostname(), self.client_port), msg)
-
-
-class OSCServer(OSCBaseServer):
+class OSCCommands(OSCBaseServer):
     """
     OSCCommands contains all commands available thru OSCServer.
     """
@@ -92,14 +16,29 @@ class OSCServer(OSCBaseServer):
     }
 
     def setup_reply(self, sender, *args):
+        return self.reply('/setup/return', sender, *args)
+
+    def status_reply(self, sender, *args):
+        return self.reply('/status', sender, *args, merge=True)
+
+    def reply(self, default_path, sender, *args, **kwargs):
+        if kwargs and 'merge' in kwargs.keys():
+            kwargs['merge'] = True
+        else:
+            kwargs['merge'] = False
+
         try:
-            if args[0][0] == '/':
+            if type(args[0]) == str and args[0][0] == '/':
                 args = list(args)
                 _msg = lo.Message(args.pop(0), *args)
+            elif len(args) >= 2 and kwargs['merge']:
+                args = list(args)
+                path = args.pop(0)
+                _msg = lo.Message(default_path+'/'+path, *args)
             else:
-                _msg = lo.Message('/setup/return', *args)
-        except TypeError:
-            _msg = lo.Message('/setup/return', *args)
+                _msg = lo.Message(default_path, *args)
+        except (TypeError, KeyError):
+            _msg = lo.Message(default_path, *args)
         self.send(sender, _msg)
         return _msg
 
@@ -120,7 +59,6 @@ class OSCServer(OSCBaseServer):
         setup_sec, setup_opt, args, = args
 
         try:
-            self.lg.debug('osc: %s', self.config_request.dump())
             _value = self.config_request.set(setup_sec, setup_opt, str(args))
             self.setup_reply(sender, path, setup_sec, setup_opt, _value)
         except configparser.NoOptionError as e:
@@ -153,6 +91,33 @@ class OSCServer(OSCBaseServer):
     def osc_restart_callback(self, path, args, types, sender):
         self.setup_reply(sender, path, "Restarting.")
         self.restart()
+
+    @lo.make_method('/motor/status', '')
+    def drive_status_callback(self, path, args, types, sender):
+        base = 'motor/'
+        try:
+            status = self.mdb_request.get_status()
+            try:
+                for k, v in status.items():
+                    path = base + k.split('_', maxsplit=1)[1]
+                    self.status_reply(sender, path, v)
+            except AttributeError:
+                self.status_reply(sender, base + 'error',
+                        'Unable to get status')
+
+            errcode = self.mdb_request.get_error_code()
+            temp = self.mdb_request.get_drive_temperature()
+            self.lg.debug(errcode)
+            self.status_reply(sender, base + 'error_code', errcode)
+            self.status_reply(sender, base + 'drive_temperature', temp)
+        except err.TimeoutError as e:
+            self.status_reply(sender, base + 'timeout', repr(e))
+            pass
+
+    @lo.make_method('/request/announce', '')
+    def request_announce_callback(self, path, args, types, sender):
+        self.lg.debug('Received announce request. Replying.')
+        self.announce()
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):

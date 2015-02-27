@@ -22,6 +22,13 @@ class FatalError(Error):
         sys.exit(repr(self))
 
 
+class TimeoutError(Error):
+    """Raised on a function timeout."""
+
+    def __init__(self, msg=''):
+        Error.__init__(self, 'Timeout: %s' % (msg,))
+
+
 class ConfigError(FatalError):
     """Raised when program cannot load config."""
 
@@ -34,3 +41,10 @@ class OSCServerError(FatalError):
 
     def __init__(self, msg=''):
         FatalError.__init__(self, 'Cannot start OSC server: %s' % (msg,))
+
+
+class ModbusMasterError(Error):
+    """Raised when program cannot start Modbus master."""
+
+    def __init__(self, msg=''):
+        Error.__init__(self, 'Cannot start Modbus master: %s' % (msg,))

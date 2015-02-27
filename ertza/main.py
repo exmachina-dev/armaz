@@ -3,13 +3,13 @@
 import multiprocessing as mp
 import signal
 
-from ertza.config import ConfigParser
-from ertza.config import ConfigWorker
+from .config import ConfigWorker
 
-from ertza.utils import LogWorker
+from .utils import LogWorker
 
-from ertza.remotes import RemoteWorker
-from ertza.remotes import OSCWorker
+from .remotes import RemoteWorker
+from .remotes import OSCWorker
+from .remotes import ModbusWorker
 
 
 class MainInitializer(object):
@@ -23,10 +23,13 @@ class MainInitializer(object):
     manager = mp.Manager()
     log_queue = manager.Queue()
 
+    cmd_args = None
+
     # Some events
     exit_event = manager.Event()
     config_event = manager.Event()
     osc_event = manager.Event()
+    modbus_event = manager.Event()
     blockall_event = manager.Event()
 
     # Some locks
@@ -34,12 +37,18 @@ class MainInitializer(object):
     init_lock = manager.Lock()
 
     # Config pipes
-    conf_log_pipe = mp.Pipe()
-    conf_rmt_pipe = mp.Pipe()
-    conf_osc_pipe = mp.Pipe()
+    cnf_log_pipe = mp.Pipe()
+    cnf_rmt_pipe = mp.Pipe()
+    cnf_osc_pipe = mp.Pipe()
+    cnf_mdb_pipe = mp.Pipe()
 
-    def __init__(self):
+    mdb_osc_pipe = mp.Pipe()
+
+    def __init__(self, args=None):
         self.jobs = []
+
+        if args:
+            self.cmd_args = args
 
     def processes(self):
         self.jobs = [
@@ -50,6 +59,8 @@ class MainInitializer(object):
                 mp.Process(target=RemoteWorker, name='ertza.rmt',
                     args=(self,)),
                 mp.Process(target=OSCWorker, name='ertza.osc',
+                    args=(self,)),
+                mp.Process(target=ModbusWorker, name='ertza.mdb',
                     args=(self,)),
                 ]
 
@@ -65,20 +76,25 @@ class MainInitializer(object):
             j.join()
         self.log_queue.put_nowait(None)
 
-if __name__ == "__main__":
-    # Save a reference to the original signal handler for SIGINT.
-    default_sigint = signal.getsignal(signal.SIGINT)
+    def ignore_sigint(self):
+        # Save a reference to the original signal handler for SIGINT.
+        self._default_sigint = signal.getsignal(signal.SIGINT)
 
-    # Set signal handling of SIGINT to ignore mode.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # Set signal handling of SIGINT to ignore mode.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    def restore_sigint(self):
+        # Since we spawned all the necessary processes already, 
+        # restore default signal handling for the parent process. 
+        signal.signal(signal.SIGINT, self._default_sigint)
+
+if __name__ == "__main__":
 
     mi = MainInitializer()
+    mi.ignore_sigint()
     mi.processes()
     mi.start()
-
-    # Since we spawned all the necessary processes already, 
-    # restore default signal handling for the parent process. 
-    signal.signal(signal.SIGINT, default_sigint)
+    mi.restore_sigint()
 
     try:
         signal.pause()

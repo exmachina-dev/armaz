@@ -3,8 +3,10 @@
 import sys, os
 from queue import Empty
 
-from ertza.base import BaseWorker
-from ertza.config import ConfigRequest, ConfigResponse, ConfigParser
+from ..base import BaseWorker
+from ..config import ConfigParser, ConfigRequest
+
+import time
 
 import logging
 import logging.handlers
@@ -13,7 +15,7 @@ class LogWorker(BaseWorker):
 
     def __init__(self, sm):
         super(LogWorker, self).__init__(sm)
-        self.config_pipe = self.initializer.conf_log_pipe[1]
+        self.config_pipe = self.initializer.cnf_log_pipe[1]
         self.config_request = ConfigRequest(self.config_pipe)
 
         f = '%(asctime)s %(processName)-10s %(levelname)-8s %(message)s'
@@ -24,12 +26,15 @@ class LogWorker(BaseWorker):
         self.wait_for_config()
 
         self.lg.debug(self.config_request.get('log', 'log_path'))
-        self.log_path = self.config_request.get('log', 'log_path')
+        self.log_path = self.config_request.get('log', 'log_path', 
+                os.path.expanduser('~/.ertza/'))
+        if not os.path.exists(self.log_path):
+            self.exit('Log path must exist: %s' % self.log_path)
         self.log_file = os.path.join(self.log_path, 'ertza.log')
         self.max_size = int(self.config_request.get('log', 'max_size',
-            1048576))
+                1048576))
         self.backup_count = int(self.config_request.get('log', 'backup_count',
-            10))
+                10))
         h = logging.handlers.RotatingFileHandler(self.log_file,
                 maxBytes=self.max_size, backupCount=self.backup_count)
 
@@ -56,26 +61,3 @@ class LogWorker(BaseWorker):
                 import traceback
                 print('FATAL:', file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
-
-
-class FakeConfigParser(ConfigParser):
-    def __init__(self):
-        super(FakeConfigParser, self).__init__()
-
-        self._conf_path = None
-        self.save_path = None
-        self.autosave = False
-        self.read_hard_defaults()
-
-
-class FakeConfig(object):
-    def recv(self, *args):
-        rp = ConfigResponse(self, self.rq, FakeConfigParser())
-
-        rp.handle()
-        rp.send()
-
-        return rp
-
-    def send(self, rq):
-        self.rq = rq
