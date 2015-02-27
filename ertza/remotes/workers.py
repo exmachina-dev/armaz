@@ -39,7 +39,7 @@ class OSCWorker(BaseWorker):
 
     def __init__(self, sm):
         super(OSCWorker, self).__init__(sm)
-        self.interval = 0.001
+        self.interval = 0.005
 
         self.config_pipe = self.initializer.cnf_osc_pipe[1]
         self.modbus_pipe = self.initializer.mdb_osc_pipe[1]
@@ -82,7 +82,7 @@ class ModbusWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ModbusWorker, self).__init__(sm)
-        self.interval = 0.01
+        self.interval = 0.005
 
         try:
             self.fake_modbus = self.cmd_args.without_modbus
