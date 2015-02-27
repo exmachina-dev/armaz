@@ -55,7 +55,7 @@ class OSCWorker(BaseWorker):
             self.init_osc_server()
         except OSCServerError as e:
             self.lg.warn(e)
-            self.exit_event.set()
+            self.exit()
 
         while not self.exit_event.is_set():
             self.osc_server.run(self.interval)

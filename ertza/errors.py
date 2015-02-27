@@ -19,7 +19,6 @@ class FatalError(Error):
 
     def __init__(self, msg=''):
         Error.__init__(self, 'Fatal: %s' % (msg,))
-        sys.exit(repr(self))
 
 
 class TimeoutError(Error):

@@ -3,8 +3,8 @@
 import liblo as lo
 
 from ...config import ConfigRequest
+from ...errors import OSCServerError
 from ..modbus import ModbusRequest
-from ..errors import OSCServerError
 
 
 class OSCBaseServer(lo.Server):
@@ -49,12 +49,17 @@ class OSCBaseServer(lo.Server):
         self.broadcast_address = self.config_request.get(
             'osc', 'broadcast', '192.168.1.255')
 
+        self.create_server()
+
+    def create_server(self):
         try:
             super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
             self.ready = True
         except lo.ServerError as e:
-            raise OSCServerError(repr(e))
+            final_error = OSCServerError(e)
+            self.lg.error(final_error)
             self.ready = False
+            raise final_error
 
     def run(self, timeout=None):
         if self.running:

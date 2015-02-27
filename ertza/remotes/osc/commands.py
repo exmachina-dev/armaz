@@ -3,8 +3,8 @@
 import configparser
 import liblo as lo
 
-from .osc import OSCBaseServer
-from ..errors import TimeoutError
+from .server import OSCBaseServer
+from ...errors import TimeoutError
 
 
 class OSCCommands(OSCBaseServer):
