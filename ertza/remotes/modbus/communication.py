@@ -22,6 +22,9 @@ class ModbusRequest(BaseRequest):
     def get_error_code(self, *args):
         return self._build_rq('get_error_code', *args)
 
+    def get_drive_temperature(self, *args):
+        return self._build_rq('get_drive_temperature', *args)
+
     def get_command(self, *args):
         return self._build_rq('get_command', *args)
 
