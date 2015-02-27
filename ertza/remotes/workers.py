@@ -106,7 +106,6 @@ class ModbusWorker(BaseWorker):
             self.lg.warn(e)
 
         while not self.exit_event.is_set():
-            self.modbus_master.run()
             if self.modbus_event.is_set():
                 self.lg.info('Modbus master restarting…')
                 self.init_modbus(True)
