@@ -42,6 +42,13 @@ class OSCServerError(FatalError):
         FatalError.__init__(self, 'Cannot start OSC server: %s' % (msg,))
 
 
+class SerialError(FatalError):
+    """Raised when program cannot start OSC server."""
+
+    def __init__(self, msg=''):
+        FatalError.__init__(self, 'SerialError: %s' % (msg,))
+
+
 class ModbusMasterError(Error):
     """Raised when program cannot start Modbus master."""
 
