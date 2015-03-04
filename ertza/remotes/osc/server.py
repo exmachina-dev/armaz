@@ -77,11 +77,13 @@ class OSCBaseServer(lo.Server):
 
         if self.ready:
             if blocking:
-                self.lg.debug("OSCServer started on %s", self.server_port)
+                self.lg.debug("%s started on %s",
+                        type(self).__name__, self.server_port)
                 while self.running:
                     self.run(self.interval)
             else:
-                self.lg.debug("OSCServer initialized on %s", self.server_port)
+                self.lg.debug("%s initialized on %s",
+                        type(self).__name__, self.server_port)
                 self.run(0)
 
     def announce(self):
