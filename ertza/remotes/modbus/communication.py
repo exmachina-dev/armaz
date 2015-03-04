@@ -89,7 +89,7 @@ class ModbusResponse(BaseResponse):
                 raise ValueError('Unexcepted method: %s', self.request.method)
 
             return self.value
-        except err.TimeoutError as e:
+        except TimeoutError as e:
             raise e
         finally:
             return None
