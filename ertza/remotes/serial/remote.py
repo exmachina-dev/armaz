@@ -81,5 +81,11 @@ class RemoteControlLink(serial.Serial):
 
 
 if __name__ == '__main__':
-    s = RemoteControlLink('/dev/ttyO1')
-    s.get_product_id()
+    default_device = '/dev/ttyUSB0'
+    dev = input('Serial device [%s]: ' % default_device)
+    if not dev:
+        dev = default_device
+    s = RemoteControlLink(dev)
+    print(s.get_product_infos())
+    print(s.get_speed())
+    print(s.get_ticks())
