@@ -209,7 +209,9 @@ class ConfigWorker(BaseWorker):
                     },
                 'enslave': {
                     'server_port': self.slave_event.set,
+                    'client_port': self.slave_event.set,
                     'mode': self.slave_event.set,
+                    'master': self.slave_event.set,
                     },
                 }
 
