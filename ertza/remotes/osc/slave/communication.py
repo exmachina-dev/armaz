@@ -21,7 +21,7 @@ class SlaveRequest(BaseRequest):
         return self._build_rq('set_master', *args)
 
     def dump(self, *args):
-        return self._build_rq('dump', *args)
+        return self._build_rq('dmp', *args)
 
 
 class SlaveResponse(BaseResponse):
