@@ -24,6 +24,7 @@ class BaseWorker(object):
         self.config_event = sm.config_event
         self.osc_event = sm.osc_event
         self.modbus_event = sm.modbus_event
+        self.slave_event = sm.slave_event
         self.blockall_event = sm.blockall_event
 
         self.config_lock = sm.config_lock
@@ -56,6 +57,7 @@ class BaseCommunicationObject(object):
             'get':                      0b0000000001,
             'set':                      0b0000000010,
             'dump':                     0b0000000100,
+            'send':                     0b0000001000,
             'get_status':               0b0001000001,
             'get_command':              0b0010000001,
             'set_command':              0b0010000010,

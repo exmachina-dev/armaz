@@ -23,6 +23,12 @@ _DEFAULTS = {
             'node_id' : 2,
             'port': 502,
             },
+        'enslave': {
+            'mode': 'master',
+            'server_port': 7900,
+            'client_port': 7901,
+            'broadcast': '192.168.1.255',
+            },
         }
 
 _CONFPATH = [
@@ -183,7 +189,9 @@ class ConfigWorker(BaseWorker):
         self.rmt_pipe = self.initializer.cnf_rmt_pipe[0]
         self.osc_pipe = self.initializer.cnf_osc_pipe[0]
         self.mdb_pipe = self.initializer.cnf_mdb_pipe[0]
-        self.pipes = self.log_pipe, self.rmt_pipe, self.osc_pipe, self.mdb_pipe
+        self.slv_pipe = self.initializer.cnf_slv_pipe[0]
+        self.pipes = (self.log_pipe, self.rmt_pipe, self.osc_pipe,
+                self.mdb_pipe, self.slv_pipe)
 
         self.interval = 0.001
 
@@ -198,6 +206,10 @@ class ConfigWorker(BaseWorker):
                 'modbus': {
                     'device': self.modbus_event.set,
                     'node_id': self.modbus_event.set,
+                    },
+                'enslave': {
+                    'server_port': self.slave_event.set,
+                    'mode': self.slave_event.set,
                     },
                 }
 

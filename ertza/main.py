@@ -10,6 +10,7 @@ from .utils import LogWorker
 from .remotes import RemoteWorker
 from .remotes import OSCWorker
 from .remotes import ModbusWorker
+from .remotes import SlaveWorker
 
 
 class MainInitializer(object):
@@ -30,6 +31,7 @@ class MainInitializer(object):
     config_event = manager.Event()
     osc_event = manager.Event()
     modbus_event = manager.Event()
+    slave_event = manager.Event()
     blockall_event = manager.Event()
 
     # Some locks
@@ -41,8 +43,11 @@ class MainInitializer(object):
     cnf_rmt_pipe = mp.Pipe()
     cnf_osc_pipe = mp.Pipe()
     cnf_mdb_pipe = mp.Pipe()
+    cnf_slv_pipe = mp.Pipe()
 
     mdb_osc_pipe = mp.Pipe()
+    mdb_slv_pipe = mp.Pipe()
+    slv_osc_pipe = mp.Pipe()
 
     def __init__(self, args=None):
         self.jobs = []
@@ -61,6 +66,8 @@ class MainInitializer(object):
                 mp.Process(target=OSCWorker, name='ertza.osc',
                     args=(self,)),
                 mp.Process(target=ModbusWorker, name='ertza.mdb',
+                    args=(self,)),
+                mp.Process(target=SlaveWorker, name='ertza.slv',
                     args=(self,)),
                 ]
 

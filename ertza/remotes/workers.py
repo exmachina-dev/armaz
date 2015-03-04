@@ -2,8 +2,9 @@
 
 from ..base import BaseWorker
 from .osc import OSCServer
+from .osc.slave import OSCSlave, SlaveRequest, SlaveResponse
 from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
-from ..errors import OSCServerError, ModbusMasterError
+from ..errors import OSCServerError, ModbusMasterError, SlaveError
 
 import time
 
@@ -130,4 +131,57 @@ class ModbusWorker(BaseWorker):
         self.modbus_master.start()
 
 
-__all__ = ['RemoteWorker', 'OSCWorker', 'ModbusWorker']
+class SlaveWorker(BaseWorker):
+    """
+    Process that handle slaves if started as master, or forward commands if
+    started as slave.
+    """
+
+    def __init__(self, sm):
+        super(SlaveWorker, self).__init__(sm)
+        self.interval = 0.005
+
+        self.config_pipe = self.initializer.cnf_slv_pipe[1]
+        self.osc_pipe = self.initializer.slv_osc_pipe[0]
+        self.modbus_pipe = self.initializer.mdb_slv_pipe[1]
+        self.pipes = (self.osc_pipe, self.modbus_pipe,)
+
+        self.get_logger()
+        self.lg.debug("Init of SlaveWorker")
+
+        self.wait_for_config()
+        self.run()
+
+    def run(self):
+        try:
+            self.init_osc_slave()
+        except SlaveError as e:
+            self.lg.warn(e)
+
+        while not self.exit_event.is_set():
+            if self.slave_event.is_set():
+                self.lg.info('Slave worker restarting…')
+                self.init_osc_slave(True)
+                self.slave_event.clear()
+            else:
+                for pipe in self.pipes:
+                    if pipe.poll():
+                        rq = pipe.recv()
+                        if not type(rq) is SlaveRequest:
+                            raise ValueError('Unexcepted type: %s' % type(rq))
+                        rs = SlaveResponse(pipe, rq, self.slave_server)
+                        rs.handle()
+                        rs.send()
+
+            time.sleep(self.interval)
+
+    def init_osc_slave(self, restart=False):
+        if restart:
+            del self.slave_server
+        self.slave_server = OSCSlave(self.config_pipe, self.lg,
+                self.slave_event, self.blockall_event, self.modbus_pipe)
+        self.slave_server.start(blocking=False)
+        self.slave_server.announce()
+
+
+__all__ = ['RemoteWorker', 'OSCWorker', 'ModbusWorker', 'SlaveWorker']
