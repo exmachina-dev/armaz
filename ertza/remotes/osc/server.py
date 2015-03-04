@@ -29,6 +29,7 @@ class OSCBaseServer(lo.Server):
         self._config = config
         if 'modbus' in kwargs:
             self._modbus = kwargs['modbus']
+            self.mdb_request = ModbusRequest(self._modbus)
         else:
             self._modbus = None
 
@@ -41,7 +42,6 @@ class OSCBaseServer(lo.Server):
         self.osc_event = restart_event
 
         self.config_request = ConfigRequest(self._config)
-        self.mdb_request = ModbusRequest(self._modbus)
         if 'no_config' in kwargs and kwargs['no_config'] == True:
             self.ready = False
         else:
