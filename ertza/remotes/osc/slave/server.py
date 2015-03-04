@@ -146,9 +146,13 @@ class SlaveServer(OSCBaseServer):
 
     def add_to_slaves(self, slv):
         self.slaves.update((slv, True))
+        self._save_slaves()
 
     def remove_from_slaves(self, slv):
-        return self.slaves.pop(slv, False)
+        r = self.slaves.pop(slv, False)
+        if r:
+            self._save_slaves()
+        return r
 
     def _load_slaves(self):
         try:
