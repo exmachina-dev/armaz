@@ -2,36 +2,42 @@
 
 import configparser
 import liblo as lo
+import pickle
 
-from .server import OSCBaseServer
-from ...base import BaseResponse, BaseRequest
-from ...errors import SlaveError, TimeoutError
-from ...utils import timeout
+from ..server import OSCBaseServer
+from ....errors import SlaveError, TimeoutError
 
 
-class OSCSlave(OSCBaseServer):
+class SlaveServer(OSCBaseServer):
     """
-    OSCSlave contains for enslaving registered slaves or act as a slave.
+    SlaveServer contains for enslaving registered slaves or act as a slave.
     """
     def __init__(self, config_pipe, logger, restart_event, blockall_event,
             modbus_pipe):
-        super(OSCSlave, self).__init__(config_pipe, logger, restart_event,
-                no_config=True)
+        super(SlaveServer, self).__init__(config_pipe, logger, restart_event,
+                modbus=modbus_pipe, no_config=True)
         self.blockall_event = blockall_event
-        self.modbus_pipe = modbus_pipe
 
         self.mode = self.config_request.get(
                 'enslave', 'mode', 'master')
         if self.mode == 'master':
             self.server_port = int(self.config_request.get(
-                'enslave', 'master_port', 7902))
+                    'enslave', 'master_port', 7902))
             self.client_port = int(self.config_request.get(
-                'enslave', 'slave_port', 7903))
+                    'enslave', 'slave_port', 7903))
+            self.slaves_datastore = self.config_request.get(
+                    'enslave', 'slaves_datastore',
+                    '/var/local/ertza/slaves.data')
+            self._load_slaves()
         elif self.mode == 'slave':
             self.server_port = int(self.config_request.get(
-                'enslave', 'slave_port', 7903))
+                    'enslave', 'slave_port', 7903))
             self.client_port = int(self.config_request.get(
-                'enslave', 'master_port', 7902))
+                    'enslave', 'master_port', 7902))
+            self.master = self.config_request.get(
+                    'enslave', 'master')
+        elif self.mode == 'standalone':
+            pass
         else:
             err = SlaveError('Unexpected mode: %s' % self.mode)
             self.lg.error(err)
@@ -39,15 +45,16 @@ class OSCSlave(OSCBaseServer):
         self.broadcast_address = self.config_request.get(
             'enslave', 'broadcast', '192.168.1.255')
 
-        self.create_server()
+        if not self.mode == 'standalone':
+            self.create_server()
 
     def announce(self):
         address = lo.Address(self.broadcast_address, self.client_port)
         msg = lo.Message('/enslave/master/online', self.server_port)
         return self.send(address, msg)
 
-    def slave_reply(self, sender, *args):
-        return self.reply('/enslave/slave', sender, *args)
+    def slave_reply(self, sender, *args, **kwargs):
+        return self.reply('/enslave/slave', sender, *args, **kwargs)
 
     @lo.make_method('/setup/set', 'ssi')
     @lo.make_method('/setup/set', 'ssh')
@@ -121,102 +128,35 @@ class OSCSlave(OSCBaseServer):
             self.status_reply(sender, base + 'timeout', repr(e))
             pass
 
+    @lo.make_method('/enslave/unregister', '')
     @lo.make_method('/enslave/register', '')
-    def request_announce_callback(self, path, args, types, sender):
-        self.lg.debug('Received slave register from %s', sender)
-        self.announce()
+    def slave_register_callback(self, path, args, types, sender):
+        if '/register' in path:
+            self.lg.debug('Received slave register from %s', sender)
+            if self.add_to_bank(sender):
+                self.slave_reply(sender, '/registered', merge=True)
+        else:
+            self.lg.debug('Received slave unregister from %s', sender)
+            if self.remove_from_bank(sender):
+                self.slave_reply(sender, '/unregistered', merge=True)
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
-        self.setup_reply(sender, "/status/wrong_osc_command", path, types, *args)
+        self.slave_reply(sender, "/enslave/unknow_command", path, types, *args)
 
+    def add_to_slaves(self, slv):
+        self.slaves.update((slv, True))
 
-class SlaveRequest(BaseRequest):
-    def get_status(self, *args):
-        return self._build_rq('get_status', *args)
+    def remove_from_slaves(self, slv):
+        return self.slaves.pop(slv, False)
 
-    def get_error_code(self, *args):
-        return self._build_rq('get_error_code', *args)
-
-    def get_drive_temperature(self, *args):
-        return self._build_rq('get_drive_temperature', *args)
-
-    def get_command(self, *args):
-        return self._build_rq('get_command', *args)
-
-    def set_command(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['set_command']
-        return self.send().value
-
-    def dump(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['dump']
-        return self.send().value
-
-
-class SlaveResponse(BaseResponse):
-    def __init__(self, target, request, end=None, *args):
-        super(ModbusResponse, self).__init__(target, *args)
-        self.request = request
-        self._end = end
-
-    @timeout(1, "Slave didn't respond.")
-    def get_from_device(self, *args):
-        if not self._end:
-            raise ValueError("Modbus isn't defined.")
-
-        if self.request.method == self._methods['get_status']:
-            self.method = self._methods['get_status']
-            self.value = self._end.get_status()
-        elif self.request.method == self._methods['get_command']:
-            self.method = self._methods['get_command']
-            self.value = self._end.get_command()
-        elif self.request.method == self._methods['get_error_code']:
-            self.method = self._methods['get_error_code']
-            self.value = self._end.get_error_code()
-        elif self.request.method == self._methods['get_drive_temperature']:
-            self.method = self._methods['get_drive_temperature']
-            self.value = self._end.get_drive_temperature()
-
-    @timeout(1, "Slave didn't respond.")
-    def set_to_device(self, *args):
-        self.method = self._methods['set']
-
-        if not self._end:
-            raise ValueError("Modbus isn't defined.")
-        if len(args) == 3:
-            section, option, value = args
-        else:
-            raise ValueError("One or more argument is missing.")
-        self.value = self._end.set(str(section), str(option), str(value))
-
-    @timeout(1, "Slave didn't respond.")
-    def dump_config(self, *args):
-        self.method = self._methods['dump']
-
-        if not self._end:
-            raise ValueError("Modbus isn't defined.")
-        if len(args) == 1:
-            section, = args
-        else:
-            section = None
-        self.value = self._end.dump(str(section))
-
-    def handle(self):
-        args = self.request.args
+    def _load_slaves(self):
         try:
-            if self.request.method & self._methods['set']:
-                self.set_to_config(*args)
-            elif self.request.method & self._methods['get']:
-                self.get_from_device(*args)
-            elif self.request.method & self._methods['dump']:
-                self.dump_config(*args)
-            else:
-                raise ValueError('Unexcepted method: %s', self.request.method)
+            with open(self.slaves_datastore, 'rb') as f:
+                self.slaves = pickle.load(f)
+        except FileNotFoundError:
+            self.slaves = {}
 
-            return self.value
-        except TimeoutError as e:
-            raise e
-        finally:
-            return None
+    def _save_slaves(self):
+        with open(self.slaves_datastore, 'wb') as f:
+            pickle.dump(self.slaves, f, pickle.HIGHEST_PROTOCOL)
