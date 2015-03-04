@@ -51,26 +51,26 @@ class BaseWorker(object):
 
 
 class BaseCommunicationObject(object):
-    _methods = {
-            'get':                      0b00000001,
-            'set':                      0b00000010,
-            'dump':                     0b00000100,
-            'get_status':               0b00010001,
-            'get_command':              0b00100001,
-            'set_command':              0b00100010,
-            'get_error_code':           0b00110001,
-            'get_drive_temperature':    0b01000001,
+    _methods = {                        #bxxxxyyyyyy    Where x is category
+                                        #               and y is command
+            'get':                      0b0000000001,
+            'set':                      0b0000000010,
+            'dump':                     0b0000000100,
+            'get_status':               0b0001000001,
+            'get_command':              0b0010000001,
+            'set_command':              0b0010000010,
+            'get_error_code':           0b0011000001,
+            'get_drive_temperature':    0b0100000001,
             }
 
     def __init__(self, target, *args):
         self.target = target
         self.method = None
         self.value = None
+        self.args = None
 
         if args:
             self.args = args
-        else:
-            self.args = None
 
     def send(self):
         if self.method:
