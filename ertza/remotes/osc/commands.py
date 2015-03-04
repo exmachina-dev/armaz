@@ -4,7 +4,7 @@ import configparser
 import liblo as lo
 
 from .server import OSCBaseServer
-from ...errors import TimeoutError
+from ...errors import TimeoutError, SlaveError
 from .slave.communication import SlaveRequest
 
 
@@ -66,6 +66,26 @@ class OSCCommands(OSCBaseServer):
             self.setup_reply(sender, path, *args)
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
+
+    @lo.make_method('/setup/enslave/to', 's')
+    @lo.make_method('/setup/enslave/mode', 's')
+    def enslave_callback(self, path, args, types, sender):
+        if '/to' in path:
+            master, = args
+            try:
+                self.slave_request.set_master(master)
+                r = master
+            except (SlaveError) as e:
+                r = repr(e)
+        elif '/mode' in path:
+            mode, = args
+            try:
+                self.slave_request.set_mode(mode)
+                r = mode
+            except (SlaveError) as e:
+                r = repr(e)
+
+        self.setup_reply(sender, path.split('/')[1:], r)
 
     @lo.make_method('/setup/save', '')
     def setup_save_callback(self, path, args, types, sender):
