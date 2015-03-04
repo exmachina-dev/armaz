@@ -42,14 +42,17 @@ class OSCBaseServer(lo.Server):
 
         self.config_request = ConfigRequest(self._config)
         self.mdb_request = ModbusRequest(self._modbus)
-        self.server_port = int(self.config_request.get(
-            'osc', 'server_port', 7900))
-        self.client_port = int(self.config_request.get(
-            'osc', 'client_port', 7901))
-        self.broadcast_address = self.config_request.get(
-            'osc', 'broadcast', '192.168.1.255')
+        if 'no_config' in kwargs and kwargs['no_config'] == True:
+            self.ready = False
+        else:
+            self.server_port = int(self.config_request.get(
+                'osc', 'server_port', 7900))
+            self.client_port = int(self.config_request.get(
+                'osc', 'client_port', 7901))
+            self.broadcast_address = self.config_request.get(
+                'osc', 'broadcast', '192.168.1.255')
 
-        self.create_server()
+            self.create_server()
 
     def create_server(self):
         try:
