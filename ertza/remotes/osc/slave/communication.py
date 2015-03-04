@@ -94,7 +94,7 @@ class SlaveResponse(BaseResponse):
         args = self.request.args
         try:
             if self.request.method & self._methods['set']:
-                self.set_to_config(*args)
+                self.set_to_device(*args)
             elif self.request.method & self._methods['get']:
                 self.get_from_device(*args)
             elif self.request.method & self._methods['dmp']:

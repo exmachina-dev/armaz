@@ -85,7 +85,7 @@ class OSCCommands(OSCBaseServer):
             except (SlaveError) as e:
                 r = repr(e)
 
-        self.setup_reply(sender, path.split('/')[1:], r)
+        self.setup_reply(sender, '/'.join(path.split('/')[1:]), r)
 
     @lo.make_method('/setup/save', '')
     def setup_save_callback(self, path, args, types, sender):
