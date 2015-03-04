@@ -5,15 +5,21 @@ import liblo as lo
 
 from .server import OSCBaseServer
 from ...errors import TimeoutError
+from .slave.communication import SlaveRequest
 
 
 class OSCCommands(OSCBaseServer):
     """
     OSCCommands contains all commands available thru OSCServer.
     """
-    _commands_store = {
+    def __init__(self, *args, **kwargs):
+        if 'slave' in kwargs:
+            self._slave = kwargs['slave']
+            self.slave_request = SlaveRequest(self._slave)
+        else:
+            self._slave = None
 
-    }
+        super(OSCCommands, self).__init__(*args, **kwargs)
 
     def setup_reply(self, sender, *args):
         return self.reply('/setup/return', sender, *args)
