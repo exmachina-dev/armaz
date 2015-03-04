@@ -2,7 +2,7 @@
 
 from ..base import BaseWorker
 from .osc import OSCServer
-from .osc.slave import OSCSlave, SlaveRequest, SlaveResponse
+from .osc.slave import SlaveServer, SlaveRequest, SlaveResponse
 from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
 from ..errors import OSCServerError, ModbusMasterError, SlaveError
 
@@ -178,7 +178,7 @@ class SlaveWorker(BaseWorker):
     def init_osc_slave(self, restart=False):
         if restart:
             del self.slave_server
-        self.slave_server = OSCSlave(self.config_pipe, self.lg,
+        self.slave_server = SlaveServer(self.config_pipe, self.lg,
                 self.slave_event, self.blockall_event, self.modbus_pipe)
         self.slave_server.start(blocking=False)
         self.slave_server.announce()
