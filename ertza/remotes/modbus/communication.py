@@ -1,21 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from ertza.base import BaseResponse, BaseRequest
-import ertza.errors as err
-from ertza.utils import timeout
+from ...base import BaseResponse, BaseRequest
+from ...errors import TimeoutError
+from ...utils import timeout
 
 class ModbusRequest(BaseRequest):
-    def _check_args(self, *args):
-        self.args = args
-        if self.args:
-            self.method = None
-            self.value = None
-    def _build_rq(self, method, *args):
-        self._check_args(*args)
-        self.method = self._methods[method]
-        rp = self.send()
-        return rp.value
-
     def get_status(self, *args):
         return self._build_rq('get_status', *args)
 

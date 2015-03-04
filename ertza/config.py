@@ -106,27 +106,14 @@ ConfigParser = BaseConfigParser
 
 
 class ConfigRequest(BaseRequest):
-    def _check_args(self, *args):
-        self.args = args
-        if self.args:
-            self.method = None
-            self.value = None
-
     def get(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['get']
-        rp = self.send()
-        return rp.value
+        return self._build_rq('get', *args)
 
     def set(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['set']
-        return self.send().value
+        return self._build_rq('set', *args)
 
     def dump(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['dump']
-        return self.send().value
+        return self._build_rq('dump', *args)
 
 
 class ConfigResponse(BaseResponse):

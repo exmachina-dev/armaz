@@ -90,5 +90,18 @@ class BaseRequest(BaseCommunicationObject):
         rp = self.target.recv()
         return rp
 
+    def _check_args(self, *args):
+        self.args = args
+        if self.args:
+            self.method = None
+            self.value = None
+
+    def _build_rq(self, method, *args):
+        self._check_args(*args)
+        self.method = self._methods[method]
+        rp = self.send()
+        return rp.value
+
+
 class BaseResponse(BaseCommunicationObject):
     pass
