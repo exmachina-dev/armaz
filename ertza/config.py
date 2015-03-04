@@ -119,7 +119,7 @@ class ConfigRequest(BaseRequest):
         return self._build_rq('set', *args)
 
     def dump(self, *args):
-        return self._build_rq('dump', *args)
+        return self._build_rq('dmp', *args)
 
 
 class ConfigResponse(BaseResponse):
@@ -152,7 +152,7 @@ class ConfigResponse(BaseResponse):
         self.value = self._config.set(str(section), str(option), str(value))
 
     def dump_config(self, *args):
-        self.method = self._methods['dump']
+        self.method = self._methods['dmp']
 
         if not self._config:
             raise ValueError("Config isn't defined.")
@@ -168,7 +168,7 @@ class ConfigResponse(BaseResponse):
             self.set_to_config(*args)
         elif self.request.method == self._methods['get']:
             self.get_from_config(*args)
-        elif self.request.method == self._methods['dump']:
+        elif self.request.method == self._methods['dmp']:
             self.dump_config(*args)
         else:
             raise ValueError('Unexcepted method: %s', self.request.method)

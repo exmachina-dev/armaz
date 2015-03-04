@@ -18,14 +18,10 @@ class ModbusRequest(BaseRequest):
         return self._build_rq('get_command', *args)
 
     def set_command(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['set_command']
-        return self.send().value
+        return self._build_rq('set_command', *args)
 
     def dump(self, *args):
-        self._check_args(*args)
-        self.method = self._methods['dump']
-        return self.send().value
+        return self._build_rq('dmp', *args)
 
 
 class ModbusResponse(BaseResponse):
@@ -66,7 +62,7 @@ class ModbusResponse(BaseResponse):
 
     @timeout(1, "Slave didn't respond.")
     def dump_config(self, *args):
-        self.method = self._methods['dump']
+        self.method = self._methods['dmp']
 
         if not self._end:
             raise ValueError("Modbus isn't defined.")
@@ -83,7 +79,7 @@ class ModbusResponse(BaseResponse):
                 self.set_to_config(*args)
             elif self.request.method & self._methods['get']:
                 self.get_from_device(*args)
-            elif self.request.method & self._methods['dump']:
+            elif self.request.method & self._methods['dmp']:
                 self.dump_config(*args)
             else:
                 raise ValueError('Unexcepted method: %s', self.request.method)

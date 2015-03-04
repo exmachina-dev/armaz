@@ -52,18 +52,27 @@ class BaseWorker(object):
 
 
 class BaseCommunicationObject(object):
-    _methods = {                        #bxxxxyyyyyy    Where x is category
-                                        #               and y is command
-            'get':                      0b0000000001,
-            'set':                      0b0000000010,
-            'dump':                     0b0000000100,
-            'send':                     0b0000001000,
-            'get_status':               0b0001000001,
-            'get_command':              0b0010000001,
-            'set_command':              0b0010000010,
-            'get_error_code':           0b0011000001,
-            'get_drive_temperature':    0b0100000001,
+    _command = {
+            'get':                      0b00000001,
+            'set':                      0b00000010,
+            'dmp':                      0b00000100,
+            'reg':                      0b00001000,
             }
+    _methods = {
+            'get_status':               (0b00000001 << 8) + _command['get'],
+            'get_command':              (0b00000010 << 8) + _command['get'],
+            'set_command':              (0b00000010 << 8) + _command['set'],
+            'get_error_code':           (0b00000011 << 8) + _command['get'],
+            'get_drive_temperature':    (0b00000100 << 8) + _command['get'],
+            'register_slave':           (0b00000101 << 8) + _command['reg'],
+            'unregister_slave':         (0b00000110 << 8) + _command['reg'],
+            'set_master':               (0b00000111 << 8) + _command['set'],
+            'get_master':               (0b00000111 << 8) + _command['get'],
+            'set_mode':                 (0b00001000 << 8) + _command['set'],
+            'get_mode':                 (0b00001000 << 8) + _command['get'],
+            }
+
+    _methods.update(_command)
 
     def __init__(self, target, *args):
         self.target = target
