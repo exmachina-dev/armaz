@@ -110,3 +110,24 @@ class OSCBaseServer(lo.Server):
     def send(self, dst, msg):
         return super(OSCBaseServer, self).send(
                 lo.Address(dst.get_hostname(), self.client_port), msg)
+
+    def reply(self, default_path, sender, *args, **kwargs):
+        if kwargs and 'merge' in kwargs.keys():
+            kwargs['merge'] = True
+        else:
+            kwargs['merge'] = False
+
+        try:
+            if type(args[0]) == str and args[0][0] == '/':
+                args = list(args)
+                _msg = lo.Message(args.pop(0), *args)
+            elif len(args) >= 2 and kwargs['merge']:
+                args = list(args)
+                path = args.pop(0)
+                _msg = lo.Message(default_path+'/'+path, *args)
+            else:
+                _msg = lo.Message(default_path, *args)
+        except (TypeError, KeyError):
+            _msg = lo.Message(default_path, *args)
+        self.send(sender, _msg)
+        return _msg
