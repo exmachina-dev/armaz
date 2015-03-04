@@ -44,6 +44,7 @@ class OSCWorker(BaseWorker):
 
         self.config_pipe = self.initializer.cnf_osc_pipe[1]
         self.modbus_pipe = self.initializer.mdb_osc_pipe[1]
+        self.slave_pipe = self.initializer.slv_osc_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
@@ -71,7 +72,7 @@ class OSCWorker(BaseWorker):
         if restart:
             del self.osc_server
         self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event,
-                modbus=self.modbus_pipe)
+                modbus=self.modbus_pipe, slave=self.slave_pipe)
         self.osc_server.start(blocking=False)
         self.osc_server.announce()
 
