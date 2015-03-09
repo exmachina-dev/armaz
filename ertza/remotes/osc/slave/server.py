@@ -54,6 +54,19 @@ class SlaveServer(OSCBaseServer):
     def slave_reply(self, sender, *args, **kwargs):
         return self.reply('/enslave/slave', sender, *args, **kwargs)
 
+    @lo.make_method('/enslave/get_status', '')
+    @lo.make_method('/enslave/get_command', '')
+    @lo.make_method('/enslave/get_error_code', '')
+    @lo.make_method('/enslave/get_drive_temperature', '')
+    def enslave_get_callback(self, path, args, types, sender):
+        try:
+            _value = self.mdb_request.get(path.split('/')[-1])
+            self.slave_reply(sender, path, _value)
+        except ValueError as e:
+            self.slave_reply(sender, str(e))
+
+        self.lg.debug('Executed %s (%s) from %s',
+                path, args, types, sender.get_hostname())
 
     @lo.make_method('/setup/get', 'ss')
     @lo.make_method('/setup/get', 's')
