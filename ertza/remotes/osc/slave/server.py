@@ -54,32 +54,6 @@ class SlaveServer(OSCBaseServer):
     def slave_reply(self, sender, *args, **kwargs):
         return self.reply('/enslave/slave', sender, *args, **kwargs)
 
-    @lo.make_method('/setup/set', 'ssi')
-    @lo.make_method('/setup/set', 'ssh')
-    @lo.make_method('/setup/set', 'ssf')
-    @lo.make_method('/setup/set', 'ssd')
-    @lo.make_method('/setup/set', 'ssc')
-    @lo.make_method('/setup/set', 'sss')
-    @lo.make_method('/setup/set', 'ssS')
-    @lo.make_method('/setup/set', 'ssm')
-    @lo.make_method('/setup/set', 'ssT')
-    @lo.make_method('/setup/set', 'ssF')
-    @lo.make_method('/setup/set', 'ssN')
-    @lo.make_method('/setup/set', 'ssI')
-    @lo.make_method('/setup/set', 'ssb')
-    def setup_set_callback(self, path, args, types, sender):
-        setup_sec, setup_opt, args, = args
-
-        try:
-            _value = self.config_request.set(setup_sec, setup_opt, str(args))
-            self.setup_reply(sender, path, setup_sec, setup_opt, _value)
-        except configparser.NoOptionError as e:
-            self.setup_reply(sender, path, setup_sec, str(e))
-        except configparser.NoSectionError as e:
-            self.setup_reply(sender, str(e))
-
-        self.lg.debug('Executed %s %s.%s %s (%s) from %s',
-                path, setup_sec, setup_opt, args, types, sender.get_hostname())
 
     @lo.make_method('/setup/get', 'ss')
     @lo.make_method('/setup/get', 's')
@@ -93,16 +67,6 @@ class SlaveServer(OSCBaseServer):
             self.setup_reply(sender, path, *args)
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
-
-    @lo.make_method('/setup/save', '')
-    def setup_save_callback(self, path, args, types, sender):
-        self.config_request.save()
-
-
-    @lo.make_method('/osc/restart', '')
-    def osc_restart_callback(self, path, args, types, sender):
-        self.setup_reply(sender, path, "Restarting.")
-        self.restart()
 
     @lo.make_method('/motor/status', '')
     def drive_status_callback(self, path, args, types, sender):
