@@ -201,17 +201,17 @@ class ConfigWorker(BaseWorker):
 
         self.watched_options = {
                 'osc': {
-                    'server_port': self.osc_event.set
+                    'server_port': self.restart_osc_event.set
                     },
                 'modbus': {
-                    'device': self.modbus_event.set,
-                    'node_id': self.modbus_event.set,
+                    'device': self.restart_mdb_event.set,
+                    'node_id': self.restart_mdb_event.set,
                     },
                 'enslave': {
-                    'server_port': self.slave_event.set,
-                    'client_port': self.slave_event.set,
-                    'mode': self.slave_event.set,
-                    'master': self.slave_event.set,
+                    'server_port': self.restart_slv_event.set,
+                    'client_port': self.restart_slv_event.set,
+                    'mode': self.restart_slv_event.set,
+                    'master': self.restart_slv_event.set,
                     },
                 }
 
@@ -227,7 +227,7 @@ class ConfigWorker(BaseWorker):
         self.run()
 
     def run(self):
-        self.config_event.set()
+        self.cnf_ready_event.set()
         while not self.exit_event.is_set():
             for pipe in self.pipes:
                 if pipe.poll():

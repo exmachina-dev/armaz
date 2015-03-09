@@ -61,17 +61,17 @@ class OSCWorker(BaseWorker):
 
         while not self.exit_event.is_set():
             self.osc_server.run(self.interval)
-            if self.osc_event.is_set():
+            if self.restart_osc_event.is_set():
                 self.lg.info('OSC server restarting…')
                 self.init_osc_server(True)
-                self.osc_event.clear()
+                self.restart_osc_event.clear()
 
             time.sleep(self.interval)
 
     def init_osc_server(self, restart=False):
         if restart:
             del self.osc_server
-        self.osc_server = OSCServer(self.config_pipe, self.lg, self.osc_event,
+        self.osc_server = OSCServer(self.config_pipe, self.lg, self.restart_osc_event,
                 modbus=self.modbus_pipe, slave=self.slave_pipe)
         self.osc_server.start(blocking=False)
         self.osc_server.announce()
@@ -108,10 +108,10 @@ class ModbusWorker(BaseWorker):
             self.lg.warn(e)
 
         while not self.exit_event.is_set():
-            if self.modbus_event.is_set():
+            if self.restart_mdb_event.is_set():
                 self.lg.info('Modbus master restarting…')
                 self.init_modbus(True)
-                self.modbus_event.clear()
+                self.restart_mdb_event.clear()
             else:
                 for pipe in self.pipes:
                     if pipe.poll():
@@ -128,7 +128,7 @@ class ModbusWorker(BaseWorker):
         if restart:
             del self.modbus_backend
         self.modbus_master = ModbusMaster(self.config_pipe, self.lg,
-                self.modbus_event, self.blockall_event, self.fake_modbus)
+                self.restart_mdb_event, self.blockall_event, self.fake_modbus)
         self.modbus_master.start()
 
 
@@ -160,10 +160,10 @@ class SlaveWorker(BaseWorker):
             self.lg.warn(e)
 
         while not self.exit_event.is_set():
-            if self.slave_event.is_set():
+            if self.restart_slv_event.is_set():
                 self.lg.info('Slave worker restarting…')
                 self.init_osc_slave(True)
-                self.slave_event.clear()
+                self.restart_slv_event.clear()
             else:
                 for pipe in self.pipes:
                     if pipe.poll():
@@ -180,7 +180,7 @@ class SlaveWorker(BaseWorker):
         if restart:
             del self.slave_server
         self.slave_server = SlaveServer(self.config_pipe, self.lg,
-                self.slave_event, self.blockall_event, self.modbus_pipe)
+                self.restart_slv_event, self.blockall_event, self.modbus_pipe)
         self.slave_server.start(blocking=False)
         self.slave_server.announce()
 
