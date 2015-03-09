@@ -213,6 +213,14 @@ class ConfigWorker(BaseWorker):
                     'mode': self.restart_slv_event.set,
                     'master': self.restart_slv_event.set,
                     },
+                'control': {
+                    'mode': (x() for x in (self.restart_rmt_event.set,
+                        self.restart_osc_event.set)),
+                    'switch_0_mode': self.restart_rmt_event.set,
+                    'switch_1_mode': self.restart_rmt_event.set,
+                    'switch_0_inversed': self.restart_rmt_event.set,
+                    'switch_1_inversed': self.restart_rmt_event.set,
+                    },
                 }
 
         try:
