@@ -20,22 +20,20 @@ class SlaveServer(OSCBaseServer):
 
         self.mode = self.config_request.get(
                 'enslave', 'mode', 'master')
-        if self.mode == 'master':
+        if self.mode == 'master' or self.mode == 'slave':
             self.server_port = int(self.config_request.get(
                     'enslave', 'master_port', 7902))
             self.client_port = int(self.config_request.get(
                     'enslave', 'slave_port', 7903))
+
+        if self.mode == 'master':
             self.slaves_datastore = self.config_request.get(
                     'enslave', 'slaves_datastore',
                     '/var/local/ertza/slaves.data')
             self._load_slaves()
         elif self.mode == 'slave':
-            self.server_port = int(self.config_request.get(
-                    'enslave', 'slave_port', 7903))
-            self.client_port = int(self.config_request.get(
-                    'enslave', 'master_port', 7902))
             self.master = self.config_request.get(
-                    'enslave', 'master')
+                    'enslave', 'master', None)
         elif self.mode == 'standalone':
             pass
         else:
