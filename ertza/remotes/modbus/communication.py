@@ -17,6 +17,11 @@ class ModbusRequest(BaseRequest):
     def get_command(self, *args):
         return self._build_rq('get_command', *args)
 
+    def get(self, command, *args):
+        if command not in self._methods:
+            return ValueError('Unexcepted method: %s' % command)
+        return self._build_rq(command, *args)
+
     def set_command(self, *args):
         return self._build_rq('set_command', *args)
 
