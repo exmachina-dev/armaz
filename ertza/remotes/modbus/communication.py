@@ -87,7 +87,7 @@ class ModbusResponse(BaseResponse):
             elif self.request.method & self._methods['dmp']:
                 self.dump_config(*args)
             else:
-                raise ValueError('Unexcepted method: %s', self.request.method)
+                raise ValueError('Unexcepted method: %s' % self.request.method)
 
             return self.value
         except TimeoutError as e:
