@@ -23,6 +23,7 @@ class BaseWorker(object):
         self.exit_event = sm.exit_event
         self.blockall_event = sm.blockall_event
         self.cnf_ready_event = sm.cnf_ready_event
+        self.slv_ready_event = sm.slv_ready_event
 
         self.restart_osc_event = sm.restart_osc_event
         self.restart_mdb_event = sm.restart_mdb_event
@@ -44,6 +45,10 @@ class BaseWorker(object):
 
     def wait_for_config(self):
         while not self.cnf_ready_event.is_set():
+            time.sleep(self.interval)
+
+    def wait_for_slaves(self):
+        while not self.slv_ready_event.is_set():
             time.sleep(self.interval)
 
     def exit(self, reason=None):
