@@ -14,7 +14,7 @@ class OSCBaseServer(lo.Server):
     Provides basic method to init and configure an OSC server working in a
     RemoteWorker instance.
 
-    Require a ConfigParser object (or a proxy) as init argument.
+    Require a pipe to ConfigWorker.
     """
 
     def __init__(self, config, logger=None, restart_event=None, **kwargs):
