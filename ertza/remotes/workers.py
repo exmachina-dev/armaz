@@ -160,6 +160,7 @@ class SlaveWorker(BaseWorker):
             self.lg.warn(e)
 
         while not self.exit_event.is_set():
+            self.slave_server.run(self.interval)
             if self.restart_slv_event.is_set():
                 self.lg.info('Slave worker restarting…')
                 self.init_osc_slave(True)
