@@ -32,6 +32,7 @@ class MainInitializer(object):
     cnf_ready_event = manager.Event()
     slv_ready_event = manager.Event()
     restart_osc_event = manager.Event()
+    restart_rmt_event = manager.Event()
     restart_mdb_event = manager.Event()
     restart_slv_event = manager.Event()
 
@@ -48,7 +49,9 @@ class MainInitializer(object):
 
     mdb_osc_pipe = mp.Pipe()
     mdb_slv_pipe = mp.Pipe()
+    mdb_rmt_pipe = mp.Pipe()
     slv_osc_pipe = mp.Pipe()
+    slv_rmt_pipe = mp.Pipe()
 
     def __init__(self, args=None):
         self.jobs = []

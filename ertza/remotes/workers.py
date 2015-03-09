@@ -18,8 +18,11 @@ class RemoteWorker(BaseWorker):
 
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
-        self.config_pipe = self.initializer.cnf_rmt_pipe[1]
         self.interval = 0.01
+
+        self.cnf_pipe = self.initializer.cnf_rmt_pipe[1]
+        self.mdb_pipe = self.initializer.mdb_rmt_pipe[1]
+        self.slv_pipe = self.initializer.slv_rmt_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of RemoteWorker")
@@ -31,6 +34,10 @@ class RemoteWorker(BaseWorker):
     def run(self):
         while not self.exit_event.is_set():
             time.sleep(self.interval)
+            if self.restart_rmt_event.is_set():
+                self.lg.info('Remote server restarting…')
+                self.init_rmt_server(True)
+                self.restart_rmt_event.clear()
 
 
 class OSCWorker(BaseWorker):
@@ -42,9 +49,9 @@ class OSCWorker(BaseWorker):
         super(OSCWorker, self).__init__(sm)
         self.interval = 0.005
 
-        self.config_pipe = self.initializer.cnf_osc_pipe[1]
-        self.modbus_pipe = self.initializer.mdb_osc_pipe[1]
-        self.slave_pipe = self.initializer.slv_osc_pipe[1]
+        self.cnf_pipe = self.initializer.cnf_osc_pipe[1]
+        self.mdb_pipe = self.initializer.mdb_osc_pipe[1]
+        self.slv_pipe = self.initializer.slv_osc_pipe[1]
 
         self.get_logger()
         self.lg.debug("Init of OSCWorker")
@@ -71,8 +78,8 @@ class OSCWorker(BaseWorker):
     def init_osc_server(self, restart=False):
         if restart:
             del self.osc_server
-        self.osc_server = OSCServer(self.config_pipe, self.lg, self.restart_osc_event,
-                modbus=self.modbus_pipe, slave=self.slave_pipe)
+        self.osc_server = OSCServer(self.cnf_pipe, self.lg, self.restart_osc_event,
+                modbus=self.mdb_pipe, slave=self.slv_pipe)
         self.osc_server.start(blocking=False)
         self.osc_server.announce()
 
@@ -91,9 +98,10 @@ class ModbusWorker(BaseWorker):
         except AttributeError:
             self.fake_modbus = False
 
-        self.config_pipe = self.initializer.cnf_mdb_pipe[1]
+        self.cnf_pipe = self.initializer.cnf_mdb_pipe[1]
         self.osc_pipe = self.initializer.mdb_osc_pipe[0]
-        self.pipes = (self.osc_pipe,)
+        self.rmt_pipe = self.initializer.mdb_rmt_pipe[0]
+        self.pipes = (self.osc_pipe, self.rmt_pipe)
 
         self.get_logger()
         self.lg.debug("Init of ModbusWorker")
@@ -127,7 +135,7 @@ class ModbusWorker(BaseWorker):
     def init_modbus(self, restart=False):
         if restart:
             del self.modbus_backend
-        self.modbus_master = ModbusMaster(self.config_pipe, self.lg,
+        self.modbus_master = ModbusMaster(self.cnf_pipe, self.lg,
                 self.restart_mdb_event, self.blockall_event, self.fake_modbus)
         self.modbus_master.start()
 
@@ -142,10 +150,11 @@ class SlaveWorker(BaseWorker):
         super(SlaveWorker, self).__init__(sm)
         self.interval = 0.005
 
-        self.config_pipe = self.initializer.cnf_slv_pipe[1]
+        self.cnf_pipe = self.initializer.cnf_slv_pipe[1]
         self.osc_pipe = self.initializer.slv_osc_pipe[0]
-        self.modbus_pipe = self.initializer.mdb_slv_pipe[1]
-        self.pipes = (self.osc_pipe, self.modbus_pipe,)
+        self.mdb_pipe = self.initializer.mdb_slv_pipe[1]
+        self.rmt_pipe = self.initializer.mdb_rmt_pipe[1]
+        self.pipes = (self.osc_pipe, self.mdb_pipe, self.rmt_pipe)
 
         self.get_logger()
         self.lg.debug("Init of SlaveWorker")
@@ -180,8 +189,8 @@ class SlaveWorker(BaseWorker):
     def init_osc_slave(self, restart=False):
         if restart:
             del self.slave_server
-        self.slave_server = SlaveServer(self.config_pipe, self.lg,
-                self.restart_slv_event, self.blockall_event, self.modbus_pipe)
+        self.slave_server = SlaveServer(self.cnf_pipe, self.lg,
+                self.restart_slv_event, self.blockall_event, self.mdb_pipe)
         self.slave_server.start(blocking=False)
         self.slave_server.announce()
 
