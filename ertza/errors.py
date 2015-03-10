@@ -1,7 +1,7 @@
 # -*- coding: utf:8 -*-
 import sys
 
-class Error(Exception):
+class ErtzaError(Exception):
     """Base class for Ertza exceptions."""
 
     def __init__(self, msg=''):
@@ -14,14 +14,14 @@ class Error(Exception):
     __str__ = __repr__
 
 
-class FatalError(Error):
+class FatalError(ErtzaError):
     """Raised when program cannot continue."""
 
     def __init__(self, msg=''):
         Error.__init__(self, 'Fatal: %s' % (msg,))
 
 
-class TimeoutError(Error):
+class TimeoutError(ErtzaError):
     """Raised on a function timeout."""
 
     def __init__(self, msg=''):
@@ -56,7 +56,7 @@ class SerialError(FatalError):
         FatalError.__init__(self, 'SerialError: %s' % (msg,))
 
 
-class ModbusMasterError(Error):
+class ModbusMasterError(FatalError):
     """Raised when program cannot start Modbus master."""
 
     def __init__(self, msg=''):
