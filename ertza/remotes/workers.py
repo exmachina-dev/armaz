@@ -78,8 +78,9 @@ class OSCWorker(BaseWorker):
     def init_osc_server(self, restart=False):
         if restart:
             del self.osc_server
-        self.osc_server = OSCServer(self.cnf_pipe, self.lg, self.restart_osc_event,
-                modbus=self.mdb_pipe, slave=self.slv_pipe)
+        self.osc_server = OSCServer(self.cnf_pipe, logger=self.lg,
+                restart_event=self.restart_osc_event, modbus=self.mdb_pipe,
+                slave=self.slv_pipe)
         self.osc_server.start(blocking=False)
         self.osc_server.announce()
 

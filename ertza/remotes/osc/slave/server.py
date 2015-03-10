@@ -13,10 +13,11 @@ class SlaveServer(OSCBaseServer):
     """
     SlaveServer contains for enslaving registered slaves or act as a slave.
     """
-    def __init__(self, config_pipe, logger, restart_event, blockall_event,
+    def __init__(self, config_pipe, lg, restart_event, blockall_event,
             modbus_pipe):
-        super(SlaveServer, self).__init__(config_pipe, logger, restart_event,
-                modbus=modbus_pipe, no_config=True)
+        super(SlaveServer, self).__init__(config_pipe, logger=lg,
+                restart_event=restart_event, modbus=modbus_pipe,
+                no_config=True)
         self.blockall_event = blockall_event
 
         self.mode = self.config_request.get(

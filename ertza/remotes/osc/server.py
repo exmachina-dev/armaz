@@ -17,7 +17,7 @@ class OSCBaseServer(lo.Server):
     Require a pipe to ConfigWorker.
     """
 
-    def __init__(self, config, logger=None, restart_event=None, **kwargs):
+    def __init__(self, config, **kwargs):
         """
         Init OSCServer with a ConfigParser instance and get server and client
         port.
@@ -26,20 +26,23 @@ class OSCBaseServer(lo.Server):
         self.running = True
         self.interval = 0
 
+        self._modbus, self.restart_event = None, None
         self._config = config
+
         if 'modbus' in kwargs:
             self._modbus = kwargs['modbus']
             self.mdb_request = ModbusRequest(self._modbus)
         else:
             self._modbus = None
 
-        if logger:
-            self.lg = logger
+        if 'logger' in kwargs:
+            self.lg = kwargs['logger']
         else:
             import logging
             self.lg = logging.getLogger()
 
-        self.osc_event = restart_event
+        if 'restart_event' in kwargs:
+            self.restart_event = kwargs['restart_event']
 
         self.config_request = ConfigRequest(self._config)
         if 'no_config' in kwargs and kwargs['no_config'] == True:
