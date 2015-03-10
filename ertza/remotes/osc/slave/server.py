@@ -48,7 +48,7 @@ class SlaveServer(OSCBaseServer):
 
     def announce(self):
         address = lo.Address(self.broadcast_address, self.client_port)
-        msg = lo.Message('/enslave/master/online', self.server_port)
+        msg = lo.Message('/enslave/' + self.mode + '/online', self.server_port)
         return self.send(address, msg)
 
     def slave_reply(self, sender, *args, **kwargs):
