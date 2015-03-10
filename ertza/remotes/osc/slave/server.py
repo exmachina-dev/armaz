@@ -120,7 +120,7 @@ class SlaveServer(OSCBaseServer):
         self.slave_reply(sender, "/enslave/unknow_command", path, types, *args)
 
     def add_to_slaves(self, slv):
-        self.slaves.update((slv, True))
+        self.slaves.update({slv: True,})
         self._save_slaves()
 
     def remove_from_slaves(self, slv):
