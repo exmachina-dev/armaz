@@ -134,12 +134,17 @@ class ConfigResponse(BaseResponse):
 
         if not self._config:
             raise ValueError("Config isn't defined.")
-        if len(args) == 3:
-            section, option, fallback = args
-            self.value = self._config.get(section, option, fallback=fallback)
-        elif len(args) == 2:
-            section, option = args
-            self.value = self._config.get(section, option)
+
+        try:
+            if len(args) == 3:
+                section, option, fallback = args
+                self.value = self._config.get(section, option, fallback=fallback)
+            elif len(args) == 2:
+                section, option = args
+                self.value = self._config.get(section, option)
+        except configparser.NoSectionError as e:
+            self.value = None
+            raise(err.ConfigError(e))
 
     def set_to_config(self, *args):
         self.method = self._methods['set']
