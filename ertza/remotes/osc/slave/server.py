@@ -28,8 +28,7 @@ class SlaveServer(OSCBaseServer):
 
         if self.mode == 'master':
             self.slaves_datastore = self.config_request.get(
-                    'enslave', 'slaves_datastore',
-                    '/var/local/ertza/slaves.data')
+                    'enslave', 'slaves_datastore')
             self._load_slaves()
         elif self.mode == 'slave':
             self.master = self.config_request.get(

@@ -28,6 +28,7 @@ _DEFAULTS = {
             'server_port': 7900,
             'client_port': 7901,
             'broadcast': '192.168.1.255',
+            'slaves_datastore': os.path.join(user_config_path, 'slaves.dat')
             },
         }
 
