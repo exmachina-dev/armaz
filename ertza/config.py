@@ -209,9 +209,7 @@ class ConfigWorker(BaseWorker):
             missing = self._config.read_configs()
             self.lg.info('Missing configs: %s', missing)
         except configparser.Error as e:
-            error = ConfigError(e.message)
-            self.lg.warn(error)
-            raise error
+            raise ConfigError(e.message, self.lg)
 
         self.run()
 

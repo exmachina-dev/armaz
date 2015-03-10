@@ -62,10 +62,8 @@ class OSCBaseServer(lo.Server):
             super(OSCBaseServer, self).__init__(self.server_port, lo.UDP)
             self.ready = True
         except lo.ServerError as e:
-            final_error = OSCServerError(e)
-            self.lg.error(final_error)
             self.ready = False
-            raise final_error
+            raise OSCServerError(e, self.lg)
 
     def run(self, timeout=None):
         if self.running:
