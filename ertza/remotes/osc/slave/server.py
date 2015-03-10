@@ -106,13 +106,22 @@ class SlaveServer(OSCBaseServer):
     @lo.make_method('/enslave/unregister', '')
     @lo.make_method('/enslave/register', '')
     def slave_register_callback(self, path, args, types, sender):
+        sender_host = sender.get_hostname()
         if '/register' in path:
-            self.lg.debug('Received slave register from %s', sender)
-            if self.add_to_bank(sender):
-                self.slave_reply(sender, '/registered', merge=True)
+            self.lg.debug('Received slave register from %s', sender_host)
+            if sender_host != '127.0.0.1':
+                if self.add_to_slaves(sender):
+                    self.slave_reply(sender, '/registered', merge=True)
+                else:
+                    self.slave_reply(sender, '/unable_to_registered',
+                            merge=True)
+            else:
+                self.slave_reply(sender, '/wrong_slave', sender_host,
+                        merge=True)
+                self.lg.info('Wrong slave adress: %s', sender_host)
         else:
-            self.lg.debug('Received slave unregister from %s', sender)
-            if self.remove_from_bank(sender):
+            self.lg.debug('Received slave unregister from %s', sender_host)
+            if self.remove_from_slaves(sender):
                 self.slave_reply(sender, '/unregistered', merge=True)
 
     @lo.make_method(None, None)
