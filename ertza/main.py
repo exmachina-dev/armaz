@@ -2,6 +2,7 @@
 
 import multiprocessing as mp
 import signal
+import logging
 
 from .config import ConfigWorker
 
@@ -20,6 +21,9 @@ class MainInitializer(object):
     Initialize all master processes such as remote, config and motor.
     Also initialize a LogWorker for debug purposes.
     """
+
+    log = logging.getLogger()
+    log.setLevel(logging.DEBUG)
 
     manager = mp.Manager()
     log_queue = manager.Queue()
@@ -58,6 +62,7 @@ class MainInitializer(object):
 
         if args:
             self.cmd_args = args
+            self.log.debug('Ertza started with %s', args)
 
     def processes(self):
         self.jobs = [
@@ -76,11 +81,13 @@ class MainInitializer(object):
                 ]
 
     def start(self):
+        self.log.debug('Starting processes')
         for j in self.jobs:
             j.start()
 
     def exit(self):
         self.exit_event.set()
+        self.log.debug('Exiting')
 
     def join(self):
         for j in self.jobs:
