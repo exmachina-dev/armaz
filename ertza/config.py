@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from ertza.base import BaseWorker, BaseResponse, BaseRequest
-import ertza.errors as err
+from .base import BaseWorker, BaseResponse, BaseRequest
+from .errors import ConfigError
 from .defaults import DEFAULT_CONFIG, CONFIG_PATHS, CONTROL_MODES
 
 import time
@@ -119,7 +119,7 @@ class ConfigResponse(BaseResponse):
                 self.value = self._config.get(section, option)
         except configparser.NoSectionError as e:
             self.value = None
-            raise(err.ConfigError(e))
+            raise(ConfigError(e))
 
     def set_to_config(self, *args):
         self.method = self._methods['set']
@@ -209,7 +209,7 @@ class ConfigWorker(BaseWorker):
             missing = self._config.read_configs()
             self.lg.info('Missing configs: %s', missing)
         except configparser.Error as e:
-            error = err.ConfigError(e.message)
+            error = ConfigError(e.message)
             self.lg.warn(error)
             raise error
 
