@@ -2,7 +2,7 @@
 
 import liblo as lo
 
-from ...config import ConfigRequest
+from ...config import ConfigRequest, _CONTROL_MODES
 from ...errors import OSCServerError
 from ..modbus import ModbusRequest
 
@@ -49,12 +49,15 @@ class OSCBaseServer(lo.Server):
             self.ready = False
         else:
             self.server_port = int(self.config_request.get(
-                'osc', 'server_port', 7900))
+                    'osc', 'server_port', 7900))
             self.client_port = int(self.config_request.get(
-                'osc', 'client_port', 7901))
+                    'osc', 'client_port', 7901))
             self.broadcast_address = self.config_request.get(
-                'osc', 'broadcast', '192.168.1.255')
+                    'osc', 'broadcast', '192.168.1.255')
+            self.control_mode = self.config_request.get(
+                    'control', 'mode')
 
+            self.enable_control_mode(self.control_mode)
             self.create_server()
 
     def create_server(self):
@@ -64,6 +67,11 @@ class OSCBaseServer(lo.Server):
         except lo.ServerError as e:
             self.ready = False
             raise OSCServerError(e, self.lg)
+
+    def enable_control_mode(self, ctrl_mode='osc'):
+        if ctrl_mode not in _CONTROL_MODES:
+            raise OSCServerError('Unexpected control mode: %s' % ctrl_mode,
+                    self.lg)
 
     def run(self, timeout=None):
         if self.running:
