@@ -4,7 +4,7 @@ import os
 
 _user_config_path = os.path.expanduser('~/.ertza')
 
-_DEFAULTS = {
+DEFAULT_CONFIG= {
         'log': {
             'log_path': _user_config_path,
             },
@@ -27,9 +27,9 @@ _DEFAULTS = {
             },
         }
 
-_CONFPATH = [
+CONFIG_PATHS = [
         '/etc/ertza/default.conf',
         os.path.join(_user_config_path, 'ertza.conf'),
         ]
 
-_CONTROL_MODES = ('osc', 'serial', 'slave')
+CONTROL_MODES = ('osc', 'serial', 'slave')
