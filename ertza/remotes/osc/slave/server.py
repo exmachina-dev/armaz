@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import configparser
 import liblo as lo
 import pickle
@@ -136,5 +137,7 @@ class SlaveServer(OSCBaseServer):
             self.slaves = {}
 
     def _save_slaves(self):
+        if not os.path.exists(self.slaves_datastore):
+            open(self.slaves_datastore, 'a').close()
         with open(self.slaves_datastore, 'wb') as f:
             pickle.dump(self.slaves, f, pickle.HIGHEST_PROTOCOL)
