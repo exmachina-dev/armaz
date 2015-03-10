@@ -11,7 +11,7 @@ import time
 class RemoteWorker(BaseWorker):
     """
     Master process that handle all communication instances:
-        - Discret I/Os
+        - Switchs
         - Accessories serial bus
         - LCD display
     """
