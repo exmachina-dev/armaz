@@ -2,7 +2,8 @@
 
 from .base import BaseWorker, BaseResponse, BaseRequest
 from .errors import ConfigError
-from .defaults import DEFAULT_CONFIG, CONFIG_PATHS, CONTROL_MODES
+from .defaults import DEFAULT_CONFIG, CONFIG_PATHS
+from .defaults import CONTROL_MODES, DEFAULT_CONTROL_MODE
 
 import time
 import os
