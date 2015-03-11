@@ -6,6 +6,7 @@ import liblo as lo
 import pickle
 
 from ..server import OSCBaseServer
+from ....config import DEFAULT_CONTROL_MODE
 from ....errors import SlaveError, TimeoutError
 
 
@@ -47,6 +48,24 @@ class SlaveServer(OSCBaseServer):
         if not self.mode == 'standalone':
             self.create_server()
 
+        self.start_mode()
+
+    def start_mode(self):
+        if self.mode == 'master':
+            for slv in self.slaves.keys():
+                self.request_slave_config(slv)
+
+    def enable_control_mode(self, ctrl_mode=DEFAULT_CONTROL_MODE):
+        super(SlaveServer, self).enable_control_mode(ctrl_mode)
+
+        if ctrl_mode == 'osc':
+            self.del_method('/control/', None)
+        elif ctrl_mode == 'serial':
+            self.del_method('/control/', None)
+
+    def run(self, timeout=None):
+        super(SlaveServer, self).run(timeout)
+
     def announce(self):
         address = lo.Address(self.broadcast_address, self.client_port)
         msg = lo.Message('/enslave/' + self.mode + '/online', self.server_port)
@@ -82,27 +101,20 @@ class SlaveServer(OSCBaseServer):
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
 
-    @lo.make_method('/motor/status', '')
-    def drive_status_callback(self, path, args, types, sender):
-        base = 'motor/'
-        try:
-            status = self.mdb_request.get_status()
-            try:
-                for k, v in status.items():
-                    path = base + k.split('_', maxsplit=1)[1]
-                    self.status_reply(sender, path, v)
-            except AttributeError:
-                self.status_reply(sender, base + 'error',
-                        'Unable to get status')
+    @lo.make_method('/enslave/config/', None)
+    def enslave_config_callback(self, path, args, types, sender):
+        if len(args) < 3:
+            self.slave_reply(sender, 'config', 'Invalid number of arguments')
+            return None
+        elif len(args) > 3:
+            args = (args[0], args[1], args[2:])
+        if sender not in self.slaves.keys():
+            self.slave_reply(sender, 'config', 'Non-registered slave')
+            return None
 
-            errcode = self.mdb_request.get_error_code()
-            temp = self.mdb_request.get_drive_temperature()
-            self.lg.debug(errcode)
-            self.status_reply(sender, base + 'error_code', errcode)
-            self.status_reply(sender, base + 'drive_temperature', temp)
-        except TimeoutError as e:
-            self.status_reply(sender, base + 'timeout', repr(e))
-            pass
+        sec, opt, value = args
+        slave_config = self.slaves[sender]
+        slave_config.update({(sec, opt): value,})
 
     @lo.make_method('/enslave/unregister', '')
     @lo.make_method('/enslave/register', '')
@@ -113,6 +125,7 @@ class SlaveServer(OSCBaseServer):
             if sender_host != '127.0.0.1':
                 if self.add_to_slaves(sender):
                     self.slave_reply(sender, '/registered', merge=True)
+                    self.request_slave_config(sender)
                 else:
                     self.slave_reply(sender, '/unable_to_registered',
                             merge=True)
@@ -129,8 +142,11 @@ class SlaveServer(OSCBaseServer):
     def fallback_callback(self, path, args, types, sender):
         self.slave_reply(sender, "/enslave/unknow_command", path, types, *args)
 
+    def request_slave_config(self, slave):
+        self.reply('/enslave/dump_config', slave)
+
     def add_to_slaves(self, slv):
-        self.slaves.update({slv: True,})
+        self.slaves.update({slv: {},})
         self._save_slaves()
 
     def remove_from_slaves(self, slv):

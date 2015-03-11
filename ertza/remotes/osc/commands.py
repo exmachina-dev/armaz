@@ -4,6 +4,7 @@ import configparser
 import liblo as lo
 
 from .server import OSCBaseServer
+from ...config import DEFAULT_CONTROL_MODE
 from ...errors import TimeoutError, SlaveError
 from .slave.communication import SlaveRequest
 
@@ -20,6 +21,14 @@ class OSCCommands(OSCBaseServer):
             self._slave = None
 
         super(OSCCommands, self).__init__(*args, **kwargs)
+
+    def enable_control_mode(self, ctrl_mode=DEFAULT_CONTROL_MODE):
+        super(OSCCommands, self).enable_control_mode(ctrl_mode)
+
+        if ctrl_mode == 'slave':
+            self.del_method('/control/', None)
+        elif ctrl_mode == 'serial':
+            self.del_method('/control/', None)
 
     def setup_reply(self, sender, *args):
         return self.reply('/setup/return', sender, *args)
