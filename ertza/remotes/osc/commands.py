@@ -3,9 +3,9 @@
 import configparser
 import liblo as lo
 
-from .server import OSCBaseServer
 from ...config import DEFAULT_CONTROL_MODE
 from ...errors import TimeoutError, SlaveError
+from .server import OSCBaseServer
 from .slave.communication import SlaveRequest
 
 

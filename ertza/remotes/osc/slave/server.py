@@ -5,9 +5,9 @@ import configparser
 import liblo as lo
 import pickle
 
-from ..server import OSCBaseServer
 from ....config import DEFAULT_CONTROL_MODE
 from ....errors import SlaveError, TimeoutError
+from ..server import OSCBaseServer
 
 
 class SlaveServer(OSCBaseServer):
