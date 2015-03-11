@@ -136,7 +136,7 @@ class OSCBaseServer(lo.Server):
                 _msg = lo.Message(default_path+'/'+path, *args)
             else:
                 _msg = lo.Message(default_path, *args)
-        except (TypeError, KeyError):
+        except (TypeError, KeyError, IndexError):
             _msg = lo.Message(default_path, *args)
         self.send(sender, _msg)
         return _msg
