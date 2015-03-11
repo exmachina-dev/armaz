@@ -178,6 +178,11 @@ class ConfigWorker(BaseWorker):
 
         self.get_logger()
 
+        def _restart_slv_rmt_osc():
+            self.restart_slv_event.set()
+            self.restart_rmt_event.set()
+            self.restart_osc_event.set()
+
         self.watched_options = {
                 'osc': {
                     'server_port': self.restart_osc_event.set
@@ -193,8 +198,7 @@ class ConfigWorker(BaseWorker):
                     'master': self.restart_slv_event.set,
                     },
                 'control': {
-                    'mode': (x() for x in (self.restart_rmt_event.set,
-                        self.restart_osc_event.set)),
+                    'mode': _restart_slv_rmt_osc,
                     'switch_0_mode': self.restart_rmt_event.set,
                     'switch_1_mode': self.restart_rmt_event.set,
                     'switch_0_inversed': self.restart_rmt_event.set,
