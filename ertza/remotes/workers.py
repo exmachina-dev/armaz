@@ -4,7 +4,7 @@ from ..base import BaseWorker
 from .osc import OSCServer
 from .osc.slave import SlaveServer, SlaveRequest, SlaveResponse
 from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
-from ..errors import OSCServerError, ModbusMasterError, SlaveError
+from ..errors import RemoteServerError, OSCServerError, ModbusMasterError, SlaveError
 
 import time
 
@@ -32,6 +32,12 @@ class RemoteWorker(BaseWorker):
         self.run()
 
     def run(self):
+        try:
+            self.init_rmt_server()
+        except RemoteServerError as e:
+            self.lg.warn(e)
+            self.exit()
+
         while not self.exit_event.is_set():
             time.sleep(self.interval)
             if self.restart_rmt_event.is_set():
@@ -39,6 +45,10 @@ class RemoteWorker(BaseWorker):
                 self.init_rmt_server(True)
                 self.restart_rmt_event.clear()
 
+    def init_rmt_server(self, restart=False):
+        if restart:
+            del self.rmt_server
+        self.rmt_server = True
 
 class OSCWorker(BaseWorker):
     """

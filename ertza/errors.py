@@ -38,6 +38,13 @@ class ConfigError(FatalError):
         FatalError.__init__(self, 'Unable to load config: %s' % (msg,), lg)
 
 
+class RemoteServerError(FatalError):
+    """Raised when program cannot start remotes server."""
+
+    def __init__(self, msg='', lg=None):
+        FatalError.__init__(self, 'Cannot start Remote server: %s' % (msg,), lg)
+
+
 class OSCServerError(FatalError):
     """Raised when program cannot start OSC server."""
 
