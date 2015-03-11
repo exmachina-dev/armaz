@@ -10,9 +10,6 @@ import os
 
 import configparser
 
-_DEFAULTS, _CONFPATH, _CONTROL_MODES = (DEFAULT_CONFIG, CONFIG_PATHS,
-        CONTROL_MODES)
-
 
 class BaseConfigParser(configparser.ConfigParser):
     """
@@ -23,7 +20,7 @@ class BaseConfigParser(configparser.ConfigParser):
     """
 
     def __init__(self):
-        self._conf_path = _CONFPATH
+        self._conf_path = CONFIG_PATHS
         self.save_path = self._conf_path[-1]
         self.autosave = True
 
@@ -64,7 +61,7 @@ class BaseConfigParser(configparser.ConfigParser):
         return list(missing)
 
     def read_hard_defaults(self):
-        return self.read_dict(_DEFAULTS)
+        return self.read_dict(DEFAULT_CONFIG)
 
     @property
     def configs(self):
