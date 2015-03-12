@@ -80,6 +80,10 @@ class SlaveServer(OSCBaseServer):
     def slave_reply(self, sender, *args, **kwargs):
         return self.reply('/enslave/slave', sender, *args, **kwargs)
 
+    def master_reply(self, sender, *args, **kwargs):
+        return self.reply('/enslave/master', sender, *args, merge=True,
+                **kwargs)
+
     @lo.make_method('/enslave/get_status', '')
     @lo.make_method('/enslave/get_command', '')
     @lo.make_method('/enslave/get_error_code', '')
@@ -99,13 +103,13 @@ class SlaveServer(OSCBaseServer):
     @lo.make_method('/setup/get', '')
     def setup_get_callback(self, path, args, types, sender):
         if len(args) != 2:
-            self.setup_reply(sender, "One or more argument is missing.")
+            self.slave_reply(sender, 'config', 'Invalid number of arguments')
         setup_section, setup_var = args
         try:
             args.append(self.config_request.get(setup_section, setup_var))
-            self.setup_reply(sender, path, *args)
+            self.slave_reply(sender, path, *args)
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
-            self.setup_reply(sender, setup_section, str(repr(e)))
+            self.slave_reply(sender, setup_section, str(repr(e)))
 
     @lo.make_method('/enslave/config/', None)
     def enslave_config_callback(self, path, args, types, sender):
@@ -130,19 +134,17 @@ class SlaveServer(OSCBaseServer):
             self.lg.debug('Received slave register from %s', sender_host)
             if sender_host != '127.0.0.1':
                 if self.add_to_slaves(sender):
-                    self.slave_reply(sender, '/registered', merge=True)
+                    self.master_reply(sender, 'registered')
                     self.request_slave_config(sender)
                 else:
-                    self.slave_reply(sender, '/unable_to_registered',
-                            merge=True)
+                    self.master_reply(sender, 'unable_to_registered')
             else:
-                self.slave_reply(sender, '/wrong_slave', sender_host,
-                        merge=True)
+                self.master_reply(sender, 'wrong_slave', sender_host)
                 self.lg.info('Wrong slave adress: %s', sender_host)
         else:
             self.lg.debug('Received slave unregister from %s', sender_host)
             if self.remove_from_slaves(sender):
-                self.slave_reply(sender, '/unregistered', merge=True)
+                self.master_reply(sender, 'unregistered')
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
@@ -155,7 +157,7 @@ class SlaveServer(OSCBaseServer):
         return False
 
     def request_slave_config(self, slave):
-        self.reply('/enslave/dump_config', slave)
+        self.master_reply(slave, 'dump_config')
 
     def add_to_slaves(self, slv):
         self.slaves.update({slv: {},})
