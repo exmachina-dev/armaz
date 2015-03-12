@@ -100,10 +100,8 @@ class SlaveServer(OSCBaseServer):
         self.lg.debug('Executed %s (%s) from %s',
                 path, args, types, sender.get_hostname())
 
-    @lo.make_method('/setup/get', 'ss')
-    @lo.make_method('/setup/get', 's')
-    @lo.make_method('/setup/get', '')
-    def setup_get_callback(self, path, args, types, sender):
+    @lo.make_method('/enslave/config/get', None)
+    def enslave_config_get_callback(self, path, args, types, sender):
         if len(args) != 2:
             self.slave_reply(sender, 'config', 'Invalid number of arguments')
         setup_section, setup_var = args
@@ -113,8 +111,8 @@ class SlaveServer(OSCBaseServer):
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.slave_reply(sender, setup_section, str(repr(e)))
 
-    @lo.make_method('/enslave/config/', None)
-    def enslave_config_callback(self, path, args, types, sender):
+    @lo.make_method('/enslave/config/set', None)
+    def enslave_config_set_callback(self, path, args, types, sender):
         if len(args) < 3:
             self.slave_reply(sender, 'config', 'Invalid number of arguments')
             return None
@@ -128,8 +126,15 @@ class SlaveServer(OSCBaseServer):
         slave_config = self.slaves[sender]
         slave_config.update({(sec, opt): value,})
 
-    @lo.make_method('/enslave/unregister', '')
-    @lo.make_method('/enslave/register', '')
+    @lo.make_method('/enslave/config/dump', None)
+    def enslave_config_dump(self, path, args, types, sender):
+        self.lg.debug('Dumping config to %s', sender.get_hostname())
+        for a, v in self.config_request.dump():
+            s, o = a
+            self.slave_reply(sender, '/config/value', s, o, v)
+
+    @lo.make_method('/enslave/slave/unregister', '')
+    @lo.make_method('/enslave/slave/register', '')
     def slave_register_callback(self, path, args, types, sender):
         sender_host = sender.get_hostname()
         if '/register' in path:
