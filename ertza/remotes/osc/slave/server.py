@@ -68,6 +68,8 @@ class SlaveServer(OSCBaseServer):
             self.del_method('/control/', None)
         elif ctrl_mode == 'serial':
             self.del_method('/control/', None)
+        elif ctrl_mode == 'slave':
+            self.config_request.set('enslave', 'mode', 'slave')
 
     def run(self, timeout=None):
         super(SlaveServer, self).run(timeout)
