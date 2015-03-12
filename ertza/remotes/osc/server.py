@@ -2,7 +2,7 @@
 
 import liblo as lo
 
-from ...config import ConfigRequest, CONTROL_MODES
+from ...config import ConfigRequest, CONTROL_MODES, DEFAULT_CONTROL_MODE
 from ...errors import OSCServerError
 from ..modbus import ModbusRequest
 
@@ -70,8 +70,9 @@ class OSCBaseServer(lo.Server):
 
     def enable_control_mode(self, ctrl_mode='osc'):
         if ctrl_mode not in CONTROL_MODES:
-            raise OSCServerError('Unexpected control mode: %s' % ctrl_mode,
-                    self.lg)
+            OSCServerError('Unexpected control mode: %s. Fallback to %s.' % \
+                    (ctrl_mode, DEFAULT_CONTROL_MODE,), self.lg)
+            self.config_request.set('control', 'mode', DEFAULT_CONTROL_MODE)
 
     def run(self, timeout=None):
         if self.running:

@@ -45,6 +45,10 @@ class SlaveServer(OSCBaseServer):
         self.broadcast_address = self.config_request.get(
             'enslave', 'broadcast', '192.168.1.255')
 
+        self.control_mode = self.config_request.get(
+                'control', 'mode')
+        self.enable_control_mode(self.control_mode)
+
         if not self.mode == 'standalone':
             self.create_server()
 
