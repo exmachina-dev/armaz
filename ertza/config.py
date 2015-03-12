@@ -72,12 +72,10 @@ class BaseConfigParser(configparser.ConfigParser):
             super(BaseConfigParser, self).write(configfile)
 
     def dump(self, section=None):
-        output = ''
+        output = {}
         for s, o in self.items():
-            output += ('[ %s : ( ' % s)
             for o, v in o.items():
-                output += ('%s: %s — ' % (o, v))
-            output += (']')
+                output.update({(s, o): v,})
 
         return output
 
