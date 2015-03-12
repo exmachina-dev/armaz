@@ -58,6 +58,8 @@ class SlaveServer(OSCBaseServer):
         if self.mode == 'master':
             for slv in self.slaves.keys():
                 self.request_slave_config(slv)
+        elif self.mode == 'slave':
+            self.register_to_master()
 
     def enable_control_mode(self, ctrl_mode=DEFAULT_CONTROL_MODE):
         super(SlaveServer, self).enable_control_mode(ctrl_mode)
@@ -145,6 +147,12 @@ class SlaveServer(OSCBaseServer):
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
         self.slave_reply(sender, "/enslave/unknow_command", path, types, *args)
+
+    def register_to_master(self):
+        if self.master:
+            return self.slave_reply(lo.Address(self.master, self.server_port), 'register')
+        self.lg.info('No master specified, waiting for it.')
+        return False
 
     def request_slave_config(self, slave):
         self.reply('/enslave/dump_config', slave)
