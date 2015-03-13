@@ -12,6 +12,7 @@ __version__ = '0.0.1'
 packages = [
     'ertza',
     'ertza.utils',
+    'ertza.config',
     'ertza.remotes',
     'ertza.remotes.osc',
     'ertza.remotes.osc.slave',
