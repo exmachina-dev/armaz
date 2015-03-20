@@ -54,7 +54,7 @@ class RemoteControlLink(serial.Serial):
             for k, v in zip(self.product_keys, d):
                 self.product_infos[k] = v
             return self.product_infos
-        return None
+        raise SerialError("Unexpected serial command")
 
     def get_speed(self):
         print(1)
