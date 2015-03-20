@@ -30,7 +30,11 @@ class RemoteWorker(BaseWorker):
 
         self.wait_for_config()
 
-        self.run()
+        try:
+            self.run()
+        except KeyboardInterrupt:
+            self.lg.info("Keyboard interrupt received: exiting.")
+            exit(0)
 
     def run(self):
         try:
@@ -70,7 +74,11 @@ class OSCWorker(BaseWorker):
         self.lg.debug("Init of OSCWorker")
 
         self.wait_for_config()
-        self.run()
+        try:
+            self.run()
+        except KeyboardInterrupt:
+            self.lg.info("Keyboard interrupt received: exiting.")
+            exit(0)
 
     def run(self):
         try:
