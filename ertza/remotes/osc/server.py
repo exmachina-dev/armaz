@@ -32,8 +32,6 @@ class OSCBaseServer(lo.Server):
         if 'modbus' in kwargs:
             self._modbus = kwargs['modbus']
             self.mdb_request = ModbusRequest(self._modbus)
-        else:
-            self._modbus = None
 
         if 'logger' in kwargs:
             self.lg = kwargs['logger']
