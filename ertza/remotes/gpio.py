@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from ...config import ConfigRequest
+from ...errors import RemoteServerError
+from ..modbus import ModbusRequest
+
 try:
     import Adafruit_BBIO.GPIO as GPIO
     import Adafruit_BBIO.ADC as ADC
@@ -13,9 +17,28 @@ TEMP_TARGET = (35.0, 40.0,) # in °C
 FAN_PINS = ('P8_13', 'P8_19',)
 
 class RemoteServer(object):
-    def __init__(self):
+    def __init__(self, config, **kwargs):
+
+        self._modbus, self.restart_event = None, None
+        self._config = config
+
+        if 'modbus' in kwargs:
+            self._modbus = kwargs['modbus']
+            self.mdb_request = ModbusRequest(self._modbus)
+
+        if 'logger' in kwargs:
+            self.lg = kwargs['logger']
+        else:
+            import logging
+            self.lg = logging.getLogger()
+
+        if 'restart_event' in kwargs:
+            self.restart_event = kwargs['restart_event']
+
+        self.config_request = ConfigRequest(self._config)
+
         if TEST_MODE:
-            return False
+            raise RemoteServerError('Unable to import GPIO lib, am I on a beaglebone ?')
 
         for p in SWITCH_PINS:
             GPIO.setup(p, GPIO.IN)
@@ -25,6 +48,10 @@ class RemoteServer(object):
             ADC.setup()
             for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
                 self._temp_watcher.append(TempWatcher(s, f, t))
+
+    def run(self):
+        for tw in self._temp_watcher:
+            tw.set_pid()
 
     def __del__(self):
         GPIO.cleanup()
