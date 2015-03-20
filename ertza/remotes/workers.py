@@ -4,6 +4,7 @@ from ..base import BaseWorker
 from .osc import OSCServer
 from .osc.slave import SlaveServer, SlaveRequest, SlaveResponse
 from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
+from .gpio import RemoteServer
 from ..errors import RemoteServerError, OSCServerError, ModbusMasterError, SlaveError
 
 import time
@@ -39,7 +40,7 @@ class RemoteWorker(BaseWorker):
             self.exit()
 
         while not self.exit_event.is_set():
-            time.sleep(self.interval)
+            self.rmt_server.run(self.interval)
             if self.restart_rmt_event.is_set():
                 self.lg.info('Remote server restarting…')
                 self.init_rmt_server(True)
@@ -48,7 +49,9 @@ class RemoteWorker(BaseWorker):
     def init_rmt_server(self, restart=False):
         if restart:
             del self.rmt_server
-        self.rmt_server = True
+        self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
+                restart_event=self.restart_rm_event, modbus=self.mdb_pipe,
+                slave=self.slv_pipe)
 
 class OSCWorker(BaseWorker):
     """
