@@ -13,6 +13,8 @@ from .remotes import OSCWorker
 from .remotes import ModbusWorker
 from .remotes import SlaveWorker
 
+from .errors import FatalError
+
 
 class MainInitializer(object):
     """

@@ -40,7 +40,14 @@ class ConfigError(FatalError):
         FatalError.__init__(self, 'Unable to load config: %s' % (msg,), lg)
 
 
-class RemoteServerError(FatalError):
+class RemoteError(ErtzaError):
+    """Raised in remote server."""
+
+    def __init__(self, msg='', lg=None):
+        ErtzaError.__init__(self, 'Remote server: %s' % (msg,), lg)
+
+
+class RemoteServerError(FatalError, RemoteError):
     """Raised when program cannot start remotes server."""
 
     def __init__(self, msg='', lg=None):
