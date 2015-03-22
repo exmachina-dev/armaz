@@ -37,6 +37,21 @@ class ModbusBackend(object):
             'command_timeout',
             )
 
+    states = {
+            'ready': (
+                True,
+                None,
+                True,
+                None,
+                False,),
+            'enabled': (
+                True,
+                True,
+                True,
+                False,
+                False,),
+            }
+
 
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
