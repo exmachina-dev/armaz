@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from ...config import ConfigRequest
-from ...errors import RemoteServerError
-from ..modbus import ModbusRequest
+from ..config import ConfigRequest
+from ..errors import RemoteError
+from .modbus import ModbusRequest
 
 try:
     import Adafruit_BBIO.GPIO as GPIO
