@@ -94,8 +94,9 @@ class ConfigWorker(BaseWorker):
             section = response.request.args[0]
             if response.request.args[1] in self.watched_options[section]:
                 option = response.request.args[1]
-                self.lg.debug('Watched item changed: %s.%s\n\tNew value: %s' % (
-                    section, option, response.value))
+                self.lg.debug(
+                        'Watched item changed: %s.%s\n\tNew value: %s' % (
+                            section, option, response.value))
                 self.watched_options[section][option]()
 
 
