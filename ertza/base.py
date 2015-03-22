@@ -77,6 +77,8 @@ class BaseCommunicationObject(object):
             'get_master':               (0b00000111 << 8) + _command['get'],
             'set_mode':                 (0b00001000 << 8) + _command['set'],
             'get_mode':                 (0b00001000 << 8) + _command['get'],
+            'set_speed':                (0b00001001 << 8) + _command['set'],
+            'get_speed':                (0b00001001 << 8) + _command['get'],
             }
 
     _methods.update(_command)
