@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ...base import BaseResponse, BaseRequest
-from ...errors import TimeoutError
+from ...errors import TimeoutError, ModbusMasterError
 from ...utils import timeout
 
 class ModbusRequest(BaseRequest):
@@ -51,18 +51,24 @@ class ModbusResponse(BaseResponse):
         if not self._end:
             raise ValueError("Modbus isn't defined.")
 
-        if self.request.method == self._methods['get_status']:
-            self.method = self._methods['get_status']
-            self.value = self._end.get_status()
-        elif self.request.method == self._methods['get_command']:
-            self.method = self._methods['get_command']
-            self.value = self._end.get_command()
-        elif self.request.method == self._methods['get_error_code']:
-            self.method = self._methods['get_error_code']
-            self.value = self._end.get_error_code()
-        elif self.request.method == self._methods['get_drive_temperature']:
-            self.method = self._methods['get_drive_temperature']
-            self.value = self._end.get_drive_temperature()
+        mth = self.methods
+        opts = {
+                mth['get_status']: self._end.get_status,
+                mth['get_command']: self._end.get_command,
+                mth['get_error_code']: self._end.get_error_code,
+                mth['get_speed']: self._end.get_speed,
+                mth['get_encoder_velocity']: self._end.get_encoder_velocity,
+                mth['get_encoder_position']: self._end.get_encoder_position,
+                mth['get_drive_temperature']: self._end.get_drive_temperature,
+                mth['get_dropped_frames']: self._end.get_dropped_frames,
+                }
+
+        try:
+            self.method = self.request_method
+            self.value = opts[self.request_method]()
+        except IndexError:
+            self.value = None
+            raise ModbusMasterError('Unexepected method')
 
     @timeout(1, "Slave didn't respond.")
     def set_to_device(self, *args):
