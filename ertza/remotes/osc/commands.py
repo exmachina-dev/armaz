@@ -110,7 +110,7 @@ class OSCCommands(OSCBaseServer):
     def drive_status_callback(self, path, args, types, sender):
         base = 'motor/'
         try:
-            status = self.mdb_request.get_status()
+            status = self.mdb_request.status
             try:
                 for k, v in status.items():
                     path = base + k.split('_', maxsplit=1)[1]
@@ -119,9 +119,10 @@ class OSCCommands(OSCBaseServer):
                 self.status_reply(sender, base + 'error',
                         'Unable to get status')
 
-            errcode = self.mdb_request.get_error_code()
-            temp = self.mdb_request.get_drive_temperature()
+            errcode = self.mdb_request.error_code
             self.lg.debug(errcode)
+            temp = self.mdb_request.drive_temperature
+
             self.status_reply(sender, base + 'error_code', errcode)
             self.status_reply(sender, base + 'drive_temperature', temp)
         except TimeoutError as e:
