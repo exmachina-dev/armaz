@@ -74,8 +74,11 @@ class SlaveServer(OSCBaseServer):
     def run(self, timeout=None):
         super(SlaveServer, self).run(timeout)
 
-    def announce(self):
-        address = lo.Address(self.broadcast_address, self.client_port)
+    def announce(self, **kwargs):
+        if 'target' in kwargs.keys():
+            address = lo.Address(kwargs['target'], self.client_port)
+        else:
+            address = lo.Address(self.broadcast_address, self.client_port)
         msg = lo.Message('/enslave/' + self.mode + '/online', self.server_port)
         return self.send(address, msg)
 
@@ -152,6 +155,20 @@ class SlaveServer(OSCBaseServer):
             self.lg.debug('Received slave unregister from %s', sender_host)
             if self.remove_from_slaves(sender):
                 self.master_reply(sender, 'unregistered')
+
+    # Auto-register when master come up
+    @lo.make_method('/enslave/master/online', 'i')
+    def auto_register_to_master(self, path, args, types, sender):
+        port, = args
+        if sender.get_hostname() == self.master and port == self.server_port:
+            self.register_to_master()
+
+    # Auto-annouce to slave when it come up (so it can auto-register)
+    @lo.make_method('/enslave/slave/online', 'i')
+    def auto_announce_to_slave(self, path, args, types, sender):
+        port, = args
+        if sender in self.slaves.keys():
+            self.announce(target=sender.get_hostname())
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
