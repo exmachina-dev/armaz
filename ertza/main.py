@@ -106,16 +106,21 @@ class MainInitializer(object):
         # restore default signal handling for the parent process. 
         signal.signal(signal.SIGINT, self._default_sigint)
 
+    def main_run(self):
+        self.ignore_sigint()
+        self.processes()
+        self.start()
+        self.restore_sigint()
+        self.join()
+
+        try:
+            signal.pause()
+        except (KeyboardInterrupt, FatalError):
+            self.exit()
+        finally:
+            self.exit()
+
 if __name__ == "__main__":
 
     mi = MainInitializer()
-    mi.ignore_sigint()
-    mi.processes()
-    mi.start()
-    mi.restore_sigint()
-
-    try:
-        signal.pause()
-    except KeyboardInterrupt:
-        mi.exit()
-        mi.join()
+    mi.main_run()

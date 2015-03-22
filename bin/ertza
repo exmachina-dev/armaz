@@ -11,8 +11,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     mi = Ertza(args)
-    mi.ignore_sigint()
-    mi.processes()
-    mi.start()
-    mi.restore_sigint()
-    mi.join()
+    mi.main_run()
