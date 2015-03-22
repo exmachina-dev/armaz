@@ -5,17 +5,25 @@ from ...errors import TimeoutError
 from ...utils import timeout
 
 class ModbusRequest(BaseRequest):
-    def get_status(self, *args):
-        return self._build_rq('get_status', *args)
+    @property
+    def status(self):
+        return self._build_rq('get_status')
 
-    def get_error_code(self, *args):
-        return self._build_rq('get_error_code', *args)
+    @property
+    def error_code(self):
+        return self._build_rq('get_error_code')
 
-    def get_drive_temperature(self, *args):
-        return self._build_rq('get_drive_temperature', *args)
+    @property
+    def drive_temperature(self):
+        return self._build_rq('get_drive_temperature')
 
-    def get_command(self, *args):
-        return self._build_rq('get_command', *args)
+    @property
+    def command(self):
+        return self._build_rq('get_command')
+
+    @property
+    def speed(self):
+        return self._build_rq('get_speed')
 
     def get(self, command, *args):
         if command not in self._methods:
@@ -24,6 +32,9 @@ class ModbusRequest(BaseRequest):
 
     def set_command(self, *args):
         return self._build_rq('set_command', *args)
+
+    def set_speed(self, *args):
+        return self._build_rq('set_speed', *args)
 
     def dump(self, *args):
         return self._build_rq('dmp', *args)
