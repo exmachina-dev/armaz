@@ -59,7 +59,7 @@ class ModbusBackend(object):
                 23,     # Read/write multiple registers
                 ]
 
-        self.get_config()
+        self.load_config()
         self.min_comms = 1
         self.max_comms = 99
 
@@ -90,7 +90,7 @@ class ModbusBackend(object):
         self.get_config()
         self.connect()
 
-    def get_config(self):
+    def load_config(self):
         try:
             self.device = self.config_request.get(
                 'modbus', 'device', '192.168.100.2')
