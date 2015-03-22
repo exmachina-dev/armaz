@@ -4,9 +4,11 @@ import sys
 class ErtzaError(Exception):
     """Base class for Ertza exceptions."""
 
-    def __init__(self, msg=''):
+    def __init__(self, msg='', lg=None):
         self.message = msg
         Exception.__init__(self, msg)
+        if lg:
+            lg.warn(msg)
 
     def __repr__(self):
         return self.message
