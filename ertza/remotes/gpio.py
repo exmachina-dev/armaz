@@ -42,32 +42,59 @@ class RemoteServer(object):
 
         try:
             if not self.fake_mode:
-                for p in SWITCH_PINS:
-                    GPIO.setup(p, GPIO.IN)
-                    GPIO.output(p, GPIO.HIGH)
-                    GPIO.add_event_detect(p, GPIO.BOTH)
+                sw = list()
+                for i, p in enumerate(SWITCH_PINS):
+                    sw.append(SwitchHandler(i, p))
+                self.switchs = tuple(sw)
         except RuntimeError as e:
             raise RemoteError(
                     'Error configuring pins, am I on a beaglebone ?',
                     self.lg) from e
 
-
         try:
             if TEMP_PINS and not self.fake_mode:
                 ADC.setup()
+                tw = list()
                 for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
-                    self._temp_watcher.append(TempWatcher(s, f, t))
+                    tw.append(TempWatcher(s, f, t))
+                self.temp_watchers = tuple(tw)
         except RuntimeError as e:
             raise RemoteError(
                     'Error enabling fan pins, am I on a beaglebone ?',
                     self.lg) from e
 
-    def run(self):
-        for tw in self._temp_watcher:
+    def run(self, interval=None):
+        if not self.fake_mode:
+            self.update_pid()
+            self.detect_gpio_state()
+
+    def update_pid(self):
+        for tw in self.temp_watchers:
             tw.set_pid()
+
+    def detect_gpio_state(self):
+        for p in self.switch_pins:
+            p.update_state()
+
 
     def __del__(self):
         GPIO.cleanup()
+
+class SwitchHandler(object):
+    def __init__(self, p):
+        self.pin = p
+
+        self.setup_pin()
+
+    def setup_pin(self):
+        GPIO.setup(p, GPIO.IN)
+        GPIO.output(p, GPIO.HIGH)
+        GPIO.add_event_detect(p, GPIO.BOTH)
+
+    def update_state(self):
+        if GPIO.event_detected(self.pin):
+            self.state = GPIO.input(self.pin)
+
 
 class TempWatcher(object):
     def __init__(self, sensor, fan, target_temp):
