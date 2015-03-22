@@ -58,9 +58,15 @@ class RemoteWorker(BaseWorker):
     def init_rmt_server(self, restart=False):
         if restart:
             del self.rmt_server
-        self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
-                restart_event=self.restart_rm_event, modbus=self.mdb_pipe,
-                slave=self.slv_pipe)
+        try:
+            self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
+                    restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
+                    slave=self.slv_pipe)
+        except RemoteError:
+            self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
+                    restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
+                    slave=self.slv_pipe, fake_mode=True)
+            pass
 
 class OSCWorker(BaseWorker):
     """
