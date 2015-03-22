@@ -84,9 +84,13 @@ class TempWatcher(object):
         _cmd = self.get_pid()
         self.fan.set_duty_cycle(_cmd)
 
+    def get_temperature(self):
+        raw = ADC.read_raw(self.sensor)
+        return raw
+
     def get_error(self):
         self.error_last = self.error
-        self.error = self.target - self.get_temp()
+        self.error = self.target - self.get_temperature()
         self.error_sum += self.error
         self.error_delta = self.error - self.error_last
 
