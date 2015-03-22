@@ -9,7 +9,7 @@ try:
     import Adafruit_BBIO.ADC as ADC
     import Adafruit_BBIO.PWM as PWM
 except ImportError as e:
-    TEST_MODE = True
+    pass
  
 SWITCH_PINS = ("P8_10", "P8_11",)
 TEMP_PINS = ('P9_39', 'P9_40',)
@@ -18,9 +18,12 @@ FAN_PINS = ('P8_13', 'P8_19',)
 
 class RemoteServer(object):
     def __init__(self, config, **kwargs):
-
+        self.fake_mode = False
         self._modbus, self.restart_event = None, None
         self._config = config
+
+        if 'fake_mode' in kwargs:
+            self.fake_mode = kwargs['fake_mode']
 
         if 'modbus' in kwargs:
             self._modbus = kwargs['modbus']
@@ -37,17 +40,26 @@ class RemoteServer(object):
 
         self.config_request = ConfigRequest(self._config)
 
-        if TEST_MODE:
-            raise RemoteServerError('Unable to import GPIO lib, am I on a beaglebone ?')
+        try:
+            if not self.fake_mode:
+                for p in SWITCH_PINS:
+                    GPIO.setup(p, GPIO.IN)
+                    GPIO.output(p, GPIO.HIGH)
+        except RuntimeError as e:
+            raise RemoteError(
+                    'Error configuring pins, am I on a beaglebone ?',
+                    self.lg) from e
 
-        for p in SWITCH_PINS:
-            GPIO.setup(p, GPIO.IN)
-            GPIO.output(p, GPIO.HIGH)
 
-        if TEMP_PINS:
-            ADC.setup()
-            for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
-                self._temp_watcher.append(TempWatcher(s, f, t))
+        try:
+            if TEMP_PINS and not self.fake_mode:
+                ADC.setup()
+                for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
+                    self._temp_watcher.append(TempWatcher(s, f, t))
+        except RuntimeError as e:
+            raise RemoteError(
+                    'Error enabling fan pins, am I on a beaglebone ?',
+                    self.lg) from e
 
     def run(self):
         for tw in self._temp_watcher:
