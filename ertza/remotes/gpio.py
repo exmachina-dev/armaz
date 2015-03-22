@@ -45,6 +45,7 @@ class RemoteServer(object):
                 for p in SWITCH_PINS:
                     GPIO.setup(p, GPIO.IN)
                     GPIO.output(p, GPIO.HIGH)
+                    GPIO.add_event_detect(p, GPIO.BOTH)
         except RuntimeError as e:
             raise RemoteError(
                     'Error configuring pins, am I on a beaglebone ?',
