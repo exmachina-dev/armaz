@@ -37,6 +37,12 @@ class ModbusBackend(object):
             'command_timeout',
             )
 
+    command_keys = (
+            'driveEnable',
+            'stop',
+            'releaseBrake',
+            )
+
     states = {
             'ready': (
                 True,
@@ -149,12 +155,10 @@ class ModbusBackend(object):
     def get_command(self):
         command = self.read_comm(self.netdata['command'])
 
-        keys = ('driveEnable', 'stop', 'releaseBrake',)
-
         command = self._to_bools(command[0]+command[1])
         command.reverse()
 
-        for k, v in zip(keys, command):
+        for k, v in zip(self.command_keys, command):
             self.command[k] = bool(int(v))
 
         return self.command
