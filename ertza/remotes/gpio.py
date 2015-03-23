@@ -81,15 +81,16 @@ class RemoteServer(object):
         GPIO.cleanup()
 
 class SwitchHandler(object):
-    def __init__(self, p):
-        self.pin = p
+    def __init__(self, index, pin):
+        self.index = index
+        self.pin = pin
 
         self.setup_pin()
 
     def setup_pin(self):
-        GPIO.setup(p, GPIO.IN)
-        GPIO.output(p, GPIO.HIGH)
-        GPIO.add_event_detect(p, GPIO.BOTH)
+        GPIO.setup(self.pin, GPIO.IN)
+        GPIO.output(self.pin, GPIO.HIGH)
+        GPIO.add_event_detect(self.pin, GPIO.BOTH)
 
     def update_state(self):
         if GPIO.event_detected(self.pin):
