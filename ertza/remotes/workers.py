@@ -10,6 +10,7 @@ from ..errors import OSCServerError
 from ..errors import ModbusMasterError, SlaveError
 
 import time
+import sys
 
 class RemoteWorker(BaseWorker):
     """
@@ -45,15 +46,18 @@ class RemoteWorker(BaseWorker):
             self.lg.warn(e)
             self.exit()
 
-        while not self.exit_event.is_set():
-            try:
-                self.rmt_server.run(self.interval)
-            except RemoteError:
-                pass
-            if self.restart_rmt_event.is_set():
-                self.lg.info('Remote server restarting…')
-                self.init_rmt_server(True)
-                self.restart_rmt_event.clear()
+        try:
+            while not self.exit_event.is_set():
+                try:
+                    self.rmt_server.run(self.interval)
+                except RemoteError:
+                    pass
+                if self.restart_rmt_event.is_set():
+                    self.lg.info('Remote server restarting…')
+                    self.init_rmt_server(True)
+                    self.restart_rmt_event.clear()
+        except ConnectionError:
+            sys.exit()
 
     def init_rmt_server(self, restart=False):
         if restart:
@@ -98,14 +102,17 @@ class OSCWorker(BaseWorker):
             self.lg.warn(e)
             self.exit()
 
-        while not self.exit_event.is_set():
-            self.osc_server.run(self.interval)
-            if self.restart_osc_event.is_set():
-                self.lg.info('OSC server restarting…')
-                self.init_osc_server(True)
-                self.restart_osc_event.clear()
+        try:
+            while not self.exit_event.is_set():
+                self.osc_server.run(self.interval)
+                if self.restart_osc_event.is_set():
+                    self.lg.info('OSC server restarting…')
+                    self.init_osc_server(True)
+                    self.restart_osc_event.clear()
 
-            time.sleep(self.interval)
+                time.sleep(self.interval)
+        except ConnectionError:
+            sys.exit()
 
     def init_osc_server(self, restart=False):
         if restart:
@@ -148,22 +155,25 @@ class ModbusWorker(BaseWorker):
         except ModbusMasterError as e:
             self.lg.warn(e)
 
-        while not self.exit_event.is_set():
-            if self.restart_mdb_event.is_set():
-                self.lg.info('Modbus master restarting…')
-                self.init_modbus(True)
-                self.restart_mdb_event.clear()
-            else:
-                for pipe in self.pipes:
-                    if pipe.poll():
-                        rq = pipe.recv()
-                        if not type(rq) is ModbusRequest:
-                            raise ValueError('Unexcepted type: %s' % type(rq))
-                        rs = ModbusResponse(pipe, rq, self.modbus_master.back)
-                        rs.handle()
-                        rs.send()
+        try:
+            while not self.exit_event.is_set():
+                if self.restart_mdb_event.is_set():
+                    self.lg.info('Modbus master restarting…')
+                    self.init_modbus(True)
+                    self.restart_mdb_event.clear()
+                else:
+                    for pipe in self.pipes:
+                        if pipe.poll():
+                            rq = pipe.recv()
+                            if not type(rq) is ModbusRequest:
+                                raise ValueError('Unexcepted type: %s' % type(rq))
+                            rs = ModbusResponse(pipe, rq, self.modbus_master.back)
+                            rs.handle()
+                            rs.send()
 
-            time.sleep(self.interval)
+                time.sleep(self.interval)
+        except ConnectionError:
+            sys.exit()
 
     def init_modbus(self, restart=False):
         if restart:
@@ -201,23 +211,26 @@ class SlaveWorker(BaseWorker):
         except SlaveError as e:
             self.lg.warn(e)
 
-        while not self.exit_event.is_set():
-            self.slave_server.run(self.interval)
-            if self.restart_slv_event.is_set():
-                self.lg.info('Slave worker restarting…')
-                self.init_osc_slave(True)
-                self.restart_slv_event.clear()
-            else:
-                for pipe in self.pipes:
-                    if pipe.poll():
-                        rq = pipe.recv()
-                        if not type(rq) is SlaveRequest:
-                            raise ValueError('Unexcepted type: %s' % type(rq))
-                        rs = SlaveResponse(pipe, rq, self.slave_server)
-                        rs.handle()
-                        rs.send()
+        try:
+            while not self.exit_event.is_set():
+                self.slave_server.run(self.interval)
+                if self.restart_slv_event.is_set():
+                    self.lg.info('Slave worker restarting…')
+                    self.init_osc_slave(True)
+                    self.restart_slv_event.clear()
+                else:
+                    for pipe in self.pipes:
+                        if pipe.poll():
+                            rq = pipe.recv()
+                            if not type(rq) is SlaveRequest:
+                                raise ValueError('Unexcepted type: %s' % type(rq))
+                            rs = SlaveResponse(pipe, rq, self.slave_server)
+                            rs.handle()
+                            rs.send()
 
-            time.sleep(self.interval)
+                time.sleep(self.interval)
+        except ConnectionError:
+            sys.exit()
 
     def init_osc_slave(self, restart=False):
         if restart:

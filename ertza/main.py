@@ -113,14 +113,12 @@ class MainInitializer(object):
         self.processes()
         self.start()
         self.restore_sigint()
-        self.join()
 
         try:
             signal.pause()
+            self.join()
         except (KeyboardInterrupt, FatalError):
-            self.exit()
-        finally:
-            self.exit()
+            print('Received keyboard interrupt, exiting…')
 
 if __name__ == "__main__":
 

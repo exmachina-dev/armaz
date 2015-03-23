@@ -6,6 +6,7 @@ from .parser import BaseConfigParser as ConfigParser
 from .communication import ConfigRequest, ConfigResponse
 from .defaults import CONTROL_MODES, DEFAULT_CONTROL_MODE
 
+import sys
 import time
 
 from configparser import Error
@@ -73,19 +74,22 @@ class ConfigWorker(BaseWorker):
 
     def run(self):
         self.cnf_ready_event.set()
-        while not self.exit_event.is_set():
-            for pipe in self.pipes:
-                if pipe.poll():
-                    rq = pipe.recv()
-                    if not type(rq) is ConfigRequest:
-                        raise ValueError('Unexcepted type: %s' % type(rq))
-                    rs = ConfigResponse(pipe, rq, self._config)
-                    rs.handle()
-                    self._watchconfig(rs)
-                    rs.send()
+        try:
+            while not self.exit_event.is_set():
+                for pipe in self.pipes:
+                    if pipe.poll():
+                        rq = pipe.recv()
+                        if not type(rq) is ConfigRequest:
+                            raise ValueError('Unexcepted type: %s' % type(rq))
+                        rs = ConfigResponse(pipe, rq, self._config)
+                        rs.handle()
+                        self._watchconfig(rs)
+                        rs.send()
 
 
-            time.sleep(self.interval)
+                time.sleep(self.interval)
+        except ConnectionError:
+            sys.exit()
 
     def _watchconfig(self, response):
         if not response.method == ConfigResponse._methods['set']:

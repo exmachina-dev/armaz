@@ -46,18 +46,21 @@ class LogWorker(BaseWorker):
         self.run()
 
     def run(self):
-        while not self.exit_event.is_set():
-            try:
-                record = self.lgq.get(timeout=0.1)
-                if record is None: # We send this as a sentinel to tell the listener to quit.
-                    break
-                logger = logging.getLogger(record.name)
-                logger.handle(record) # No level or filter logic applied - just do it!
-            except Empty:
-                pass
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                import traceback
-                print('FATAL:', file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
+        try:
+            while not self.exit_event.is_set():
+                try:
+                    record = self.lgq.get(timeout=0.1)
+                    if record is None: # We send this as a sentinel to tell the listener to quit.
+                        break
+                    logger = logging.getLogger(record.name)
+                    logger.handle(record) # No level or filter logic applied - just do it!
+                except (Empty, EOFError):
+                    pass
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except:
+                    import traceback
+                    print('FATAL:', file=sys.stderr)
+                    traceback.print_exc(file=sys.stderr)
+        except (ConnectionError, EOFError):
+            sys.exit()
