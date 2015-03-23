@@ -182,6 +182,14 @@ class ModbusBackend(object):
 
         return self.speed
 
+    def set_speed(self, new_speed, check=True):
+        new_speed = _from_float(new_speed)
+        rtn = self.write_comm(self.netdata['speed'], new_speed)
+
+        if check:
+            return self.get_speed()
+        return rtn
+
     def get_drive_temperature(self):
         temp = self.read_comm(self.netdata['drive_temperature'])
         self.drive_temperature = self._to_float(temp[0]+temp[1])
@@ -222,6 +230,11 @@ world_lenght: %s, reg_by_comms: %s' % \
     def _to_float(bits):
         bits = bitstring.Bits(bin=bits)
         return bits.float
+
+    @staticmethod
+    def _from_float(value_float):
+        bits = bitstring.Bits(float=value_float, length=32)
+        return bits.unpack('bin:16, bin')
 
     @staticmethod
     def _to_bools(bits):
