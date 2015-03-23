@@ -176,6 +176,12 @@ class ModbusBackend(object):
 
         return self.error_code
 
+    def get_speed(self):
+        speed = self.read_comm(self.netdata['speed'])
+        self.speed = self._to_float(speed[0]+speed[1])
+
+        return self.speed
+
     def get_drive_temperature(self):
         temp = self.read_comm(self.netdata['drive_temperature'])
         self.drive_temperature = self._to_float(temp[0]+temp[1])
