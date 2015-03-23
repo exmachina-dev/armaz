@@ -163,6 +163,22 @@ class ModbusBackend(object):
 
         return self.command
 
+    def set_command(self, check=True, **kwargs):
+        new_cmd = [False,]*32
+        for i, k in enumerate(self.command_keys):
+            if k in kwargs.keys():
+                v = bool(kwargs[k])
+            else:
+                v = self.command[k]
+            new_cmd[i] = (v)
+
+        new_cmd = self._from_bools(new_cmd)
+        rtn = self.write_comm(self.netdata['command'], new_cmd)
+
+        if check:
+            return self.get_command()
+        return rtn
+
     def get_status(self):
         status = self.read_comm(self.netdata['status'])
 
