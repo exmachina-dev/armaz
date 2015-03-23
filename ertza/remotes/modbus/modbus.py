@@ -231,13 +231,18 @@ world_lenght: %s, reg_by_comms: %s' % \
         return bits.int
 
     @staticmethod
+    def _from_int(int_value):
+        bits = bitstring.Bits(bin=int_value)
+        return bits.unpack('bin:16, bin')
+
+    @staticmethod
     def _to_float(bits):
         bits = bitstring.Bits(bin=bits)
         return bits.float
 
     @staticmethod
-    def _from_float(value_float):
-        bits = bitstring.Bits(float=value_float, length=32)
+    def _from_float(float_value):
+        bits = bitstring.Bits(float=float_value, length=32)
         return bits.unpack('bin:16, bin')
 
     @staticmethod
@@ -248,6 +253,14 @@ world_lenght: %s, reg_by_comms: %s' % \
             l.append(b)
 
         return l
+
+    @staticmethod
+    def _from_bools(bools):
+        bin_str = '0b'
+        for b in bools:
+            bin_str += int(b)
+        bits = bitstring.Bits(bin=bin_str)
+        return bits.unpack('bin:16, bin')
 
     def _read_holding_registers(self, address, count):
             rq = ReadHoldingRegistersRequest(
