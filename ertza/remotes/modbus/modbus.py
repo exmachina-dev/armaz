@@ -248,7 +248,7 @@ world_lenght: %s, reg_by_comms: %s' % \
 
     @staticmethod
     def _from_int(int_value):
-        bits = bitstring.Bits(bin=int_value)
+        bits = bitstring.Bits(int=int_value, length=32)
         return bits.unpack('bin:16, bin')
 
     @staticmethod
