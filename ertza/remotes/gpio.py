@@ -95,8 +95,8 @@ class RemoteServer(object):
 
     def detect_gpio_state(self):
         for p in self.switch_pins:
-            p.update_state()
-
+            if p.update_state(): # if something change, trigger
+                self.mdb_request.trigger(p.action, p.state)
 
     def __del__(self):
         GPIO.cleanup()
