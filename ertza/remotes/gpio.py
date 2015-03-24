@@ -81,9 +81,11 @@ class RemoteServer(object):
         GPIO.cleanup()
 
 class SwitchHandler(object):
-    def __init__(self, index, pin):
+    def __init__(self, index, pin, action=None, reverse=False):
         self.index = index
         self.pin = pin
+        self.action = action
+        self.reverse = reverse
 
         self.setup_pin()
 
@@ -95,6 +97,8 @@ class SwitchHandler(object):
     def update_state(self):
         if GPIO.event_detected(self.pin):
             self.state = GPIO.input(self.pin)
+            return True
+        return None
 
 
 class TempWatcher(object):
