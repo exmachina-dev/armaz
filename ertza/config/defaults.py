@@ -31,6 +31,14 @@ DEFAULT_CONFIG= {
         'control': {
             'mode': DEFAULT_CONTROL_MODE,
             },
+        'switch0': {
+            'action': None,
+            'reverse': False,
+            },
+        'switch1': {
+            'mode': None,
+            'reverse': False,
+            },
         }
 
 CONFIG_PATHS = (
