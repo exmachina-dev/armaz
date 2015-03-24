@@ -41,32 +41,53 @@ class RemoteServer(object):
         self.config_request = ConfigRequest(self._config)
 
         try:
-            if not self.fake_mode:
-                sw = list()
-                for i, p in enumerate(SWITCH_PINS):
-                    sw.append(SwitchHandler(i, p))
-                self.switchs = tuple(sw)
-        except RuntimeError as e:
-            raise RemoteError(
-                    'Error configuring pins, am I on a beaglebone ?',
-                    self.lg) from e
+            self.run(init=True)
+        except RemoteError:
+            self.fake_mode = True
+            self.run(init=True)
 
-        try:
-            if TEMP_PINS and not self.fake_mode:
-                ADC.setup()
-                tw = list()
-                for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
-                    tw.append(TempWatcher(s, f, t))
-                self.temp_watchers = tuple(tw)
-        except RuntimeError as e:
-            raise RemoteError(
-                    'Error enabling fan pins, am I on a beaglebone ?',
-                    self.lg) from e
+    def run(self, interval=None, init=False):
+        if (self.restart_event and self.restart_event.is_set()) or init:
+            if not init:
+                self.lg.info('Updating remote server…')
+            try:
+                self.create_switch_pins()
+                self.create_temp_watchers()
+                if self.restart_event:
+                    self.restart_event.clear()
+            except RuntimeError as e:
+                raise RemoteError(
+                        'Error configuring pins, am I on a beaglebone ?',
+                        self.lg) from e
+                if not self.fake_mode:
+                    self.lg.warn('Starting failed. Fallback to fake mode.')
+                    self.fake_mode = True
+                    self.run()
 
-    def run(self, interval=None):
         if not self.fake_mode:
             self.update_pid()
             self.detect_gpio_state()
+
+    def create_switch_pins(self):
+        if not self.fake_mode:
+            sw = list()
+            for i, p in enumerate(SWITCH_PINS):
+                a = self.config_request.get('switch'+str(i), 'action', None)
+                r = self.config_request.get('switch'+str(i), 'reverse', False)
+                sw.append(SwitchHandler(i, p, a, r))
+            self.switchs = tuple(sw)
+            return True
+        return False
+
+    def create_temp_watchers(self):
+        if TEMP_PINS and not self.fake_mode:
+            ADC.setup()
+            tw = list()
+            for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
+                tw.append(TempWatcher(s, f, t))
+            self.temp_watchers = tuple(tw)
+            return True
+        return False
 
     def update_pid(self):
         for tw in self.temp_watchers:

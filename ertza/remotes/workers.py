@@ -52,24 +52,18 @@ class RemoteWorker(BaseWorker):
                     self.rmt_server.run(self.interval)
                 except RemoteError:
                     pass
-                if self.restart_rmt_event.is_set():
-                    self.lg.info('Remote server restarting…')
-                    self.init_rmt_server(True)
-                    self.restart_rmt_event.clear()
         except ConnectionError:
             sys.exit()
 
     def init_rmt_server(self, restart=False):
         if restart:
-            del self.rmt_server
+            self.rmt_server.restart()
+            return True
         try:
             self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
                     restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
                     slave=self.slv_pipe)
         except RemoteError:
-            self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
-                    restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
-                    slave=self.slv_pipe, fake_mode=True)
             pass
 
 class OSCWorker(BaseWorker):
