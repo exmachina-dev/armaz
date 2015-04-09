@@ -62,9 +62,6 @@ class ModbusBackend(object):
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
         self.command = {}
-        for k in self.command_keys:
-            self.command[k] = False
-
         self.errorcode = None
         self.end = None
         self.connected = False
@@ -172,13 +169,11 @@ class ModbusBackend(object):
             if k in kwargs.keys():
                 v = bool(kwargs[k])
             else:
-                print('%s not in' % k)
                 v = self.command[k]
             new_cmd[i] = (v)
 
         new_cmd = self._from_bools(new_cmd)
         rtn = self.write_comm(self.netdata['command'], new_cmd)
-        print(rtn)
 
         if check:
             return self.get_command()
@@ -287,7 +282,6 @@ world_lenght: %s, reg_by_comms: %s' % \
     @staticmethod
     def _to_bools(bits):
         bits = bitstring.Bits(bin=bits)
-        print(bits)
         l = list()
         for b in bits:
             l.append(b)
@@ -298,7 +292,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     def _from_bools(bools):
         bin_str = '0b'
         for b in bools:
-            bin_str += str(int(b))
+            bin_str += int(b)
         bits = bitstring.Bits(bin=bin_str)
         return bits.unpack('bin:16, bin')
 
@@ -357,3 +351,15 @@ if __name__ == "__main__":
     from ertza.utils import FakeConfig
 
     mb = ModbusBackend(FakeConfig(), None, None, None)
+    mb.device = '/dev/pts/1'
+    mb.baudrate = 9600
+    print(
+'''
+Use socat -d -d pty,raw,echo=0 pty,raw,echo=0 to create a fake serial line.
+You can use cat < /dev/pts/11 to read output and echo 'something' > /dev/pts/11
+to write in serial line.
+'''
+    )
+    print(mb.dump_config())
+    mb.connect()
+    mb.read_comm(1)

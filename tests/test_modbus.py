@@ -45,9 +45,3 @@ class Test_ModbusBitOperations(object):
         b = ModbusBackend._from_float(start_float)
         end_float = ModbusBackend._to_float(b[0]+b[1])
         assert start_float == round(end_float, 4)
-
-    def test_bools(self):
-        start_bools = (True, False, True, False, False, True, False, True,) * 2
-        b = ModbusBackend._from_bools(start_bools)
-        end_bools = ModbusBackend._to_bools(b[0]+b[1])
-        assert list(start_bools) == end_bools
