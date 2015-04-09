@@ -99,7 +99,8 @@ class RemoteServer(object):
                 self.mdb_request.trigger(p.action, p.state)
 
     def __del__(self):
-        GPIO.cleanup()
+        if not self.fake_mode:
+            GPIO.cleanup()
 
 class SwitchHandler(object):
     def __init__(self, index, pin, action=None, reverse=False):
