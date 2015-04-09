@@ -79,6 +79,9 @@ class BaseCommunicationObject(object):
             'get_mode':                 (0b00001000 << 8) + _command['get'],
             'set_speed':                (0b00001001 << 8) + _command['set'],
             'get_speed':                (0b00001001 << 8) + _command['get'],
+            'get_encoder_velocity':     (0b00001010 << 8) + _command['get'],
+            'get_encoder_position':     (0b00001011 << 8) + _command['get'],
+            'get_dropped_frames':       (0b00001100 << 8) + _command['get'],
             }
 
     _methods.update(_command)

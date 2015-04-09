@@ -210,11 +210,29 @@ class ModbusBackend(object):
             return self.get_speed()
         return rtn
 
+    def get_encoder_velocity(self):
+        ev = self.read_comm(self.netdata['encoder_velocity'])
+        self.encoder_velocity = self._to_float(ev[0]+ev[1])
+
+        return self.encoder_velocity
+
+    def get_encoder_position(self):
+        ep = self.read_comm(self.netdata['encoder_position'])
+        self.encoder_position = self._to_int(ep[0]+ep[1])
+
+        return self.encoder_position
+
     def get_drive_temperature(self):
         temp = self.read_comm(self.netdata['drive_temperature'])
         self.drive_temperature = self._to_float(temp[0]+temp[1])
 
         return self.drive_temperature
+
+    def get_dropped_frames(self):
+        df = self.read_comm(self.netdata['dropped_frames'])
+        self.dropped_frames = self._to_int(df[0]+df[1])
+
+        return self.dropped_frames
 
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
