@@ -30,8 +30,8 @@ class ModbusRequest(BaseRequest):
             return ValueError('Unexcepted method: %s' % command)
         return self._build_rq(command, *args)
 
-    def set_command(self, *args):
-        return self._build_rq('set_command', *args)
+    def set_command(self, *args, **kwargs):
+        return self._build_rq('set_command', *args, **kwargs)
 
     def set_speed(self, *args):
         return self._build_rq('set_speed', *args)
@@ -41,8 +41,8 @@ class ModbusRequest(BaseRequest):
 
 
 class ModbusResponse(BaseResponse):
-    def __init__(self, target, request, end=None, *args):
-        super(ModbusResponse, self).__init__(target, *args)
+    def __init__(self, target, request, end=None, *args, **kwargs):
+        super(ModbusResponse, self).__init__(target, *args, **kwargs)
         self.request = request
         self._end = end
 
@@ -96,13 +96,14 @@ class ModbusResponse(BaseResponse):
 
     def handle(self):
         args = self.request.args
+        kwargs = self.request.kwargs
         try:
             if self.request.method & self._methods['set']:
-                self.set_to_device(*args)
+                self.set_to_device(*args, **kwargs)
             elif self.request.method & self._methods['get']:
-                self.get_from_device(*args)
+                self.get_from_device(*args, **kwargs)
             elif self.request.method & self._methods['dmp']:
-                self.dump_config(*args)
+                self.dump_config(*args, **kwargs)
             else:
                 raise ValueError('Unexcepted method: %s' % self.request.method)
 

@@ -86,14 +86,17 @@ class BaseCommunicationObject(object):
 
     _methods.update(_command)
 
-    def __init__(self, target, *args):
+    def __init__(self, target, *args, **kwargs):
         self.target = target
         self.method = None
         self.value = None
         self.args = None
+        self.kwargs = None
 
         if args:
             self.args = args
+        if kwargs:
+            self.kwargs = kwargs
 
     def send(self):
         if self.method:
@@ -113,14 +116,12 @@ class BaseRequest(BaseCommunicationObject):
         rp = self.target.recv()
         return rp
 
-    def _check_args(self, *args):
+    def _check_args(self, *args, **kwargs):
         self.args = args
-        if self.args:
-            self.method = None
-            self.value = None
+        self.kwargs = kwargs
 
-    def _build_rq(self, method, *args):
-        self._check_args(*args)
+    def _build_rq(self, method, *args, **kwargs):
+        self._check_args(*args, **kwargs)
         self.method = self._methods[method]
         rp = self.send()
         return rp.value
