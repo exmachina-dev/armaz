@@ -295,7 +295,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     def _from_bools(bools):
         bin_str = '0b'
         for b in bools:
-            bin_str += int(b)
+            bin_str += str(int(b))
         bits = bitstring.Bits(bin=bin_str)
         return bits.unpack('bin:16, bin')
 
