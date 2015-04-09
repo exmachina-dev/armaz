@@ -51,8 +51,8 @@ class ModbusResponse(BaseResponse):
         if not self._end:
             raise ValueError("Modbus isn't defined.")
 
-        mth = self.methods
-        opts = {
+        mth = self._methods
+        g_opts = {
                 mth['get_status']: self._end.get_status,
                 mth['get_command']: self._end.get_command,
                 mth['get_error_code']: self._end.get_error_code,
