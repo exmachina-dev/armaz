@@ -64,23 +64,29 @@ class ModbusResponse(BaseResponse):
                 }
 
         try:
-            self.method = self.request_method
-            self.value = opts[self.request_method]()
+            self.method = self.request.method
+            self.value = g_opts[self.request.method](*args)
         except IndexError:
             self.value = None
             raise ModbusMasterError('Unexepected method')
 
     @timeout(1, "Slave didn't respond.")
-    def set_to_device(self, *args):
-        self.method = self._methods['set']
-
+    def set_to_device(self, *args, **kwargs):
         if not self._end:
             raise ValueError("Modbus isn't defined.")
-        if len(args) == 3:
-            section, option, value = args
-        else:
-            raise ValueError("One or more argument is missing.")
-        self.value = self._end.set(str(section), str(option), str(value))
+
+        mth = self._methods
+        s_opts = {
+                mth['set_command']: self._end.set_command,
+                mth['set_speed']: self._end.set_speed,
+                }
+
+        try:
+            self.method = self.request.method
+            self.value = s_opts[self.request.method](*args, **kwargs)
+        except IndexError:
+            self.value = None
+            raise ModbusMasterError('Unexepected method')
 
     @timeout(1, "Slave didn't respond.")
     def dump_config(self, *args):
