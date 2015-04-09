@@ -52,6 +52,7 @@ class RemoteWorker(BaseWorker):
                     self.rmt_server.run(self.interval)
                 except RemoteError:
                     pass
+                self.exit_event.wait(self.interval)
         except ConnectionError:
             sys.exit()
 
@@ -104,7 +105,7 @@ class OSCWorker(BaseWorker):
                     self.init_osc_server(True)
                     self.restart_osc_event.clear()
 
-                time.sleep(self.interval)
+                self.exit_event.wait(self.interval)
         except ConnectionError:
             sys.exit()
 
@@ -165,7 +166,7 @@ class ModbusWorker(BaseWorker):
                             rs.handle()
                             rs.send()
 
-                time.sleep(self.interval)
+                self.exit_event.wait(self.interval)
         except ConnectionError:
             sys.exit()
 
@@ -222,7 +223,7 @@ class SlaveWorker(BaseWorker):
                             rs.handle()
                             rs.send()
 
-                time.sleep(self.interval)
+                self.exit_event.wait(self.interval)
         except ConnectionError:
             sys.exit()
 
