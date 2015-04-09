@@ -64,8 +64,8 @@ class ModbusResponse(BaseResponse):
                 }
 
         try:
-            self.method = self.request_method
-            self.value = opts[self.request_method]()
+            self.method = self.request.method
+            self.value = g_opts[self.request.method](*args)
         except IndexError:
             self.value = None
             raise ModbusMasterError('Unexepected method')
