@@ -55,7 +55,7 @@ class RemoteServer(object):
                 self.create_temp_watchers()
                 if self.restart_event:
                     self.restart_event.clear()
-            except RuntimeError as e:
+            except (NameError, RuntimeError) as e:
                 raise RemoteError(
                         'Error configuring pins, am I on a beaglebone ?',
                         self.lg) from e
