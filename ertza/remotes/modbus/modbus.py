@@ -62,6 +62,9 @@ class ModbusBackend(object):
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
         self.command = {}
+        for k in self.command_keys:
+            self.command[k] = False
+
         self.errorcode = None
         self.end = None
         self.connected = False
