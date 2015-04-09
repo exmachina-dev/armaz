@@ -105,7 +105,16 @@ class BaseCommunicationObject(object):
             raise ValueError("Method isn't defined.")
 
     def __str__(self):
-        return '%s %s %s' % (self.method, self.args, self.value)
+        for k, v in self._methods.items():
+            if self.method == v:
+                method_name = k
+                break
+            else:
+                method_name = None
+        return '%s %s(%s)\nArgs: %s\nKwargs: %s\nValue: %s' % (
+                type(self).__name__,
+                method_name, self.method,
+                self.args, self.kwargs, self.value)
 
     __repr__ = __str__
 
