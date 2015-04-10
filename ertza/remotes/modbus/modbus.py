@@ -71,9 +71,15 @@ class ModbusBackend(object):
         self.max_retry = 5
         self.retry = self.max_retry
 
-        self._config = config
-        self.lg = logger
-        self.config_request = ConfigRequest(self._config)
+        if config:
+            self._config = config
+            self.config_request = ConfigRequest(self._config)
+
+        if logger:
+            self.lg = logger
+        else:
+            import logging
+            self.lg = loggin.get_logger()
 
         self.available_functions = [
                 3,     # Read holding registers
@@ -83,7 +89,9 @@ class ModbusBackend(object):
                 23,     # Read/write multiple registers
                 ]
 
-        self.load_config()
+        if self.config_request:
+            self.load_config()
+
         self.min_comms = 1
         self.max_comms = 99
 
