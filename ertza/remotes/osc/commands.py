@@ -110,7 +110,7 @@ class OSCCommands(OSCBaseServer):
         self.restart()
 
     @lo.make_method('/debug/drive/driveEnable', 'i')
-    def debug_drive_callback(self, path, args, types, sender):
+    def debug_drive_enable_callback(self, path, args, types, sender):
         st, = args
         try:
             rtn = self.mdb_request.set_command(driveEnable=st)
@@ -120,7 +120,7 @@ class OSCCommands(OSCBaseServer):
             pass
 
     @lo.make_method('/debug/drive/speed', 'i')
-    def debug_drive_callback(self, path, args, types, sender):
+    def debug_drive_speed_callback(self, path, args, types, sender):
         sp, = args
         try:
             rtn = self.mdb_request.set_command(speed=sp)
