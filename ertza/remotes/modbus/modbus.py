@@ -80,7 +80,7 @@ class ModbusBackend(object):
             self.lg = logger
         else:
             import logging
-            self.lg = loggin.getLogger(__name__)
+            self.lg = logging.getLogger(__name__)
 
         self.available_functions = [
                 3,     # Read holding registers
