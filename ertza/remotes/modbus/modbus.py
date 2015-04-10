@@ -359,18 +359,11 @@ world_lenght: %s, reg_by_comms: %s' % \
 
 
 if __name__ == "__main__":
-    from ertza.utils import FakeConfig
+    mb = ModbusBackend(None, None, None, None)
 
-    mb = ModbusBackend(FakeConfig(), None, None, None)
-    mb.device = '/dev/pts/1'
-    mb.baudrate = 9600
-    print(
-'''
-Use socat -d -d pty,raw,echo=0 pty,raw,echo=0 to create a fake serial line.
-You can use cat < /dev/pts/11 to read output and echo 'something' > /dev/pts/11
-to write in serial line.
-'''
-    )
-    print(mb.dump_config())
-    mb.connect()
-    mb.read_comm(1)
+    mb.device = '192.168.100.2'
+    mb.port = 502
+    mb.node_id = 2
+    mb.word_lenght = 16
+    mb.data_bit = 8
+    mb.nb_reg_by_comms = self.word_lenght / self.data_bit
