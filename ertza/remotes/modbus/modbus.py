@@ -184,9 +184,7 @@ class ModbusBackend(object):
                 v = self.command[k]
             new_cmd[i] = (v)
 
-        new_cmd.reverse()
-        bits = self._from_bools(new_cmd)
-        new_cmd = [self._to_int(x) for x in bits]
+        new_cmd = self._from_bools(new_cmd)
         rtn = self.write_comm(self.netdata['command'], new_cmd)
 
         if check:
@@ -281,7 +279,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     @staticmethod
     def _from_int(int_value):
         bits = bitstring.Bits(int=int_value, length=32)
-        return bits.unpack('bin:16, bin')
+        return bits.unpack('uintbe:16, uintbe')
 
     @staticmethod
     def _to_float(bits):
@@ -291,7 +289,7 @@ world_lenght: %s, reg_by_comms: %s' % \
     @staticmethod
     def _from_float(float_value):
         bits = bitstring.Bits(float=float_value, length=32)
-        return bits.unpack('bin:16, bin')
+        return bits.unpack('uintbe:16, uintbe')
 
     @staticmethod
     def _to_bools(bits):
@@ -305,10 +303,11 @@ world_lenght: %s, reg_by_comms: %s' % \
     @staticmethod
     def _from_bools(bools):
         bin_str = '0b'
+        bools.reverse()
         for b in bools:
             bin_str += str(int(b))
         bits = bitstring.Bits(bin=bin_str)
-        return bits.unpack('bin:16, bin')
+        return bits.unpack('uintbe:16, uintbe')
 
     def _read_holding_registers(self, address, count):
             rq = ReadHoldingRegistersRequest(
