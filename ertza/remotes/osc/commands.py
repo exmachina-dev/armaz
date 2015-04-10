@@ -36,6 +36,9 @@ class OSCCommands(OSCBaseServer):
     def status_reply(self, sender, *args):
         return self.reply('/status', sender, *args, merge=True)
 
+    def timeout_reply(self, sender, *args):
+        return self.reply('/timeout', sender, *args, merge=False)
+
     @lo.make_method('/setup/set', 'ssi')
     @lo.make_method('/setup/set', 'ssh')
     @lo.make_method('/setup/set', 'ssf')
@@ -113,7 +116,7 @@ class OSCCommands(OSCBaseServer):
             rtn = self.mdb_request.set_command(driveEnable=st)
             self.status_reply(sender, '/debug/drive/return', rtn)
         except TimeoutError as e:
-            self.status_reply(sender, base + 'timeout', repr(e))
+            self.timeout_reply(sender, path, repr(e))
             pass
 
     @lo.make_method('/motor/status', '')
@@ -136,7 +139,7 @@ class OSCCommands(OSCBaseServer):
             self.status_reply(sender, base + 'error_code', errcode)
             self.status_reply(sender, base + 'drive_temperature', temp)
         except TimeoutError as e:
-            self.status_reply(sender, base + 'timeout', repr(e))
+            self.timeout_reply(sender, path, repr(e))
             pass
 
     @lo.make_method('/request/announce', '')
