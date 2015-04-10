@@ -215,7 +215,7 @@ class ModbusBackend(object):
         return self.speed
 
     def set_speed(self, new_speed, check=True):
-        new_speed = _from_float(new_speed)
+        new_speed = self._from_float(new_speed)
         rtn = self.write_comm(self.netdata['speed'], new_speed)
 
         if check:
