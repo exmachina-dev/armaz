@@ -184,7 +184,8 @@ class ModbusBackend(object):
                 v = self.command[k]
             new_cmd[i] = (v)
 
-        new_cmd = self._from_bools(new_cmd)
+        bits = self._from_bools(new_cmd)
+        new_cmd = [self._to_int(x) for x in bits]
         rtn = self.write_comm(self.netdata['command'], new_cmd)
 
         if check:
