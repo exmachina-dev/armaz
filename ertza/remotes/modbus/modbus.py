@@ -68,6 +68,7 @@ class ModbusBackend(object):
         self.errorcode = None
         self.end = None
         self.connected = False
+        self.config_request = None
         self.max_retry = 5
         self.retry = self.max_retry
 
@@ -79,7 +80,7 @@ class ModbusBackend(object):
             self.lg = logger
         else:
             import logging
-            self.lg = loggin.get_logger()
+            self.lg = loggin.getLogger(__name__)
 
         self.available_functions = [
                 3,     # Read holding registers
@@ -366,4 +367,4 @@ if __name__ == "__main__":
     mb.node_id = 2
     mb.word_lenght = 16
     mb.data_bit = 8
-    mb.nb_reg_by_comms = self.word_lenght / self.data_bit
+    mb.nb_reg_by_comms = int(mb.word_lenght / mb.data_bit)
