@@ -123,7 +123,7 @@ class OSCCommands(OSCBaseServer):
     def debug_drive_speed_callback(self, path, args, types, sender):
         sp, = args
         try:
-            rtn = self.mdb_request.set_command(speed=sp)
+            rtn = self.mdb_request.set_speed(sp)
             self.status_reply(sender, '/debug/drive/return', rtn)
         except TimeoutError as e:
             self.timeout_reply(sender, path, repr(e))
