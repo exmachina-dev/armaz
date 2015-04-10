@@ -8,6 +8,8 @@ from .gpio import RemoteServer
 from ..errors import RemoteServerError, RemoteError
 from ..errors import OSCServerError
 from ..errors import ModbusMasterError, SlaveError
+from ..config.defaults import (RMT_REFRESH_RATE, OSC_REFRESH_RATE,
+        MDB_REFRESH_RATE, SLV_REFRESH_RATE)
 
 import time
 import sys
@@ -22,7 +24,7 @@ class RemoteWorker(BaseWorker):
 
     def __init__(self, sm):
         super(RemoteWorker, self).__init__(sm)
-        self.interval = 0.01
+        self.interval = 1 / RMT_REFRESH_RATE
 
         self.cnf_pipe = self.initializer.cnf_rmt_pipe[1]
         self.mdb_pipe = self.initializer.mdb_rmt_pipe[1]
@@ -74,7 +76,7 @@ class OSCWorker(BaseWorker):
 
     def __init__(self, sm):
         super(OSCWorker, self).__init__(sm)
-        self.interval = 0.005
+        self.interval = 1 / OSC_REFRESH_RATE
 
         self.cnf_pipe = self.initializer.cnf_osc_pipe[1]
         self.mdb_pipe = self.initializer.mdb_osc_pipe[1]
@@ -126,7 +128,7 @@ class ModbusWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ModbusWorker, self).__init__(sm)
-        self.interval = 0.005
+        self.interval = 1 / MDB_REFRESH_RATE
 
         try:
             self.fake_modbus = self.cmd_args.without_modbus
@@ -186,7 +188,7 @@ class SlaveWorker(BaseWorker):
 
     def __init__(self, sm):
         super(SlaveWorker, self).__init__(sm)
-        self.interval = 0.005
+        self.interval = 1 / SLV_REFRESH_RATE
 
         self.cnf_pipe = self.initializer.cnf_slv_pipe[1]
         self.osc_pipe = self.initializer.slv_osc_pipe[0]

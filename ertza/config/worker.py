@@ -4,7 +4,7 @@ from ..base import BaseWorker
 from ..errors import ConfigError
 from .parser import BaseConfigParser as ConfigParser
 from .communication import ConfigRequest, ConfigResponse
-from .defaults import CONTROL_MODES, DEFAULT_CONTROL_MODE
+from .defaults import CONTROL_MODES, DEFAULT_CONTROL_MODE, CNF_REFRESH_RATE
 
 import sys
 import time
@@ -29,7 +29,7 @@ class ConfigWorker(BaseWorker):
         self.pipes = (self.log_pipe, self.rmt_pipe, self.osc_pipe,
                 self.mdb_pipe, self.slv_pipe)
 
-        self.interval = 0.001
+        self.interval = 1 / CNF_REFRESH_RATE
 
         self._config = self._config()
 

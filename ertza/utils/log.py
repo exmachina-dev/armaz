@@ -5,6 +5,7 @@ from queue import Empty
 
 from ..base import BaseWorker
 from ..config import ConfigParser, ConfigRequest
+from ..config.defaults import LOG_REFRESH_RATE
 
 import time
 
@@ -15,6 +16,8 @@ class LogWorker(BaseWorker):
 
     def __init__(self, sm):
         super(LogWorker, self).__init__(sm)
+        self.interval = 1 / LOG_REFRESH_RATE
+
         self.config_pipe = self.initializer.cnf_log_pipe[1]
         self.config_request = ConfigRequest(self.config_pipe)
 
@@ -49,7 +52,7 @@ class LogWorker(BaseWorker):
         try:
             while not self.exit_event.is_set():
                 try:
-                    record = self.lgq.get(timeout=0.1)
+                    record = self.lgq.get(block=False)
                     if record is None: # We send this as a sentinel to tell the listener to quit.
                         break
                     logger = logging.getLogger(record.name)
@@ -62,5 +65,7 @@ class LogWorker(BaseWorker):
                     import traceback
                     print('FATAL:', file=sys.stderr)
                     traceback.print_exc(file=sys.stderr)
+
+                self.exit_event.wait(self.interval)
         except (ConnectionError, EOFError):
             sys.exit()

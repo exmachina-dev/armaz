@@ -4,6 +4,14 @@ import os
 
 _user_config_path = os.path.expanduser('~/.ertza')
 
+OSC_REFRESH_RATE = 1000 # Hz
+MDB_REFRESH_RATE = 1000 # Hz
+SLV_REFRESH_RATE = 1500 # Hz
+RMT_REFRESH_RATE = 500 # Hz
+
+CNF_REFRESH_RATE = 100 # Hz
+LOG_REFRESH_RATE = 100 # Hz
+
 CONTROL_MODES = ('osc', 'serial', 'slave')
 DEFAULT_CONTROL_MODE = CONTROL_MODES[0]
 
