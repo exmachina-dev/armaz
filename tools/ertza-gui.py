@@ -178,14 +178,14 @@ class ErtzaGui(tk.Frame):
                 command=self.actions.close)
         self.quit_but.grid()
 
+        self.actions.load_defaults()
+
     def init_vars(self):
         self.dev_addr = tk.StringVar()
         self.dev_port = tk.IntVar()
         self.srv_port = tk.IntVar()
 
         self.ctl_drive_enable = tk.StringVar()
-
-        self.actions.load_defaults()
 
 
 root = tk.Tk()
