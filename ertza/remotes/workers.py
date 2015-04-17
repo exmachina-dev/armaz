@@ -78,6 +78,11 @@ class OSCWorker(BaseWorker):
         super(OSCWorker, self).__init__(sm)
         self.interval = 1 / OSC_REFRESH_RATE
 
+        try:
+            self.loopback = self.cmd_args.loopback
+        except AttributeError:
+            self.loopback = False
+
         self.cnf_pipe = self.initializer.cnf_osc_pipe[1]
         self.mdb_pipe = self.initializer.mdb_osc_pipe[1]
         self.slv_pipe = self.initializer.slv_osc_pipe[1]
@@ -116,7 +121,7 @@ class OSCWorker(BaseWorker):
             del self.osc_server
         self.osc_server = OSCServer(self.cnf_pipe, logger=self.lg,
                 restart_event=self.restart_osc_event, modbus=self.mdb_pipe,
-                slave=self.slv_pipe)
+                slave=self.slv_pipe, loopback=self.loopback)
         self.osc_server.start(blocking=False)
         self.osc_server.announce()
 

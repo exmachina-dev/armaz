@@ -8,6 +8,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='ertza')
     parser.add_argument('--without-modbus', action='store_true',
             help='start ertza without the modbus backend')
+    parser.add_argument('--loopback', action='store_true',
+            help='only listen on loopback')
     args = parser.parse_args()
 
     mi = Ertza(args)

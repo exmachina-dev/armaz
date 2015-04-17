@@ -55,6 +55,9 @@ class OSCBaseServer(lo.Server):
             self.control_mode = self.config_request.get(
                     'control', 'mode')
 
+            if 'loopback' in kwargs and kwargs['loopback'] == True:
+                self.broadcast_address = '127.0.0.1'
+
             self.enable_control_mode(self.control_mode)
             self.create_server()
 
