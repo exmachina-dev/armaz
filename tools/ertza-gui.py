@@ -105,7 +105,8 @@ class ErtzaActions(object):
         self.state['drive_enable'] = not self.state['drive_enable']
         self.send('/debug/drive/driveEnable', int(self.state['drive_enable']))
 
-        pass
+    def update_status(self):
+        self.send('/motor/status')
 
 
 class ErtzaGui(tk.Frame):
