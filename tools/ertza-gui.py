@@ -5,6 +5,38 @@ import tkinter as tk
 import liblo as lo
 from ertza.remotes.osc.server import OSCBaseServer
 
+class ErtzaOSCServer(lo.ServerThread):
+    def __init__(self, to, *args, **kwargs):
+        self.to = to
+        super(ErtzaOSCServer, self).__init__(*args, **kwargs)
+
+    def reply(self, default_path, sender, *args, **kwargs):
+        if kwargs and 'merge' in kwargs.keys():
+            kwargs['merge'] = True
+        else:
+            kwargs['merge'] = False
+
+        try:
+            if type(args[0]) == str and args[0][0] == '/':
+                args = list(args)
+                _msg = lo.Message(args.pop(0), *args)
+            elif len(args) >= 2 and kwargs['merge']:
+                args = list(args)
+                path = args.pop(0)
+                _msg = lo.Message(default_path+'/'+path, *args)
+            else:
+                _msg = lo.Message(default_path, *args)
+        except (TypeError, KeyError, IndexError):
+            _msg = lo.Message(default_path, *args)
+        self.send(sender, _msg)
+        return _msg
+
+    @lo.make_method('/status/online', 'i')
+    def online_cb(self, path, args, types, sender):
+        self.to.print('%s is online, listening on %s' % (
+            sender.get_hostname(), args[0]))
+
+
 class ErtzaActions(object):
     def __init__(self, master):
         self.master = master
