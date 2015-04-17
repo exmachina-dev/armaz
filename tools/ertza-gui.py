@@ -123,7 +123,8 @@ class ErtzaGui(tk.Frame):
         r = 0
         self.dev_addr_label = tk.Label(dv, text='Device address')
         self.dev_addr_label.grid(row=r, columnspan=2)
-        self.dev_addr_entry = tk.Entry(dv, textvariable=self.dev_addr)
+        self.dev_addr_entry = tk.Entry(dv, textvariable=self.dev_addr,
+                width=15)
         self.dev_addr_entry.grid(row=r, column=3, columnspan=2)
         self.dev_port_label = tk.Label(dv, text=':')
         self.dev_port_label.grid(row=r, column=5, columnspan=1)
@@ -154,7 +155,8 @@ class ErtzaGui(tk.Frame):
 
         self.log_list = tk.Listbox(lg,
                 xscrollcommand=self.log_x_scroll.set,
-                yscrollcommand=self.log_y_scroll.set)
+                yscrollcommand=self.log_y_scroll.set,
+                width=40)
         self.log_list.grid(row=0, column=0,
                 sticky=tk.N+tk.S+tk.E+tk.W)
         self.log_x_scroll['command'] = self.log_list.xview
