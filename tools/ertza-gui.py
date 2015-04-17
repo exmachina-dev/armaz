@@ -49,25 +49,22 @@ class ErtzaActions(object):
     def load_defaults(self):
         self.master.dev_addr.set('192.168.1.12')
         self.master.dev_port.set(7900)
-        self.master.dev_client.set(7901)
+        self.master.srv_port.set(7901)
 
         self.master.ctl_drive_enable.set('Drive enable')
 
     def connect(self):
         self.to = {
-                'address': self.master.dev_addr.get(),
-                'port': self.master.dev_port.get(),
-                'client': self.master.dev_client.get(),
+                'dev_addr': self.master.dev_addr.get(),
+                'dev_port': self.master.dev_port.get(),
+                'srv_port': self.master.srv_port.get(),
                 }
         if self.connected:
             del self.osc_server
 
-        self.osc_server = OSCBaseServer(None, no_config=True)
-        self.osc_server.server_port = self.to['client']
-        self.osc_server.client_port = self.to['port']
-        self.osc_server.create_server()
-        self.osc_server.start(blocking=False)
-        self.target = lo.Address(self.to['address'], self.to['port'])
+        self.osc_server = ErtzaOSCServer(self, self.to['srv_port'], lo.UDP)
+        self.osc_server.start()
+        self.target = lo.Address(self.to['dev_addr'], self.to['dev_port'])
         self.connected = True
 
     def stop(self):
@@ -116,11 +113,11 @@ class ErtzaGui(tk.Frame):
                 width=5)
         self.dev_port_entry.grid(row=r, column=6, columnspan=1)
         r = 1
-        self.dev_client_label = tk.Label(dv, text='Listen on')
-        self.dev_client_label.grid(row=r, column=4, columnspan=2)
-        self.dev_client_entry = tk.Entry(dv, textvariable=self.dev_client,
+        self.srv_port_label = tk.Label(dv, text='Listen on')
+        self.srv_port_label.grid(row=r, column=4, columnspan=2)
+        self.srv_port_entry = tk.Entry(dv, textvariable=self.srv_port,
                 width=5)
-        self.dev_client_entry.grid(row=r, column=6, columnspan=1)
+        self.srv_port_entry.grid(row=r, column=6, columnspan=1)
 
         self.connect_but = tk.Button(dv, text='Connect',
                 command=self.actions.connect)
@@ -164,7 +161,7 @@ class ErtzaGui(tk.Frame):
     def init_vars(self):
         self.dev_addr = tk.StringVar()
         self.dev_port = tk.IntVar()
-        self.dev_client = tk.IntVar()
+        self.srv_port = tk.IntVar()
 
         self.ctl_drive_enable = tk.StringVar()
 
