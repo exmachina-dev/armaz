@@ -5,6 +5,8 @@ import tkinter as tk
 import liblo as lo
 from ertza.remotes.osc.server import OSCBaseServer
 
+VERSION = '0.0.1'
+
 class ErtzaOSCServer(lo.ServerThread):
     def __init__(self, to, *args, **kwargs):
         self.to = to
@@ -53,6 +55,19 @@ class ErtzaActions(object):
 
         self.master.ctl_drive_enable.set('Drive enable')
 
+        self.print('Welcome to Ertza debug GUI.', 'Version : %s' % (VERSION,))
+
+    def print(self, *msg, **kwargs):
+        index = tk.END
+        if 'index' in kwargs:
+            index = kwargs['index']
+
+        if type(msg) is str:
+            return self.master.log_list.insert(index, msg)
+        else:
+            for m in msg:
+                self.master.log_list.insert(index, m)
+
     def connect(self):
         self.to = {
                 'dev_addr': self.master.dev_addr.get(),
@@ -62,8 +77,11 @@ class ErtzaActions(object):
         if self.connected:
             del self.osc_server
 
+        self.print('Starting server on %s' % self.to['srv_port'])
         self.osc_server = ErtzaOSCServer(self, self.to['srv_port'], lo.UDP)
         self.osc_server.start()
+        self.print('Setting target to %s:%s' % (self.to['dev_addr'],
+            self.to['dev_port'],))
         self.target = lo.Address(self.to['dev_addr'], self.to['dev_port'])
         self.connected = True
 
