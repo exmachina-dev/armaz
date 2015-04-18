@@ -1,20 +1,28 @@
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 from ..config import ConfigRequest
 from ..errors import RemoteError
 from .modbus import ModbusRequest
+from .temp_chart import NTCLE100E3103JB0 as temp_chart
+from .event_watcher import EventWatcher
 
 try:
     import Adafruit_BBIO.GPIO as GPIO
-    import Adafruit_BBIO.ADC as ADC
     import Adafruit_BBIO.PWM as PWM
 except ImportError as e:
     pass
  
 SWITCH_PINS = ("P8_10", "P8_11",)
-TEMP_PINS = ('P9_39', 'P9_40',)
-TEMP_TARGET = (35.0, 40.0,) # in °C
+TEMP_PINS = (
+        '/sys/bus/iio/devices/iio:device0/in_voltage0_raw', #AIN0
+        '/sys/bus/iio/devices/iio:device0/in_voltage1_raw', #AIN1
+        )
+TEMP_TARGET = (40.0, 40.0,) # in °C
 FAN_PINS = ('P8_13', 'P8_19',)
+
+TEMP_TABLE = np.array(temp_chart).transpose()
 
 class RemoteServer(object):
     def __init__(self, config, **kwargs):
@@ -72,8 +80,8 @@ class RemoteServer(object):
         if not self.fake_mode:
             sw = list()
             for i, p in enumerate(SWITCH_PINS):
-                a = self.config_request.get('switch'+str(i), 'action', None)
-                r = self.config_request.get('switch'+str(i), 'reverse', False)
+                a = self.config_request.get('switch_'+str(i), 'action', None)
+                r = self.config_request.get('switch_'+str(i), 'reverse', False)
                 sw.append(SwitchHandler(i, p, a, r))
             self.switchs = tuple(sw)
             return True
@@ -102,12 +110,10 @@ class RemoteServer(object):
         if not self.fake_mode:
             GPIO.cleanup()
 
-class SwitchHandler(object):
-    def __init__(self, index, pin, action=None, reverse=False):
-        self.index = index
-        self.pin = pin
-        self.action = action
-        self.reverse = reverse
+class SwitchHandler(EventWatcher):
+    def __init__(self, name, pin, callback=None, invert=False):
+        super(SwitchHandler, self).__init__(pin, key_code, name, invert)
+        self.callback = callback
 
         self.setup_pin()
 
@@ -149,8 +155,26 @@ class TempWatcher(object):
         self.fan.set_duty_cycle(_cmd)
 
     def get_temperature(self):
-        raw = ADC.read_raw(self.sensor)
-        return raw
+        """ Return the temperature in degrees celsius """
+        with open(self.sensor, "r") as file:
+            try:
+                voltage = (float(file.read().rstrip()) / 4095.0) * 1.8
+                res_val = self.voltage_to_resistance(voltage)  # Convert to resistance
+                return self.resistance_to_degrees(res_val) # Convert to degrees
+            except IOError as e:
+                logging.error("Unable to get ADC value ({0}): {1}".format(e.errno, e.strerror))
+                return -1.0
+
+    def resistance_to_degrees(self, resistor_val):
+        """ Return the temperature nearest to the resistor value """
+        idx = (np.abs(self.temp_table[1] - resistor_val)).argmin()
+        return self.temp_table[0][idx]
+
+    def voltage_to_resistance(self, v_sense):
+        """ Convert the voltage to a resistance value """
+        if v_sense == 0 or (abs(v_sense - 1.8) < 0.001):
+            return 10000000.0
+        return 4700.0 / ((1.8 / v_sense) - 1.0)
 
     def get_error(self):
         self.error_last = self.error
