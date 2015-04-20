@@ -22,6 +22,8 @@ class ModbusBackend(object):
             'status':               2,
             'error_code':           3,
             'speed':                4,
+            'acceleration':         5,
+            'deceleration':         6,
             'encoder_velocity':     10,
             'encoder_position':     11,
             'command_number':       20,
@@ -208,19 +210,35 @@ class ModbusBackend(object):
 
         return self.error_code
 
-    def get_speed(self):
-        speed = self.read_comm(self.netdata['speed'])
-        self.speed = self._to_float(speed[0]+speed[1])
+    def get_float(self, key):
+        new_float = self.read_comm(self.netdata[key])
+        return self._to_float(new_float[0]+new_float[1])
 
-        return self.speed
-
-    def set_speed(self, new_speed, check=True):
-        new_speed = self._from_float(new_speed)
-        rtn = self.write_comm(self.netdata['speed'], new_speed)
+    def set_float(self, key, new_float, check=False):
+        new_float = self._from_float(new_float)
+        rtn = self.write_comm(self.netdata[key], new_float)
 
         if check:
-            return self.get_speed()
+            return self.get_float(key)
         return rtn
+
+    def get_speed(self):
+        return self.get_float('speed')
+
+    def set_speed(self, new_speed, check=True):
+        return self.set_float('speed', new_speed)
+
+    def get_acceleration(self):
+        return self.get_float('acceleration')
+
+    def set_acceleration(self, new_acceleration, check=True):
+        return self.set_float('acceleration', new_acceleration)
+
+    def get_deceleration(self):
+        return self.get_float('deceleration')
+
+    def set_deceleration(self, new_deceleration, check=True):
+        return self.set_float('deceleration', new_deceleration)
 
     def get_encoder_velocity(self):
         ev = self.read_comm(self.netdata['encoder_velocity'])
