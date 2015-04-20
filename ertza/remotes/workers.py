@@ -78,11 +78,6 @@ class OSCWorker(BaseWorker):
         super(OSCWorker, self).__init__(sm)
         self.interval = 1 / OSC_REFRESH_RATE
 
-        try:
-            self.loopback = self.cmd_args.loopback
-        except AttributeError:
-            self.loopback = False
-
         self.cnf_pipe = self.initializer.cnf_osc_pipe[1]
         self.mdb_pipe = self.initializer.mdb_osc_pipe[1]
         self.slv_pipe = self.initializer.slv_osc_pipe[1]
@@ -121,7 +116,7 @@ class OSCWorker(BaseWorker):
             del self.osc_server
         self.osc_server = OSCServer(self.cnf_pipe, logger=self.lg,
                 restart_event=self.restart_osc_event, modbus=self.mdb_pipe,
-                slave=self.slv_pipe, loopback=self.loopback)
+                slave=self.slv_pipe, **self.cmd_args)
         self.osc_server.start(blocking=False)
         self.osc_server.announce()
 
@@ -134,11 +129,6 @@ class ModbusWorker(BaseWorker):
     def __init__(self, sm):
         super(ModbusWorker, self).__init__(sm)
         self.interval = 1 / MDB_REFRESH_RATE
-
-        try:
-            self.fake_modbus = self.cmd_args.without_modbus
-        except AttributeError:
-            self.fake_modbus = False
 
         self.cnf_pipe = self.initializer.cnf_mdb_pipe[1]
         self.osc_pipe = self.initializer.mdb_osc_pipe[0]
@@ -181,7 +171,7 @@ class ModbusWorker(BaseWorker):
         if restart:
             del self.modbus_backend
         self.modbus_master = ModbusMaster(self.cnf_pipe, self.lg,
-                self.restart_mdb_event, self.blockall_event, self.fake_modbus)
+                self.restart_mdb_event, self.blockall_event, **self.cmd_args)
         self.modbus_master.start()
 
 
@@ -238,7 +228,8 @@ class SlaveWorker(BaseWorker):
         if restart:
             del self.slave_server
         self.slave_server = SlaveServer(self.cnf_pipe, self.lg,
-                self.restart_slv_event, self.blockall_event, self.mdb_pipe)
+                self.restart_slv_event, self.blockall_event, self.mdb_pipe,
+                **self.cmd_args)
         self.slave_server.start(blocking=False)
         self.slave_server.announce()
 

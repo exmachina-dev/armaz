@@ -22,7 +22,7 @@ class SlaveServer(OSCBaseServer):
     SlaveServer contains commands for enslaving registered slaves or act as a slave.
     """
     def __init__(self, config_pipe, lg, restart_event, blockall_event,
-            modbus_pipe):
+            modbus_pipe, **kwargs):
         super(SlaveServer, self).__init__(config_pipe, logger=lg,
                 restart_event=restart_event, modbus=modbus_pipe,
                 no_config=True)
@@ -35,6 +35,11 @@ class SlaveServer(OSCBaseServer):
                     'enslave', 'master_port', 7902))
             self.client_port = int(self.config_request.get(
                     'enslave', 'slave_port', 7903))
+
+        if 'reverse_ports' in kwargs:
+            if kwargs['reverse_ports']:
+                self.lg.warn('Reversing server and client ports.')
+                self.client_port, self.server_port = self.server_port, self.client_port
 
         if self.mode == 'master':
             self.slaves_datastore = self.config_request.get(

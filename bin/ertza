@@ -10,7 +10,9 @@ if __name__ == "__main__":
             help='start ertza without the modbus backend')
     parser.add_argument('--loopback', action='store_true',
             help='only listen on loopback')
+    parser.add_argument('--reverse-ports', action='store_true',
+            help='reverse server and client ports')
     args = parser.parse_args()
 
-    mi = Ertza(args)
+    mi = Ertza(vars(args))
     mi.main_run()

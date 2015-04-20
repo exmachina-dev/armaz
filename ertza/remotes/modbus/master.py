@@ -5,15 +5,20 @@ import ertza.errors as err
 
 
 class ModbusMaster(object):
-    def __init__(self, config, logger, restart_event, block_event,
-            fake_master=False):
+    def __init__(self, config, logger, restart_event, block_event, **kwargs):
         self.config = config
-        self.fake = fake_master
+
         if logger:
             self.lg = logger
         else:
             import logging
             self.lg = logging.getLogger()
+
+        self.fake = False
+        if 'without_modbus' in kwargs:
+            self.fake = kwargs['without_modbus']
+            if self.fake:
+                self.lg.warn('Starting modbus master in fake mode.')
 
         self.back = ModbusBackend(config, self.lg, restart_event, block_event)
 
