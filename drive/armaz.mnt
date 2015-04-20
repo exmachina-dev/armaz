@@ -14,17 +14,19 @@ Bitfield CommandNetData
     motor_brake_release As 2 To 2
 End Bitfield
 
-Const _refreshRate = 50
+Const _bus = _busETHERNET
+Const _refreshRate = 5
 Const _cmdTimeout = 500     'Command timeout
+Const _axis = 0
+
 Dim cmdTime As Time
 Dim cmdTimeoutStatus As Integer = 0
-Const _axis = 0
 Dim nbCommand As Integer
-  
+
+
 Loop
     EncoderValues
     Status
-    CommandTimeout
     Wait(_refreshRate)
 End Loop
 
@@ -47,7 +49,7 @@ End Sub
 
 Sub EncoderValues()
     NETFLOAT(10) = ENCODERVEL(0)
-    NETFLOAT(11) = ENCODER(0)
+    NETINTEGER(11) = ENCODER(0)
 End Sub
 
 Sub CommandTimeout()
@@ -99,15 +101,33 @@ Event NETDATA1
     ResetCommandTimeout
 End Event
     
-Event NETDATA5
+Event NETDATA4
     Dim cmdSpeed As Float
-    cmdSpeed = NETFLOAT(5)
+    cmdSpeed = NETFLOAT(4)
     
     If cmdSpeed <> 0 Then
         JOG(_axis) = cmdSpeed
     Else
         STOP(_axis)
     End If
+    ResetCommandTimeout
+End Event
+
+Event NETDATA5
+    Dim cmdAcceleration As Float
+    cmdAcceleration = NETFLOAT(6)
+    
+    If cmdAcceleration <> 0 Then
+        ACCEL(_axis) = cmdAcceleration
+    ResetCommandTimeout
+End Event
+
+Event NETDATA6
+    Dim cmdDeceleration As Float
+    cmdDeceleration = NETFLOAT(6)
+    
+    If cmdDeceleration <> 0 Then
+        DECEL(_axis) = cmdDeceleration
     ResetCommandTimeout
 End Event
 
@@ -162,8 +182,6 @@ End Event
 Startup
     Auto
     
-    Const _bus = _busETHERNET
-  
     If _bus = _busSERIAL1 Then
         BUSNODE(_bus) = 2                                            'MicroFlex e100 is node 2 on RTU network
         SERIALBAUD(_TERM1) = 57600                                   'Running at 57.6kbaud (default)
