@@ -9,10 +9,17 @@ from ....config import DEFAULT_CONTROL_MODE
 from ....errors import SlaveError, TimeoutError
 from ..server import OSCBaseServer
 
+STATES = {
+        'EMPTY':        0x00,
+        'UPTODATE':     0x01,
+        'CHANGED':      0x02,
+        'WAITING':      0x03,
+        }
+
 
 class SlaveServer(OSCBaseServer):
     """
-    SlaveServer contains for enslaving registered slaves or act as a slave.
+    SlaveServer contains commands for enslaving registered slaves or act as a slave.
     """
     def __init__(self, config_pipe, lg, restart_event, blockall_event,
             modbus_pipe):
@@ -121,20 +128,25 @@ class SlaveServer(OSCBaseServer):
             return None
         elif len(args) > 3:
             args = (args[0], args[1], args[2:])
-        if sender not in self.slaves.keys():
+
+        try:
+            slave = self.get_slave(sender)
+
+            sec, opt, value = args
+            slave_config = self.slaves[sender]
+            slave_config.update({(sec, opt): value,})
+        except SlaveError:
             self.slave_reply(sender, 'config', 'Non-registered slave')
             return None
 
-        sec, opt, value = args
-        slave_config = self.slaves[sender]
-        slave_config.update({(sec, opt): value,})
 
     @lo.make_method('/enslave/config/dump', None)
     def enslave_config_dump(self, path, args, types, sender):
         self.lg.debug('Dumping config to %s', sender.get_hostname())
         for a, v in self.config_request.dump():
             s, o = a
-            self.slave_reply(sender, '/config/value', s, o, v)
+            self.slave_reply(sender, 'config/value', s, o, v)
+        self.slave_reply(sender, 'config/dump_done')
 
     @lo.make_method('/enslave/slave/unregister', '')
     @lo.make_method('/enslave/slave/register', '')
@@ -170,6 +182,12 @@ class SlaveServer(OSCBaseServer):
         if sender in self.slaves.keys():
             self.announce(target=sender.get_hostname())
 
+    # Update config state for slave
+    @lo.make_method('/enslave/config/dump_done', '')
+    def auto_announce_to_slave(self, path, args, types, sender):
+        slave = self.get_slave(sender)
+        slave['config_state'] = STATES['UPTODATE']
+
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
         self.slave_reply(sender, "/enslave/unknow_command", path, types, *args)
@@ -181,7 +199,16 @@ class SlaveServer(OSCBaseServer):
         return False
 
     def request_slave_config(self, slave):
-        self.master_reply(slave, 'dump_config')
+        slave = self.get_slave(slave)
+        self.master_reply(slave, 'config/dump')
+        self.slaves[slave]['config_state'] = STATES['WAITING']
+
+    def get_slave(self, slave):
+        if slave in self.slaves.keys():
+            return slave
+        else:
+            raise SlaveError('Unregistered slave: %s' % slave.get_hostname(),
+                    self.lg)
 
     def add_to_slaves(self, slv):
         self.slaves.update({slv: {},})
