@@ -87,7 +87,7 @@ class ConfigWorker(BaseWorker):
                         rs.send()
 
 
-                time.sleep(self.interval)
+                self.exit_event.wait(self.interval)
         except ConnectionError:
             sys.exit()
 
