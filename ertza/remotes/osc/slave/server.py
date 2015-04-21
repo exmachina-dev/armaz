@@ -121,7 +121,7 @@ class SlaveServer(OSCBaseServer):
         self.lg.debug('Executed %s (%s) from %s',
                 path, args, types, sender.get_hostname())
 
-    @lo.make_method('/enslave/config/get', None)
+    @lo.make_method('/enslave/master/config/get', None)
     def enslave_config_get_callback(self, path, args, types, sender):
         """ Return config value. """
         if len(args) != 2:
@@ -133,12 +133,36 @@ class SlaveServer(OSCBaseServer):
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.slave_reply(sender, setup_section, str(repr(e)))
 
-    @lo.make_method('/enslave/config/set', None)
+    @lo.make_method('/enslave/master/config/set', None)
     def enslave_config_set_callback(self, path, args, types, sender):
         """ Update config only if is send be master. """
 
+        if not self.mode == 'slave':
+            self.slave_reply(sender, 'config', 'I\'m not your slave.')
+
         if len(args) < 3:
             self.slave_reply(sender, 'config', 'Invalid number of arguments')
+            return None
+        elif len(args) > 3:
+            args = (args[0], args[1], args[2:])
+
+        try:
+            if self.master == sender.get_hostname():
+                sec, opt, value = args
+                value = self.config_request.set(setup_section, setup_var, value)
+                self.slave_reply(sender, 'config', sec, opt, value)
+            else:
+                raise SlaveError('Unrecognized master', self.lg)
+        except SlaveError as e:
+            self.slave_reply(sender, 'config', repr(e))
+            return None
+
+    @lo.make_method('/enslave/slave/config/value', None)
+    def enslave_config_value_callback(self, path, args, types, sender):
+        """ Update config in slave datastore according to slave config. """
+
+        if len(args) < 3:
+            self.master_reply(sender, 'config', 'Invalid number of arguments')
             return None
         elif len(args) > 3:
             args = (args[0], args[1], args[2:])
@@ -150,11 +174,10 @@ class SlaveServer(OSCBaseServer):
             slave_config = self.slaves[sender]
             slave_config.update({(sec, opt): value,})
         except SlaveError:
-            self.slave_reply(sender, 'config', 'Non-registered slave')
+            self.master_reply(sender, 'config', 'Non-registered slave')
             return None
 
-
-    @lo.make_method('/enslave/config/dump', None)
+    @lo.make_method('/enslave/master/config/dump', None)
     def enslave_config_dump(self, path, args, types, sender):
         """ Dump config. """
         self.lg.debug('Dumping config to %s', sender.get_hostname())
@@ -208,7 +231,7 @@ class SlaveServer(OSCBaseServer):
             self.announce(target=sender.get_hostname())
 
     # Update config state for slave
-    @lo.make_method('/enslave/config/dump_done', '')
+    @lo.make_method('/enslave/slave/config/dump_done', '')
     def auto_announce_to_slave(self, path, args, types, sender):
         """
         Update config status in  slaves datastore.
