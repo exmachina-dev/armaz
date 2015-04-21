@@ -87,6 +87,8 @@ class SlaveServer(OSCBaseServer):
         super(SlaveServer, self).run(timeout)
 
     def announce(self, **kwargs):
+        """ Send an announce on broadcast address. """
+
         if 'target' in kwargs.keys():
             address = lo.Address(kwargs['target'], self.client_port)
         else:
@@ -95,9 +97,11 @@ class SlaveServer(OSCBaseServer):
         return self.send(address, msg)
 
     def slave_reply(self, sender, *args, **kwargs):
+        """ Reply from a slave. """
         return self.reply('/enslave/slave', sender, *args, **kwargs)
 
     def master_reply(self, sender, *args, **kwargs):
+        """ Reply from a master. """
         return self.reply('/enslave/master', sender, *args, merge=True,
                 **kwargs)
 
@@ -106,6 +110,8 @@ class SlaveServer(OSCBaseServer):
     @lo.make_method('/enslave/get_error_code', '')
     @lo.make_method('/enslave/get_drive_temperature', '')
     def enslave_get_callback(self, path, args, types, sender):
+        """ Send slave status. """
+
         try:
             _value = self.mdb_request.get(path.split('/')[-1])
             self.slave_reply(sender, path, _value)
@@ -117,6 +123,7 @@ class SlaveServer(OSCBaseServer):
 
     @lo.make_method('/enslave/config/get', None)
     def enslave_config_get_callback(self, path, args, types, sender):
+        """ Return config value. """
         if len(args) != 2:
             self.slave_reply(sender, 'config', 'Invalid number of arguments')
         setup_section, setup_var = args
@@ -128,6 +135,8 @@ class SlaveServer(OSCBaseServer):
 
     @lo.make_method('/enslave/config/set', None)
     def enslave_config_set_callback(self, path, args, types, sender):
+        """ Update config only if is send be master. """
+
         if len(args) < 3:
             self.slave_reply(sender, 'config', 'Invalid number of arguments')
             return None
@@ -147,6 +156,7 @@ class SlaveServer(OSCBaseServer):
 
     @lo.make_method('/enslave/config/dump', None)
     def enslave_config_dump(self, path, args, types, sender):
+        """ Dump config. """
         self.lg.debug('Dumping config to %s', sender.get_hostname())
         for a, v in self.config_request.dump():
             s, o = a
@@ -156,6 +166,13 @@ class SlaveServer(OSCBaseServer):
     @lo.make_method('/enslave/slave/unregister', '')
     @lo.make_method('/enslave/slave/register', '')
     def slave_register_callback(self, path, args, types, sender):
+        """
+        Handle register/unregister request:
+
+        register: Update slaves datastore and request config from slaves.
+        unregister: Delete slave from datastore.
+        """
+
         sender_host = sender.get_hostname()
         if '/register' in path:
             self.lg.debug('Received slave register from %s', sender_host)
@@ -176,6 +193,8 @@ class SlaveServer(OSCBaseServer):
     # Auto-register when master come up
     @lo.make_method('/enslave/master/online', 'i')
     def auto_register_to_master(self, path, args, types, sender):
+        """ Auto register if a master is brought online. """
+
         port, = args
         if sender.get_hostname() == self.master and port == self.server_port:
             self.register_to_master()
@@ -183,6 +202,7 @@ class SlaveServer(OSCBaseServer):
     # Auto-annouce to slave when it come up (so it can auto-register)
     @lo.make_method('/enslave/slave/online', 'i')
     def auto_announce_to_slave(self, path, args, types, sender):
+        """ If a slave is received, announce to that slave. """
         port, = args
         if sender in self.slaves.keys():
             self.announce(target=sender.get_hostname())
@@ -190,25 +210,42 @@ class SlaveServer(OSCBaseServer):
     # Update config state for slave
     @lo.make_method('/enslave/config/dump_done', '')
     def auto_announce_to_slave(self, path, args, types, sender):
+        """
+        Update config status in  slaves datastore.
+
+        This is received when a slave dump its config.
+        """
         slave = self.get_slave(sender)
         slave['config_state'] = STATES['UPTODATE']
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
+        """ Default fallback when an unknown command is received. """
+
         self.slave_reply(sender, "/enslave/unknow_command", path, types, *args)
 
     def register_to_master(self):
+        """
+        Register to master
+
+        If no master, return False.
+        """
         if self.master:
             return self.slave_reply(lo.Address(self.master, self.server_port), 'register')
         self.lg.info('No master specified, waiting for it.')
         return False
 
     def request_slave_config(self, slave):
+        """ Request config of slave. """
         slave = self.get_slave(slave)
         self.master_reply(slave, 'config/dump')
         self.slaves[slave]['config_state'] = STATES['WAITING']
 
     def get_slave(self, slave):
+        """ Return a slave dict with its config or raise SlaveError if slave
+        doesn't exist.
+        """
+
         if slave in self.slaves.keys():
             return slave
         else:
@@ -216,10 +253,14 @@ class SlaveServer(OSCBaseServer):
                     self.lg)
 
     def add_to_slaves(self, slv):
+        """ Add slave to datastore. """
+
         self.slaves.update({slv: {},})
         self._save_slaves()
 
     def remove_from_slaves(self, slv):
+        """ Remove slave from datastore. """
+
         r = self.slaves.pop(slv, False)
         if r:
             self._save_slaves()
