@@ -77,6 +77,21 @@ class OSCCommands(OSCBaseServer):
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             self.setup_reply(sender, setup_section, str(repr(e)))
 
+    @lo.make_method('/setup/dump', None)
+    def setup_get_callback(self, path, args, types, sender):
+        section = None
+        if len(args) is 1:
+            section = args[0]
+
+        try:
+            self.lg.debug('Dumping config to %s' % (sender.get_hostname(),))
+            dump = self.config_request.dump(section)
+            for k, v in dump.items():
+                self.setup_reply(sender, '/setup/value', k[0], k[1], v)
+            self.setup_reply(sender, '/setup/dump/done')
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            self.setup_reply(sender, section, str(repr(e)))
+
     @lo.make_method('/setup/enslave/to', 's')
     @lo.make_method('/setup/enslave/mode', 's')
     def enslave_callback(self, path, args, types, sender):
