@@ -66,9 +66,7 @@ class OSCCommands(OSCBaseServer):
         self.lg.debug('Executed %s %s.%s %s (%s) from %s',
                 path, setup_sec, setup_opt, args, types, sender.get_hostname())
 
-    @lo.make_method('/setup/get', 'ss')
-    @lo.make_method('/setup/get', 's')
-    @lo.make_method('/setup/get', '')
+    @lo.make_method('/setup/get', None)
     def setup_get_callback(self, path, args, types, sender):
         if len(args) != 2:
             self.setup_reply(sender, "One or more argument is missing.")

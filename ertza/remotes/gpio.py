@@ -133,14 +133,6 @@ class TempWatcher(object):
     def __init__(self, sensor, fan, target_temp):
         self.sensor = sensor
         self.beta = 3977
-        self.map_table = (
-                (0, 423),
-                (25, 900),
-                (40, 1174),
-                (55, 1386),
-                (70, 1532),
-                (85, 1599),
-                (100, 1686))
         self.fan_pin = fan
         self.fan = PWM.start(fan, 0)
         self.target_temp = target_temp
