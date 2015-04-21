@@ -22,7 +22,7 @@ TEMP_PINS = (
 TEMP_TARGET = (40.0, 40.0,) # in °C
 FAN_PINS = ('P8_13', 'P8_19',)
 
-TEMP_TABLE = np.array(temp_chart).transpose()
+TEMP_TABLE = temp_chart
 
 class RemoteServer(object):
     def __init__(self, config, **kwargs):
@@ -167,8 +167,7 @@ class TempWatcher(object):
 
     def resistance_to_degrees(self, resistor_val):
         """ Return the temperature nearest to the resistor value """
-        idx = (np.abs(self.temp_table[1] - resistor_val)).argmin()
-        return self.temp_table[0][idx]
+        return resistor_val
 
     def voltage_to_resistance(self, v_sense):
         """ Convert the voltage to a resistance value """
