@@ -177,4 +177,5 @@ class OSCCommands(OSCBaseServer):
 
     @lo.make_method(None, None)
     def fallback_callback(self, path, args, types, sender):
+        self.lg.debug('Received wrong command. Ignoring.')
         self.setup_reply(sender, "/status/wrong_osc_command", path, types, *args)
