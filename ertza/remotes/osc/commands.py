@@ -132,6 +132,17 @@ class OSCCommands(OSCBaseServer):
             self.timeout_reply(sender, path, repr(e))
             pass
 
+    @lo.make_method('/debug/drive/clear_errors', 'i')
+    def debug_clear_errors_callback(self, path, args, types, sender):
+        st, = args
+        print(st)
+        try:
+            rtn = self.mdb_request.set_command(clear_errors=st)
+            self.status_reply(sender, '/debug/drive/return', rtn)
+        except TimeoutError as e:
+            self.timeout_reply(sender, path, repr(e))
+            pass
+
     @lo.make_method('/debug/drive/speed', 'i')
     def debug_drive_speed_callback(self, path, args, types, sender):
         sp, = args
