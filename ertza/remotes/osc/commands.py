@@ -156,13 +156,12 @@ class OSCCommands(OSCBaseServer):
                         'Unable to get status')
 
             errcode = self.mdb_request.error_code
-            self.lg.debug(errcode)
             temp = self.mdb_request.drive_temperature
 
             if not errcode:
                 errcode = 'Unable to get error code'
             if not temp:
-                errcode = 'Unable to get drive temperature'
+                temp = 'Unable to get drive temperature'
 
             self.status_reply(sender, base + 'error_code', errcode)
             self.status_reply(sender, base + 'drive_temperature', temp)
