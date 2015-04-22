@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
-
 from ertza.utils.adafruit_i2c import Adafruit_I2C
 import time
 import subprocess
