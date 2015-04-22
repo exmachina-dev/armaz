@@ -210,17 +210,35 @@ class ModbusBackend(object):
 
         return self.error_code
 
-    def get_float(self, key):
-        new_float = self.read_comm(self.netdata[key])
-        return self._to_float(new_float[0]+new_float[1])
+    def _get(self, key, format_function=None):
+        rtn = self.read_comm(self.netdata[key])
 
-    def set_float(self, key, new_float, check=False):
-        new_float = self._from_float(new_float)
-        rtn = self.write_comm(self.netdata[key], new_float)
+        if format_function:
+            return format_function(rtn[0]+rtn[1])
+        return rtn[0]+rtn[1]
+
+    def _set(self, key, value, format_function=None, check=None):
+        rtn = self.write_comm(self.netdata[key], format_function(new_value))
 
         if check:
-            return self.get_float(key)
+            return self._get(key, check)
         return rtn
+
+    def get_int(self, key):
+        return self._get(key, self._to_int)
+
+    def set_int(self, key, new_int, check=False):
+        if check:
+            return self._set(key, new_int, self._from_int, self._to_int)
+        return self._set(key, new_int, self._from_int)
+
+    def get_float(self, key):
+        return self._get(key, self._to_float)
+
+    def set_float(self, key, new_float, check=False):
+        if check:
+            return self._set(key, new_float, self._from_float, self._to_float)
+        return self._set(key, new_float, self._from_float)
 
     def get_speed(self):
         return self.get_float('speed')
@@ -241,28 +259,16 @@ class ModbusBackend(object):
         return self.set_float('deceleration', new_deceleration)
 
     def get_encoder_velocity(self):
-        ev = self.read_comm(self.netdata['encoder_velocity'])
-        self.encoder_velocity = self._to_float(ev[0]+ev[1])
-
-        return self.encoder_velocity
+        return self.get_float('encoder_velocity')
 
     def get_encoder_position(self):
-        ep = self.read_comm(self.netdata['encoder_position'])
-        self.encoder_position = self._to_int(ep[0]+ep[1])
-
-        return self.encoder_position
+        return self.get_int('encoder_position')
 
     def get_drive_temperature(self):
-        temp = self.read_comm(self.netdata['drive_temperature'])
-        self.drive_temperature = self._to_float(temp[0]+temp[1])
-
-        return self.drive_temperature
+        return self.get_float('drive_temperature')
 
     def get_dropped_frames(self):
-        df = self.read_comm(self.netdata['dropped_frames'])
-        self.dropped_frames = self._to_int(df[0]+df[1])
-
-        return self.dropped_frames
+        return self.get_int('dropped_frames')
 
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
