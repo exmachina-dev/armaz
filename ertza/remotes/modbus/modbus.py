@@ -24,8 +24,11 @@ class ModbusBackend(object):
             'speed':                4,
             'acceleration':         5,
             'deceleration':         6,
+            'velocity':             7,
             'encoder_velocity':     10,
             'encoder_position':     11,
+            'follow_error':         12,
+            'effort':               13,
             'command_number':       20,
             'drive_temperature':    21,
             'dropped_frames':       50,
@@ -41,8 +44,7 @@ class ModbusBackend(object):
 
     command_keys = (
             'drive_enable',
-            'stop',
-            'release_brake',
+            'drive_cancel',
             'clear_errors',
             )
 
@@ -162,6 +164,12 @@ class ModbusBackend(object):
             raise ConfigError('Data bit must be an int.') from e
 
         try:
+            self.encoder_ratio = int(self.config_request.get(
+                'modbus', 'encoder_ratio', 1000))
+        except ValueError as e:
+            raise ConfigError('Encoder ratio must be an int.') from e
+
+        try:
             self.nb_reg_by_comms = int(self.word_lenght / self.data_bit)
         except TypeError as e:
             raise ValueError('%s must be divided by %s' % (
@@ -244,8 +252,8 @@ class ModbusBackend(object):
     def get_speed(self):
         return self.get_float('speed')
 
-    def set_speed(self, new_speed, check=True):
-        return self.set_float('speed', new_speed)
+    def set_speed(self, new_speed, check=False):
+        return self.set_float('speed', new_speed, check)
 
     def get_acceleration(self):
         return self.get_float('acceleration')
@@ -259,11 +267,20 @@ class ModbusBackend(object):
     def set_deceleration(self, new_deceleration, check=True):
         return self.set_float('deceleration', new_deceleration)
 
+    def get_velocity(self):
+        return self.get_float('velocity')
+
     def get_encoder_velocity(self):
-        return self.get_float('encoder_velocity')
+        return self.get_float('encoder_velocity') / self.encoder_ratio
 
     def get_encoder_position(self):
         return self.get_int('encoder_position')
+
+    def get_follow_error(self):
+        return self.get_float('follow_error')
+
+    def get_effort(self):
+        return self.get_float('effort')
 
     def get_drive_temperature(self):
         return self.get_float('drive_temperature')
@@ -393,4 +410,5 @@ if __name__ == "__main__":
     mb.node_id = 2
     mb.word_lenght = 16
     mb.data_bit = 8
+    mb.encoder_ratio = 1000
     mb.nb_reg_by_comms = int(mb.word_lenght / mb.data_bit)
