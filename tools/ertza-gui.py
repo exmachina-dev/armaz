@@ -134,8 +134,11 @@ class ErtzaActions(object):
         root.destroy()
 
     def send(self, path, *args):
-        if self.connected:
-            return self.osc_server.reply(None, self.target, path, *args)
+        try:
+            if self.connected:
+                return self.osc_server.reply(None, self.target, path, *args)
+        except OSError as e:
+            self.print(repr(e))
 
     def drive_toggle(self):
         if self.state['drive_enable']:
@@ -145,6 +148,12 @@ class ErtzaActions(object):
 
         self.state['drive_enable'] = not self.state['drive_enable']
         self.send('/debug/drive/drive_enable', int(self.state['drive_enable']))
+
+    def drive_cancel(self):
+        self.send('/debug/drive/drive_cancel', 1)
+
+    def drive_clear(self):
+        self.send('/debug/drive/clear_errors', 1)
 
     def stop(self):
         self.speed(0)
@@ -171,6 +180,9 @@ class ErtzaActions(object):
         except KeyError:
             self.print('Unexcepted config %s.%s %s' % (sec, opt, val))
             pass
+
+    def update_device(self, *args):
+        pass
 
 
 class ErtzaGui(tk.Frame):
@@ -218,27 +230,42 @@ class ErtzaGui(tk.Frame):
 
     def _control_section(self):
         self.ctl_drive_enable = tk.StringVar()
+
         self.ctl_speed = tk.IntVar()
-        self.ctl_acceleration = tk.IntVar()
-        self.ctl_deceleration = tk.IntVar()
+        self.ctl_accel = tk.IntVar()
+        self.ctl_decel = tk.IntVar()
 
         self.ctl_frame = tk.Frame(self)
         ct = self.ctl_frame
 
         self.ctl_enable_but = tk.Button(ct, text='Drive enable')
-        self.ctl_enable_but.grid()
+        self.ctl_enable_but.grid(row=0, columnspan=2)
         self.ctl_enable_but['command'] = self.actions.drive_toggle
         self.ctl_enable_but['textvariable'] = self.ctl_drive_enable
 
+        self.ctl_cancel_but = tk.Button(ct, text='Drive cancel')
+        self.ctl_cancel_but.grid(row=0, column=2, columnspan=2)
+        self.ctl_cancel_but['command'] = self.actions.drive_cancel
+
+        self.ctl_clearerrors_but = tk.Button(ct, text='Clear errors')
+        self.ctl_clearerrors_but.grid(row=0, column=4, columnspan=2)
+        self.ctl_clearerrors_but['command'] = self.actions.drive_clear
+
         self.ctl_speed_box = self._generic_box(ct, 'Speed', 1, 0,
-                textvariable=self.ctl_speed, width=10)
+                textvariable=self.ctl_speed, width=10, change_action=True)
+
+        self.ctl_aceel_box = self._generic_box(ct, 'Acceleration', 1, 3,
+                textvariable=self.ctl_accel, width=10, change_action=True)
+
+        self.ctl_decel_box = self._generic_box(ct, 'Deceleration', 2, 3,
+                textvariable=self.ctl_decel, width=10, change_action=True)
 
         self.ctl_reverse_but = tk.Button(ct, text='Reverse')
-        self.ctl_reverse_but.grid()
+        self.ctl_reverse_but.grid(row=2, column=1, columnspan=2)
         self.ctl_reverse_but['command'] = self.actions.reverse_speed
 
         self.ctl_stop_but = tk.Button(ct, text='Stop')
-        self.ctl_stop_but.grid()
+        self.ctl_stop_but.grid(row=2, column=0)
         self.ctl_stop_but['command'] = self.actions.stop
 
         self.ctl_frame.grid(columnspan=2)
@@ -262,13 +289,14 @@ class ErtzaGui(tk.Frame):
         dev_port_label = self._port_box(dv, 'Listen on', r, 0,
                 textvariable=self.srv_port)
 
-        r = 2
         self.debug_check = tk.Checkbutton(dv, text='Debug',
                 variable=self.dbg_state)
-        self.debug_check.grid(row=r, columnspan=2)
+        self.debug_check.grid(row=r, column=2, columnspan=2)
+
+        r = 2
         self.connect_but = tk.Button(dv, text='Connect',
                 command=self.actions.connect)
-        self.connect_but.grid(row=r, column=4, columnspan=3)
+        self.connect_but.grid(row=r, column=0, columnspan=4)
 
         self.dev_frame.grid()
 
@@ -282,24 +310,32 @@ class ErtzaGui(tk.Frame):
         cf = self.config_frame
         r = 0
         conf_osc_server_port_entry = self._port_box(cf, 'Server port',
-                textvariable=self.conf_osc_server_port, row=r, column=0)
+                textvariable=self.conf_osc_server_port, row=r, column=0,
+                change_action=self.actions.update_device)
 
         conf_osc_client_port_entry = self._port_box(cf, 'Client port',
-                textvariable=self.conf_osc_client_port, row=r, column=3)
+                textvariable=self.conf_osc_client_port, row=r, column=3,
+                change_action=True)
 
         r = 1
         conf_ctrl_mode = self._generic_box(cf, 'Control mode',
-                textvariable=self.conf_ctrl_mode, row=r, column=0)
+                textvariable=self.conf_ctrl_mode, row=r, column=0,
+                change_action=True)
 
         self.config_frame.grid()
 
     @classmethod
     def _generic_box(cls, parent, label, row=None, column=None, **kwargs):
+        change_action = kwargs.pop('change_action', False)
         label = tk.Label(parent, text=label)
         entry = tk.Entry(parent, **kwargs)
         label.grid(row=row, column=column)
         if not column is None:
             entry.grid(row=row, column=column+1)
+        if change_action:
+            but = tk.Button(parent, text='C', command=change_action)
+            but.grid(row=row, column=column+2)
+            return label, entry, but
         return label, entry
 
     @classmethod
