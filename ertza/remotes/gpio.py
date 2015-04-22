@@ -2,25 +2,45 @@
 
 import numpy as np
 
+from ertza.utils.adafruit_i2c import Adafruit_I2C
+import time
+import subprocess
+
 from ..config import ConfigRequest
 from ..errors import RemoteError
 from .modbus import ModbusRequest
 from .temp_chart import NTCLE100E3103JB0 as temp_chart
 from .event_watcher import EventWatcher
 
+# PWM config
+# code taken from https://bitbucket.org/intelligentagent/redeem
+PCA9685_MODE1 = 0x0
+PCA9685_PRESCALE = 0xFE
+
+
+kernel_version = subprocess.check_output(["uname", "-r"]).strip()
+[major, minor, rev] = kernel_version.decode('UTF-8').split("-")[0].split(".")
 try:
-    import Adafruit_BBIO.GPIO as GPIO
-    import Adafruit_BBIO.PWM as PWM
-except ImportError as e:
-    pass
- 
+    if int(minor) >= 14 :
+        pwm = Adafruit_I2C(0x70, 2, False)  # Open device
+    else:
+        pwm = Adafruit_I2C(0x70, 1, False)  # Open device
+except OSError:
+    pwm = None
+    print('Unable to open pwm device.')
+
+
+if pwm:
+    pwm.write8(PCA9685_MODE1, 0x01)         # Reset
+    time.sleep(0.05)                        # Wait for reset
+
 SWITCH_PINS = ("P8_10", "P8_11",)
 TEMP_PINS = (
         '/sys/bus/iio/devices/iio:device0/in_voltage0_raw', #AIN0
         '/sys/bus/iio/devices/iio:device0/in_voltage1_raw', #AIN1
         )
 TEMP_TARGET = (40.0, 40.0,) # in °C
-FAN_PINS = ('P8_13', 'P8_19',)
+FAN_PINS = (0, 1)
 
 TEMP_TABLE = temp_chart
 
@@ -89,7 +109,6 @@ class RemoteServer(object):
 
     def create_temp_watchers(self):
         if TEMP_PINS and not self.fake_mode:
-            ADC.setup()
             tw = list()
             for s, f, t in zip(TEMP_PINS, FAN_PINS, TEMP_TARGET):
                 tw.append(TempWatcher(s, f, t))
@@ -115,13 +134,6 @@ class SwitchHandler(EventWatcher):
         super(SwitchHandler, self).__init__(pin, key_code, name, invert)
         self.callback = callback
 
-        self.setup_pin()
-
-    def setup_pin(self):
-        GPIO.setup(self.pin, GPIO.IN)
-        GPIO.output(self.pin, GPIO.HIGH)
-        GPIO.add_event_detect(self.pin, GPIO.BOTH)
-
     def update_state(self):
         if GPIO.event_detected(self.pin):
             self.state = GPIO.input(self.pin)
@@ -133,7 +145,7 @@ class TempWatcher(object):
     def __init__(self, sensor, fan, target_temp):
         self.sensor = sensor
         self.beta = 3977
-        self.fan_pin = fan
+        self.fan = Fan(fan)
         self.fan = PWM.start(fan, 0)
         self.target_temp = target_temp
 
@@ -186,5 +198,36 @@ class TempWatcher(object):
         return self.coef_td * self.error_delta
 
     def __del__(self):
-        PWM.stop(self.fan_pin)
-        PWM.cleanup()
+        pass
+
+
+class Fan(object):
+    @staticmethod
+    def set_PWM_frequency(freq):
+        """ Set the PWM frequency for all fans connected on this PWM-chip """
+        prescaleval = 25000000
+        prescaleval /= 4096
+        prescaleval /= float(freq)
+        prescaleval -= 1
+        prescale = int(prescaleval + 0.5)
+
+        oldmode = pwm.readU8(PCA9685_MODE1)
+        newmode = (oldmode & 0x7F) | 0x10
+        if pwm:
+            pwm.write8(PCA9685_MODE1, newmode)
+            pwm.write8(PCA9685_PRESCALE, prescale)
+            pwm.write8(PCA9685_MODE1, oldmode)
+            time.sleep(0.05)
+            pwm.write8(PCA9685_MODE1, oldmode | 0xA1)
+
+    def __init__(self, channel):
+        """ Channel is the channel that the fan is on (0-7) """
+        self.channel = channel
+
+    def set_value(self, value):
+        """ Set the amount of on-time from 0..1 """
+        #off = min(1.0, value)
+        off = int(value*4095)
+        byte_list = [0x00, 0x00, off & 0xFF, off >> 8]
+        if pwm:
+            pwm.writeList(0x06+(4*self.channel), byte_list)
