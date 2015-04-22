@@ -252,8 +252,8 @@ class ModbusBackend(object):
             return format_function(rtn[0]+rtn[1])
         return rtn[0]+rtn[1]
 
-    def _set(self, key, value, format_function=None, check=None):
-        rtn = self.write_comm(self.netdata[key], format_function(new_value))
+    def _set(self, key, value, format_function, check=None):
+        rtn = self.write_comm(self.netdata[key], format_function(value))
 
         if check:
             return self._get(key, check)
