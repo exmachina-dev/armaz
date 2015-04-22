@@ -144,7 +144,7 @@ class ErtzaActions(object):
             self.master.ctl_drive_enable.set('Drive disable')
 
         self.state['drive_enable'] = not self.state['drive_enable']
-        self.send('/debug/drive/driveEnable', int(self.state['drive_enable']))
+        self.send('/debug/drive/drive_enable', int(self.state['drive_enable']))
 
     def stop(self):
         self.speed(0)

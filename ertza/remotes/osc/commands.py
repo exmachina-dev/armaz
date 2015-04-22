@@ -122,11 +122,11 @@ class OSCCommands(OSCBaseServer):
         self.setup_reply(sender, path, "Restarting.")
         self.restart()
 
-    @lo.make_method('/debug/drive/driveEnable', 'i')
+    @lo.make_method('/debug/drive/drive_enable', 'i')
     def debug_drive_enable_callback(self, path, args, types, sender):
         st, = args
         try:
-            rtn = self.mdb_request.set_command(driveEnable=st)
+            rtn = self.mdb_request.set_command(drive_enable=st)
             self.status_reply(sender, '/debug/drive/return', rtn)
         except TimeoutError as e:
             self.timeout_reply(sender, path, repr(e))

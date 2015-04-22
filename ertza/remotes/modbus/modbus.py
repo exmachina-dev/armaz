@@ -40,9 +40,10 @@ class ModbusBackend(object):
             )
 
     command_keys = (
-            'driveEnable',
+            'drive_enable',
             'stop',
-            'releaseBrake',
+            'release_brake',
+            'clear_errors',
             )
 
     states = {
