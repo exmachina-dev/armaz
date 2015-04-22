@@ -36,6 +36,12 @@ class ModbusRequest(BaseRequest):
     def set_speed(self, *args):
         return self._build_rq('set_speed', *args)
 
+    def set_acceleration(self, *args):
+        return self._build_rq('set_acceleration', *args)
+
+    def set_decelaration(self, *args):
+        return self._build_rq('set_deceleration', *args)
+
     def dump(self, *args):
         return self._build_rq('dmp', *args)
 
@@ -57,6 +63,8 @@ class ModbusResponse(BaseResponse):
                 mth['get_command']: self._end.get_command,
                 mth['get_error_code']: self._end.get_error_code,
                 mth['get_speed']: self._end.get_speed,
+                mth['get_acceleration']: self._end.get_acceleration,
+                mth['get_deceleration']: self._end.get_deceleration,
                 mth['get_encoder_velocity']: self._end.get_encoder_velocity,
                 mth['get_encoder_position']: self._end.get_encoder_position,
                 mth['get_drive_temperature']: self._end.get_drive_temperature,
@@ -79,6 +87,8 @@ class ModbusResponse(BaseResponse):
         s_opts = {
                 mth['set_command']: self._end.set_command,
                 mth['set_speed']: self._end.set_speed,
+                mth['set_acceleration']: self._end.set_acceleration,
+                mth['set_deceleration']: self._end.set_deceleration,
                 }
 
         try:
