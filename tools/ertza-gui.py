@@ -146,13 +146,30 @@ class ErtzaActions(object):
         self.state['drive_enable'] = not self.state['drive_enable']
         self.send('/debug/drive/driveEnable', int(self.state['drive_enable']))
 
+    def stop(self):
+        self.speed(0)
+
+    def speed(self, speed=None):
+        if not speed is None:
+            self.master.ctl_speed.set(speed)
+        else:
+            speed = self.master.ctl_speed.get()
+
+        self.send('/debug/drive/speed', int(speed))
+
+    def reverse_speed(self):
+        speed = self.master.ctl_speed.get()
+        self.speed(int(speed * -1))
+
     def update_status(self):
         self.send('/motor/status')
 
     def update_field(self, sec, opt, val):
         try:
-            self.fields[sec][opt] = val
+            self.fields[sec][opt].set(val)
+            self.print('Setting %s.%s to %s' % (sec, opt, val))
         except KeyError:
+            self.print('Unexcepted config %s.%s %s' % (sec, opt, val))
             pass
 
 
@@ -201,6 +218,9 @@ class ErtzaGui(tk.Frame):
 
     def _control_section(self):
         self.ctl_drive_enable = tk.StringVar()
+        self.ctl_speed = tk.IntVar()
+        self.ctl_acceleration = tk.IntVar()
+        self.ctl_deceleration = tk.IntVar()
 
         self.ctl_frame = tk.Frame(self)
         ct = self.ctl_frame
@@ -209,6 +229,17 @@ class ErtzaGui(tk.Frame):
         self.ctl_enable_but.grid()
         self.ctl_enable_but['command'] = self.actions.drive_toggle
         self.ctl_enable_but['textvariable'] = self.ctl_drive_enable
+
+        self.ctl_speed_box = self._generic_box(ct, 'Speed', 1, 0,
+                textvariable=self.ctl_speed, width=10)
+
+        self.ctl_reverse_but = tk.Button(ct, text='Reverse')
+        self.ctl_reverse_but.grid()
+        self.ctl_reverse_but['command'] = self.actions.reverse_speed
+
+        self.ctl_stop_but = tk.Button(ct, text='Stop')
+        self.ctl_stop_but.grid()
+        self.ctl_stop_but['command'] = self.actions.stop
 
         self.ctl_frame.grid(columnspan=2)
 
@@ -222,22 +253,14 @@ class ErtzaGui(tk.Frame):
         self.dev_frame = tk.Frame(self)
         dv = self.dev_frame
         r = 0
-        self.dev_addr_label = tk.Label(dv, text='Device address')
-        self.dev_addr_label.grid(row=r, columnspan=2)
-        self.dev_addr_entry = tk.Entry(dv, textvariable=self.dev_addr,
-                width=15)
-        self.dev_addr_entry.grid(row=r, column=3, columnspan=2)
-        self.dev_port_label = tk.Label(dv, text=':')
-        self.dev_port_label.grid(row=r, column=5, columnspan=1)
-        self.dev_port_entry = tk.Entry(dv, textvariable=self.dev_port,
-                width=5)
-        self.dev_port_entry.grid(row=r, column=6, columnspan=1)
+        dev_addr_label = self._address_box(dv, 'Device address', r, 0,
+                textvariable=self.dev_addr)
+        dev_port_label = self._port_box(dv, ':', r, 2,
+                textvariable=self.dev_port)
+
         r = 1
-        self.srv_port_label = tk.Label(dv, text='Listen on')
-        self.srv_port_label.grid(row=r, column=4, columnspan=2)
-        self.srv_port_entry = tk.Entry(dv, textvariable=self.srv_port,
-                width=5)
-        self.srv_port_entry.grid(row=r, column=6, columnspan=1)
+        dev_port_label = self._port_box(dv, 'Listen on', r, 0,
+                textvariable=self.srv_port)
 
         r = 2
         self.debug_check = tk.Checkbutton(dv, text='Debug',
@@ -258,19 +281,36 @@ class ErtzaGui(tk.Frame):
         self.config_frame = tk.Frame(self)
         cf = self.config_frame
         r = 0
-        self.conf_osc_server_port_label = tk.Label(cf, text='Server port')
-        self.conf_osc_server_port_label.grid(row=r, columnspan=2)
-        self.conf_osc_server_port_entry = tk.Entry(cf,
-            textvariable=self.conf_osc_server_port_label, width=15)
-        self.conf_osc_server_port_entry.grid(row=r, column=3)
+        conf_osc_server_port_entry = self._port_box(cf, 'Server port',
+                textvariable=self.conf_osc_server_port, row=r, column=0)
 
-        self.conf_osc_client_port_label = tk.Label(cf, text='Client port')
-        self.conf_osc_client_port_label.grid(row=r, column=4, columnspan=2)
-        self.conf_osc_client_port_entry = tk.Entry(cf,
-            textvariable=self.conf_osc_client_port_label, width=15)
-        self.conf_osc_client_port_entry.grid(row=r, column=6)
+        conf_osc_client_port_entry = self._port_box(cf, 'Client port',
+                textvariable=self.conf_osc_client_port, row=r, column=3)
+
+        r = 1
+        conf_ctrl_mode = self._generic_box(cf, 'Control mode',
+                textvariable=self.conf_ctrl_mode, row=r, column=0)
 
         self.config_frame.grid()
+
+    @classmethod
+    def _generic_box(cls, parent, label, row=None, column=None, **kwargs):
+        label = tk.Label(parent, text=label)
+        entry = tk.Entry(parent, **kwargs)
+        label.grid(row=row, column=column)
+        if not column is None:
+            entry.grid(row=row, column=column+1)
+        return label, entry
+
+    @classmethod
+    def _address_box(cls, parent, label, row=None, column=None, **kwargs):
+        return cls._generic_box(parent, label, row=row, column=column, width=15,
+                **kwargs)
+
+    @classmethod
+    def _port_box(cls, parent, label, row=None, column=None, **kwargs):
+        return cls._generic_box(parent, label, row=row, column=column, width=5,
+                **kwargs)
 
 
 
