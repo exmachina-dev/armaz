@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from time import sleep
+from threading import Thread
+
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 
 from pymodbus.register_read_message import *
@@ -63,6 +66,8 @@ class ModbusBackend(object):
                 False,),
             }
 
+    watcher_interval = 0.001
+
 
     def __init__(self, config, logger, restart_event, block_event):
         self.status = {}
@@ -73,6 +78,7 @@ class ModbusBackend(object):
         self.errorcode = None
         self.end = None
         self.connected = False
+        self.watch = True
         self.config_request = None
         self.max_retry = 5
         self.retry = self.max_retry
@@ -112,6 +118,10 @@ class ModbusBackend(object):
                 self.end.connect()
                 self.connected = True
                 self.retry = self.max_retry
+
+                self.watcher = Thread(target=self._state_watcher)
+                self.watcher.daemon = True
+                self.watcher.start()
             except pmde.ConnectionException as e:
                 self.lg.warn(repr(ModbusMasterError(
                         'Unable to connect to slave: %s' % e)))
@@ -174,6 +184,22 @@ class ModbusBackend(object):
         except TypeError as e:
             raise ValueError('%s must be divided by %s' % (
                 self.word_lenght, self.data_bit)) from e
+
+    def _state_watcher(self):
+        while self.watch:
+            try:
+                if self.connected:
+                    self.get_command()
+                    self.get_status()
+                    self.get_speed()
+                    self.get_velocity()
+                    self.get_encoder_position()
+                    self.get_effort()
+                    self.get_drive_temperature()
+            except ModbusMasterError as e:
+                self.lg.warn('State watcher got %s' % repr(e))
+
+            sleep(ModbusBackend.watcher_interval)
 
     def get_command(self):
         command = self.read_comm(self.netdata['command'])
