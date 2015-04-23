@@ -71,7 +71,7 @@ class ModbusBackend(object):
     watcher_interval = 0.001
 
 
-    def __init__(self, config, logger, restart_event, block_event):
+    def __init__(self, config, logger, restart_event, block_event=None):
         self.status = {}
         self.command = {}
         for k in self.command_keys:
@@ -94,6 +94,9 @@ class ModbusBackend(object):
         else:
             import logging
             self.lg = logging.getLogger(__name__)
+
+        if block_event:
+            self.block_event = block_event
 
         self.available_functions = [
                 3,     # Read holding registers
@@ -199,6 +202,15 @@ class ModbusBackend(object):
                     self.get_encoder_position()
                     self.get_effort()
                     self.get_drive_temperature()
+                    try:
+                        self.block_event.clear()
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        self.block_event.set()
+                    except AttributeError:
+                        pass
             except ModbusMasterError as e:
                 self.lg.warn('State watcher got %s' % repr(e))
 
