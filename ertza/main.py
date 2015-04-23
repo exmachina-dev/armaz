@@ -118,7 +118,7 @@ class MainInitializer(object):
             signal.pause()
             self.join()
         except (KeyboardInterrupt, FatalError):
-            print('Received keyboard interrupt, exiting…')
+            print('Received keyboard interrupt, exiting...')
 
 if __name__ == "__main__":
 
