@@ -225,6 +225,8 @@ class ModbusBackend(object):
 
     def get_command(self):
         command = self.read_comm(self.netdata['command'])
+        if command is -1:
+            return None
 
         command = self._to_bools(command[0]+command[1])
         command.reverse()
@@ -245,6 +247,8 @@ class ModbusBackend(object):
 
         new_cmd = self._from_bools(new_cmd)
         rtn = self.write_comm(self.netdata['command'], new_cmd)
+        if rtn is -1:
+            return None
 
         if check:
             return self.get_command()
@@ -252,6 +256,8 @@ class ModbusBackend(object):
 
     def get_status(self):
         status = self.read_comm(self.netdata['status'])
+        if status is -1:
+            return None
 
         status = self._to_bools(status[0]+status[1])
         status.reverse()
@@ -269,6 +275,8 @@ class ModbusBackend(object):
 
     def _get(self, key, format_function=None):
         rtn = self.read_comm(self.netdata[key])
+        if rtn is -1:
+            return None
 
         if format_function:
             return format_function(rtn[0]+rtn[1])
@@ -276,6 +284,8 @@ class ModbusBackend(object):
 
     def _set(self, key, value, format_function, check=None):
         rtn = self.write_comm(self.netdata[key], format_function(value))
+        if rtn is -1:
+            return None
 
         if check:
             return self._get(key, check)
@@ -431,9 +441,10 @@ world_lenght: %s, reg_by_comms: %s' % \
     wmr = _write_multiple_registers
     rwmr = _read_write_multiple_registers
 
-    @retry(ModbusMasterError, tries=3, delay=1)
     def _rq(self, rq):
         try:
+            if not self.connected.is_set():
+                return -1
             response = self.end.execute(rq)
             rpt = type(response)
             if rpt == ExceptionResponse:
