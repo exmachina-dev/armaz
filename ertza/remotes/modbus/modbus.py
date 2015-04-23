@@ -3,6 +3,8 @@
 from time import sleep
 from threading import Thread
 
+from multiprocessing import Event
+
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 
 from pymodbus.register_read_message import *
@@ -77,7 +79,7 @@ class ModbusBackend(object):
 
         self.errorcode = None
         self.end = None
-        self.connected = False
+        self.connected = Event()
         self.watch = True
         self.config_request = None
         self.max_retry = 5
@@ -110,14 +112,15 @@ class ModbusBackend(object):
 
     @retry(ModbusMasterError, tries=3, delay=1)
     def connect(self):
-        if not self.connected:
+        if not self.connected.is_set():
             self.lg.debug("Initiated Modbus connection to %s:%s" % \
                     (self.device, self.port,))
             try:
                 self.end = ModbusClient(host=self.device, port=self.port)
                 self.end.connect()
-                self.connected = True
-                self.retry = self.max_retry
+                if self.get_status():
+                    self.connected.set()
+                    self.retry = self.max_retry
 
                 self.watcher = Thread(target=self._state_watcher)
                 self.watcher.daemon = True
@@ -126,14 +129,14 @@ class ModbusBackend(object):
                 self.lg.warn(repr(ModbusMasterError(
                         'Unable to connect to slave: %s' % e)))
             else:
-                self.connected = False
+                self.connected.clear()
 
     def close(self):
         self.end.close()
-        self.connected = False
+        self.connected.clear()
 
     def reconnect(self):
-        if self.connected:
+        if self.connected.is_set():
             self.close()
         self.get_config()
         self.connect()
@@ -188,7 +191,7 @@ class ModbusBackend(object):
     def _state_watcher(self):
         while self.watch:
             try:
-                if self.connected:
+                if self.connected.is_set():
                     self.get_command()
                     self.get_status()
                     self.get_speed()
@@ -425,6 +428,7 @@ world_lenght: %s, reg_by_comms: %s' % \
                     regs.append(fmt.format(response.getRegister(i)))
                 return regs
         except pmde.ConnectionException as e:
+            self.connected.clear()
             raise ModbusMasterError('Unable to connect to slave')
 
 
