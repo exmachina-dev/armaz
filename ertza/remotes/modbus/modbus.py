@@ -80,7 +80,7 @@ class ModbusBackend(object):
         self.errorcode = None
         self.end = None
         self.connected = Event()
-        self.watch = True
+        self.watch = Event()
         self.watcher = None
         self.config_request = None
         self.max_retry = 5
@@ -129,11 +129,11 @@ class ModbusBackend(object):
                 self.lg.debug('Starting modbus watcher.')
                 if self.watcher:
                     self.lg.debug('Waiting for existing watcher to exit.')
-                    self.watch = False
-                    sleep(ModbusBackend.watcher_interval * 2)
-                self.watch = True
+                    self.watcher.join()
+                    self.watch.set()
                 self.watcher = Thread(target=self._state_watcher)
                 self.watcher.daemon = True
+                self.watch.clear()
                 self.watcher.start()
             except pmde.ConnectionException as e:
                 self.lg.warn(repr(ModbusMasterError(
@@ -199,7 +199,7 @@ class ModbusBackend(object):
                 self.word_lenght, self.data_bit)) from e
 
     def _state_watcher(self):
-        while self.watch:
+        while not self.watch.is_set():
             try:
                 if self.connected.is_set():
                     self.get_command()
@@ -221,7 +221,7 @@ class ModbusBackend(object):
             except ModbusMasterError as e:
                 self.lg.warn('State watcher got %s' % repr(e))
 
-            sleep(ModbusBackend.watcher_interval)
+            self.watch.wait(ModbusBackend.watcher_interval)
 
     def get_command(self):
         command = self.read_comm(self.netdata['command'])
