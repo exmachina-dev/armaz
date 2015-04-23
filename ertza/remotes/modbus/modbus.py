@@ -81,6 +81,7 @@ class ModbusBackend(object):
         self.end = None
         self.connected = Event()
         self.watch = True
+        self.watcher = None
         self.config_request = None
         self.max_retry = 5
         self.retry = self.max_retry
@@ -125,6 +126,12 @@ class ModbusBackend(object):
                     self.connected.set()
                     self.retry = self.max_retry
 
+                self.lg.debug('Starting modbus watcher.')
+                if self.watcher:
+                    self.lg.debug('Waiting for existing watcher to exit.')
+                    self.watch = False
+                    sleep(ModbusBackend.watcher_interval * 2)
+                self.watch = True
                 self.watcher = Thread(target=self._state_watcher)
                 self.watcher.daemon = True
                 self.watcher.start()
