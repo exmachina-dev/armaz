@@ -122,11 +122,10 @@ class ModbusBackend(object):
                     (self.device, self.port,))
             try:
                 self.end = ModbusClient(host=self.device, port=self.port)
-                self.end.connect()
-                if self.get_status():
+                if self.end.connect():
                     self.connected.set()
                     self.retry = self.max_retry
-                elif self.retry > 0:
+                elif not self.connected.is_set() and self.retry < 0:
                     self.lg.warn('Init failed, restarting in %s second' %
                             self.restart_delay)
                     self.retry -= 1
