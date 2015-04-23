@@ -88,7 +88,7 @@ class ConfigWorker(BaseWorker):
 
 
                 self.exit_event.wait(self.interval)
-        except ConnectionError:
+        except (ConnectionError, EOFError):
             sys.exit()
 
     def _watchconfig(self, response):

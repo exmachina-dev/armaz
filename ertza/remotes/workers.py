@@ -55,7 +55,7 @@ class RemoteWorker(BaseWorker):
                 except RemoteError:
                     pass
                 self.exit_event.wait(self.interval)
-        except ConnectionError:
+        except (ConnectionError, EOFError):
             sys.exit()
 
     def init_rmt_server(self, restart=False):
@@ -108,7 +108,7 @@ class OSCWorker(BaseWorker):
                     self.restart_osc_event.clear()
 
                 self.exit_event.wait(self.interval)
-        except ConnectionError:
+        except (ConnectionError, EOFError):
             sys.exit()
 
     def init_osc_server(self, restart=False):
@@ -164,7 +164,7 @@ class ModbusWorker(BaseWorker):
                             rs.send()
 
                 self.exit_event.wait(self.interval)
-        except ConnectionError:
+        except (ConnectionError, EOFError):
             sys.exit()
 
     def init_modbus(self, restart=False):
@@ -221,7 +221,7 @@ class SlaveWorker(BaseWorker):
                             rs.send()
 
                 self.exit_event.wait(self.interval)
-        except ConnectionError:
+        except (ConnectionError, EOFError):
             sys.exit()
 
     def init_osc_slave(self, restart=False):
