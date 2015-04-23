@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from time import sleep
-from threading import Thread
 
-from multiprocessing import Event
+from multiprocessing import Process, Event
 
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 
@@ -139,9 +138,9 @@ class ModbusBackend(object):
                 self.lg.debug('Starting modbus watcher.')
                 if self.watcher:
                     self.lg.debug('Waiting for existing watcher to exit.')
-                    self.watcher.join()
                     self.watch.set()
-                self.watcher = Thread(target=self._state_watcher)
+                    self.watcher.join()
+                self.watcher = Process(target=self._state_watcher, args=(self,))
                 self.watcher.daemon = True
                 self.watch.clear()
                 self.watcher.start()
@@ -208,30 +207,30 @@ class ModbusBackend(object):
             raise ValueError('%s must be divided by %s' % (
                 self.word_lenght, self.data_bit)) from e
 
-    def _state_watcher(self):
-        while not self.watch.is_set():
+    def _state_watcher(self, master):
+        while not master.watch.is_set():
             try:
-                if self.connected.is_set():
-                    self.get_command()
-                    self.get_status()
-                    self.get_speed()
-                    self.get_velocity()
-                    self.get_encoder_position()
-                    self.get_effort()
-                    self.get_drive_temperature()
+                if master.connected.is_set():
+                    master.get_command()
+                    master.get_status()
+                    master.get_speed()
+                    master.get_velocity()
+                    master.get_encoder_position()
+                    master.get_effort()
+                    master.get_drive_temperature()
                     try:
-                        self.block_event.clear()
+                        master.block_event.clear()
                     except AttributeError:
                         pass
                 else:
                     try:
-                        self.block_event.set()
+                        master.block_event.set()
                     except AttributeError:
                         pass
             except ModbusMasterError as e:
-                self.lg.warn('State watcher got %s' % repr(e))
+                master.lg.warn('State watcher got %s' % repr(e))
 
-            self.watch.wait(ModbusBackend.watcher_interval)
+            master.watch.wait(ModbusBackend.watcher_interval)
 
     def get_command(self):
         command = self.read_comm(self.netdata['command'])
