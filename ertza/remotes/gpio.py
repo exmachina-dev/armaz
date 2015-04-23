@@ -132,12 +132,6 @@ class SwitchHandler(EventWatcher):
         super(SwitchHandler, self).__init__(pin, key_code, name, invert)
         self.callback = callback
 
-    def update_state(self):
-        if GPIO.event_detected(self.pin):
-            self.state = GPIO.input(self.pin)
-            return True
-        return None
-
 
 class TempWatcher(object):
     def __init__(self, sensor, fan, target_temp):
