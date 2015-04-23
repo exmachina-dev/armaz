@@ -32,7 +32,7 @@ from .event_watcher import EventWatcher
 #    pwm.write8(PCA9685_MODE1, 0x01)         # Reset
 #    time.sleep(0.05)                        # Wait for reset
 
-SWITCH_PINS = ("P8_10", "P8_11",)
+SWITCH_PINS = (("GPIO0_30", 'switch_0', 112), ("GPIO0_31", 'switch_1', 113))
 #TEMP_PINS = (
 #        '/sys/bus/iio/devices/iio:device0/in_voltage0_raw', #AIN0
 #        '/sys/bus/iio/devices/iio:device0/in_voltage1_raw', #AIN1
@@ -92,15 +92,14 @@ class RemoteServer(object):
 
         if not self.fake_mode:
             self.update_pid()
-            self.detect_gpio_state()
 
     def create_switch_pins(self):
         if not self.fake_mode:
             sw = list()
-            for i, p in enumerate(SWITCH_PINS):
-                a = self.config_request.get('switch_'+str(i), 'action', None)
-                r = self.config_request.get('switch_'+str(i), 'reverse', False)
-                sw.append(SwitchHandler(i, p, a, r))
+            for p in SWITCH_PINS:
+                a = self.config_request.get(p[1], 'action', None)
+                r = self.config_request.get(p[1], 'reverse', False)
+                sw.append(SwitchHandler(*p, a, r))
             self.switchs = tuple(sw)
             return True
         return False
@@ -128,7 +127,7 @@ class RemoteServer(object):
             GPIO.cleanup()
 
 class SwitchHandler(EventWatcher):
-    def __init__(self, name, pin, callback=None, invert=False):
+    def __init__(self, pin, key_code, name, callback=None, invert=False):
         super(SwitchHandler, self).__init__(pin, key_code, name, invert)
         self.callback = callback
 
