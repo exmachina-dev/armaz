@@ -85,6 +85,8 @@ class ModbusBackend(object):
         self.config_request = None
         self.max_retry = 5
         self.retry = self.max_retry
+        self.restart_delay = 10
+        self.restart_backoff = 2
 
         if config:
             self._config = config
@@ -125,6 +127,14 @@ class ModbusBackend(object):
                 if self.get_status():
                     self.connected.set()
                     self.retry = self.max_retry
+                elif self.retry > 0:
+                    self.lg.warn('Init failed, restarting in %s second' %
+                            self.restart_delay)
+                    self.retry -= 1
+                    self.connected.wait(self.restart_delay)
+                    self.restart_delay *= self.restart_backoff
+                    self.connect()
+                    return False
 
                 self.lg.debug('Starting modbus watcher.')
                 if self.watcher:
