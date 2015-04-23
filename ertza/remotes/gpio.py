@@ -99,10 +99,14 @@ class RemoteServer(object):
             for p in SWITCH_PINS:
                 a = self.config_request.get(p[1], 'action', None)
                 r = self.config_request.get(p[1], 'reverse', False)
-                sw.append(SwitchHandler(*p, a, r))
+                sw.append(SwitchHandler(*p,
+                    callback=self.switch_callback(a), invert=r))
             self.switchs = tuple(sw)
             return True
         return False
+
+    def switch_callback(self, event):
+        pass
 
     def create_temp_watchers(self):
         if TEMP_PINS and not self.fake_mode:
