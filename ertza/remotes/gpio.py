@@ -90,8 +90,8 @@ class RemoteServer(object):
                     self.fake_mode = True
                     self.run()
 
-        if not self.fake_mode:
-            self.update_pid()
+        #if not self.fake_mode:
+            #self.update_pid()
 
     def create_switch_pins(self):
         if not self.fake_mode:
@@ -125,10 +125,6 @@ class RemoteServer(object):
         for p in self.switch_pins:
             if p.update_state(): # if something change, trigger
                 self.mdb_request.trigger(p.action, p.state)
-
-    def __del__(self):
-        if not self.fake_mode:
-            GPIO.cleanup()
 
 class SwitchHandler(EventWatcher):
     def __init__(self, pin, key_code, name, callback=None, invert=False):
