@@ -1,46 +1,46 @@
 # -*- coding: utf-8 -*-
 
-from ertza.utils.adafruit_i2c import Adafruit_I2C
+#from ertza.utils.adafruit_i2c import Adafruit_I2C
 import time
 import subprocess
 
 from ..config import ConfigRequest
 from ..errors import RemoteError
 from .modbus import ModbusRequest
-from .temp_chart import NTCLE100E3103JB0 as temp_chart
+#from .temp_chart import NTCLE100E3103JB0 as temp_chart
 from .event_watcher import EventWatcher
 
-# PWM config
-# code taken from https://bitbucket.org/intelligentagent/redeem
-PCA9685_MODE1 = 0x0
-PCA9685_PRESCALE = 0xFE
-
-
-kernel_version = subprocess.check_output(["uname", "-r"]).strip()
-[major, minor, rev] = kernel_version.decode('UTF-8').split("-")[0].split(".")
-try:
-    if int(minor) >= 14 :
-        pwm = Adafruit_I2C(0x70, 2, False)  # Open device
-    else:
-        pwm = Adafruit_I2C(0x70, 1, False)  # Open device
-except OSError:
-    pwm = None
-    print('Unable to open pwm device.')
-
-
-if pwm:
-    pwm.write8(PCA9685_MODE1, 0x01)         # Reset
-    time.sleep(0.05)                        # Wait for reset
+## PWM config
+## code taken from https://bitbucket.org/intelligentagent/redeem
+#PCA9685_MODE1 = 0x0
+#PCA9685_PRESCALE = 0xFE
+#
+#
+#kernel_version = subprocess.check_output(["uname", "-r"]).strip()
+#[major, minor, rev] = kernel_version.decode('UTF-8').split("-")[0].split(".")
+#try:
+#    if int(minor) >= 14 :
+#        pwm = Adafruit_I2C(0x70, 2, False)  # Open device
+#    else:
+#        pwm = Adafruit_I2C(0x70, 1, False)  # Open device
+#except OSError:
+#    pwm = None
+#    print('Unable to open pwm device.')
+#
+#
+#if pwm:
+#    pwm.write8(PCA9685_MODE1, 0x01)         # Reset
+#    time.sleep(0.05)                        # Wait for reset
 
 SWITCH_PINS = ("P8_10", "P8_11",)
-TEMP_PINS = (
-        '/sys/bus/iio/devices/iio:device0/in_voltage0_raw', #AIN0
-        '/sys/bus/iio/devices/iio:device0/in_voltage1_raw', #AIN1
-        )
-TEMP_TARGET = (40.0, 40.0,) # in °C
-FAN_PINS = (0, 1)
+#TEMP_PINS = (
+#        '/sys/bus/iio/devices/iio:device0/in_voltage0_raw', #AIN0
+#        '/sys/bus/iio/devices/iio:device0/in_voltage1_raw', #AIN1
+#        )
+#TEMP_TARGET = (40.0, 40.0,) # in °C
+#FAN_PINS = (0, 1)
 
-TEMP_TABLE = temp_chart
+#TEMP_TABLE = temp_chart
 
 class RemoteServer(object):
     def __init__(self, config, **kwargs):
@@ -78,7 +78,7 @@ class RemoteServer(object):
                 self.lg.info('Updating remote server…')
             try:
                 self.create_switch_pins()
-                self.create_temp_watchers()
+                #self.create_temp_watchers()
                 if self.restart_event:
                     self.restart_event.clear()
             except (NameError, RuntimeError) as e:
