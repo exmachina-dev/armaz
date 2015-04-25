@@ -158,7 +158,8 @@ class ModbusWorker(BaseWorker):
                         if pipe.poll():
                             rq = pipe.recv()
                             if not type(rq) is ModbusRequest:
-                                raise ValueError('Unexcepted type: %s' % type(rq))
+                                raise ValueError('Unexcepted type: %s' %
+                                        type(rq), self.lg)
                             rs = ModbusResponse(pipe, rq, self.modbus_master.back)
                             rs.handle()
                             rs.send()

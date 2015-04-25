@@ -109,6 +109,7 @@ class ModbusBackend(object):
                 ]
 
         if self.config_request:
+            self.lg.debug('Loading config.')
             self.load_config()
 
         self.min_comms = 1
