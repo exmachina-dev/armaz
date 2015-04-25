@@ -141,4 +141,10 @@ class BaseRequest(BaseCommunicationObject):
 
 
 class BaseResponse(BaseCommunicationObject):
-    pass
+    def set_request(self, request):
+        self.request = request
+        self.method = None
+        self.args = None
+        self.kwargs = None
+        self.value = None
+        return self

@@ -19,7 +19,7 @@ class ConfigRequest(BaseRequest):
 
 
 class ConfigResponse(BaseResponse):
-    def __init__(self, target, request, config=None, *args):
+    def __init__(self, target=None, request=None, config=None, *args):
         super(ConfigResponse, self).__init__(target, *args)
         self.request = request
         self._config = config

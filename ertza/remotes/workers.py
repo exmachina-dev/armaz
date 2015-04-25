@@ -159,7 +159,8 @@ class ModbusWorker(BaseWorker):
                             rq = pipe.recv()
                             if not type(rq) is ModbusRequest:
                                 raise ValueError('Unexcepted type: %s' % type(rq))
-                            rs = ModbusResponse(pipe, rq, self.modbus_master.back)
+                            rs = self.mdrp_master.set_request(rq)
+                            rs.target = pipe
                             rs.handle()
                             rs.send()
 
@@ -169,10 +170,11 @@ class ModbusWorker(BaseWorker):
 
     def init_modbus(self, restart=False):
         if restart:
-            del self.modbus_backend
+            del self.modbus_master
         self.modbus_master = ModbusMaster(self.cnf_pipe, self.lg,
                 self.restart_mdb_event, self.blockall_event, **self.cmd_args)
         self.modbus_master.start()
+        self.mdrp_master = ModbusResponse(end=self.modbus_master.back)
 
 
 class SlaveWorker(BaseWorker):

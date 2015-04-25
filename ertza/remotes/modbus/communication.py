@@ -47,7 +47,7 @@ class ModbusRequest(BaseRequest):
 
 
 class ModbusResponse(BaseResponse):
-    def __init__(self, target, request, end=None, *args, **kwargs):
+    def __init__(self, target=None, end=None, request=None, *args, **kwargs):
         super(ModbusResponse, self).__init__(target, *args, **kwargs)
         self.request = request
         self._end = end

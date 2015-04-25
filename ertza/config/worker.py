@@ -74,6 +74,7 @@ class ConfigWorker(BaseWorker):
 
     def run(self):
         self.cnf_ready_event.set()
+        self.cfrs = ConfigResponse(config=self._config)
         try:
             while not self.exit_event.is_set():
                 for pipe in self.pipes:
@@ -81,7 +82,8 @@ class ConfigWorker(BaseWorker):
                         rq = pipe.recv()
                         if not type(rq) is ConfigRequest:
                             raise ValueError('Unexcepted type: %s' % type(rq))
-                        rs = ConfigResponse(pipe, rq, self._config)
+                        rs = self.cfrs.set_request(rq)
+                        rs.target = pipe
                         rs.handle()
                         self._watchconfig(rs)
                         rs.send()
