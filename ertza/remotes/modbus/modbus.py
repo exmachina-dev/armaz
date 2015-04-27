@@ -126,6 +126,7 @@ class ModbusBackend(object):
             try:
                 self.end = ModbusClient(host=self.device, port=self.port)
                 self.end.connect()
+                self.connected.wait(0.5)
                 if self.check_connectivity():
                     self.connected.set()
                     self.retry = self.max_retry
