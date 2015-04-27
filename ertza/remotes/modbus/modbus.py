@@ -142,7 +142,8 @@ class ModbusBackend(object):
                     self.lg.debug('Waiting for existing watcher to exit.')
                     self.watch.set()
                     self.watcher.join()
-                self.watcher = Process(target=self._state_watcher, args=(self,))
+                self.watcher = Process(target=self._state_watcher,
+                name='ertza.mw%s' % self.node_id, args=(self,))
                 self.watcher.daemon = True
                 self.watch.clear()
                 self.watcher.start()

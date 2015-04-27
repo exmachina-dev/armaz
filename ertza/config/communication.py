@@ -42,7 +42,7 @@ class ConfigResponse(BaseResponse):
                 self.value = self._config.get(section, option)
         except NoSectionError as e:
             self.value = None
-            raise(ConfigError(e))
+            raise ConfigError(e, self.lg)
 
     def set_to_config(self, *args):
         self.method = self._methods['set']
