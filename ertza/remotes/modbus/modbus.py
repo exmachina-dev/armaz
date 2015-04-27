@@ -67,8 +67,7 @@ class ModbusBackend(object):
                 False,),
             }
 
-    watcher_interval = 0.001
-    watcher_interval = 1
+    watcher_interval = 0.01
 
 
     def __init__(self, config, logger, restart_event, block_event=None,
@@ -248,6 +247,7 @@ class ModbusBackend(object):
                         master.block_event.set()
                     except AttributeError:
                         pass
+                    master.connected.wait(5)
             except ModbusMasterError as e:
                 master.lg.warn('State watcher got %s' % repr(e))
 
