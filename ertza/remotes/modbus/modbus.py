@@ -150,13 +150,15 @@ class ModbusBackend(object):
                 self.watcher.daemon = True
                 self.watch.clear()
                 self.watcher.start()
+                return True
             except pmde.ConnectionException as e:
                 self.lg.warn(repr(ModbusMasterError(
                         'Unable to connect to slave: %s' % e)))
-            else:
-                self.connected.clear()
+
+            self.connected.clear()
 
     def close(self):
+        self.watch.set()
         self.end.close()
         self.connected.clear()
 
@@ -230,9 +232,10 @@ class ModbusBackend(object):
             try:
                 if master.connected.is_set():
                     master.get_command()
-                    if master.auto_enable is True and \
+                    if master.block_event.is_set():
+                        master.set_command(drive_enable=0)
+                    elif master.auto_enable is True and \
                             master.command['drive_enable'] is False:
-
                         master.set_command(drive_enable=1)
                     master.get_status()
                     master.get_speed()
@@ -255,6 +258,9 @@ class ModbusBackend(object):
                 master.lg.warn('State watcher got %s' % repr(e))
 
             master.watch.wait(ModbusBackend.watcher_interval)
+
+        master.set_speed(0)
+        master.set_command(drive_enable=0)
 
     def get_command(self):
         command = self.read_comm(self.netdata['command'])
