@@ -8,6 +8,7 @@ from .gpio import RemoteServer
 from ..errors import RemoteServerError, RemoteError
 from ..errors import OSCServerError
 from ..errors import ModbusMasterError, SlaveError
+from ..config import ConfigRequest
 from ..config.defaults import (RMT_REFRESH_RATE, OSC_REFRESH_RATE,
         MDB_REFRESH_RATE, SLV_REFRESH_RATE)
 
@@ -139,6 +140,9 @@ class ModbusWorker(BaseWorker):
         self.lg.debug("Init of ModbusWorker")
 
         self.wait_for_config()
+
+        self.config_request = ConfigRequest(self.cnf_pipe)
+
         self.run()
 
     def run(self):
@@ -158,8 +162,12 @@ class ModbusWorker(BaseWorker):
                         if pipe.poll():
                             rq = pipe.recv()
                             if not type(rq) is ModbusRequest:
-                                raise ValueError('Unexcepted type: %s' % type(rq))
-                            rs = self.mdrp_master.set_request(rq)
+                                raise ValueError('Unexcepted type: %s' %
+                                        type(rq), self.lg)
+                            if hasattr(self, 'slave') and rq.slave == True:
+                                rs = self.mdrp_slave.set_request(rq)
+                            else:
+                                rs = self.mdrp_master.set_request(rq)
                             rs.target = pipe
                             rs.handle()
                             rs.send()
@@ -175,6 +183,26 @@ class ModbusWorker(BaseWorker):
                 self.restart_mdb_event, self.blockall_event, **self.cmd_args)
         self.modbus_master.start()
         self.mdrp_master = ModbusResponse(end=self.modbus_master.back)
+
+        if ('direct_enslave' in self.cmd_args and
+                self.cmd_args['direct_enslave'] == True):
+            if restart:
+                del self.modbus_slave
+
+            for s in self.config_request.sections():
+                if 'slave ' in s:
+                    self.slave = s.split()[1]
+                    break
+            if not hasattr(self, 'slave'):
+                raise ModbusMasterError(
+                        'Cannot start direct enslave mode, missing config.',
+                        self.lg)
+
+            self.modbus_slave = ModbusMaster(self.cnf_pipe, self.lg,
+                    self.restart_mdb_event, self.blockall_event,
+                    slave=self.slave, **self.cmd_args)
+            self.modbus_slave.start()
+            self.mdrp_slave = ModbusResponse(end=self.modbus_slave.back)
 
 
 class SlaveWorker(BaseWorker):

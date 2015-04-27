@@ -70,7 +70,8 @@ class ModbusBackend(object):
     watcher_interval = 0.001
 
 
-    def __init__(self, config, logger, restart_event, block_event=None):
+    def __init__(self, config, logger, restart_event, block_event=None,
+            **kwargs):
         self.status = {}
         self.command = {}
         for k in self.command_keys:
@@ -86,6 +87,8 @@ class ModbusBackend(object):
         self.retry = self.max_retry
         self.restart_delay = 10
         self.restart_backoff = 2
+
+        self.kwargs = kwargs
 
         if config:
             self._config = config
@@ -160,25 +163,35 @@ class ModbusBackend(object):
         self.connect()
 
     def load_config(self):
-        try:
-            self.device = self.config_request.get(
-                'modbus', 'device', '192.168.100.2')
-            if self.device:
-                self.device = str(self.device)
-            else:
-                raise ValueError('Network device must be a string.')
-        except ValueError as e:
-            raise ConfigError('Network device must be a string.') from e
+        section = 'modbus'
+
+        if 'slave' in self.kwargs:
+            self.device = self.kwargs['slave']
+            section = 'slave %s' % self.device
+            self.lg.info('Slave provided, overriding device to %s' %
+                    self.device)
+        else:
+            try:
+                self.device = str(self.config_request.get(
+                    'modbus', 'device', '192.168.100.2'))
+            except ValueError as e:
+                raise ConfigError('Network device must be a string.') from e
 
         try:
             self.port = int(self.config_request.get(
-                'modbus', 'port', 502))
+                section, 'port', 502))
         except ValueError as e:
             raise ConfigError('Port must be an int.') from e
 
         try:
+            self.encoder_ratio = int(self.config_request.get(
+                section, 'encoder_ratio', 1000))
+        except ValueError as e:
+            raise ConfigError('Encoder ratio must be an int.') from e
+
+        try:
             self.node_id = int(self.config_request.get(
-                'modbus', 'node_id', 2))
+                section, 'node_id', 2))
         except ValueError as e:
             raise ConfigError('Node id must be an int.') from e
 
@@ -193,12 +206,6 @@ class ModbusBackend(object):
                 'modbus', 'data_bit', 8))
         except ValueError as e:
             raise ConfigError('Data bit must be an int.') from e
-
-        try:
-            self.encoder_ratio = int(self.config_request.get(
-                'modbus', 'encoder_ratio', 1000))
-        except ValueError as e:
-            raise ConfigError('Encoder ratio must be an int.') from e
 
         try:
             self.nb_reg_by_comms = int(self.word_lenght / self.data_bit)

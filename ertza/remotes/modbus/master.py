@@ -20,7 +20,8 @@ class ModbusMaster(object):
             if self.fake:
                 self.lg.warn('Starting modbus master in fake mode.')
 
-        self.back = ModbusBackend(config, self.lg, restart_event, block_event)
+        self.back = ModbusBackend(config, self.lg, restart_event, block_event,
+                **kwargs)
 
     def start(self):
         if not self.fake:
