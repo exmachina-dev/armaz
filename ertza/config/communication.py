@@ -17,6 +17,9 @@ class ConfigRequest(BaseRequest):
     def dump(self, *args):
         return self._build_rq('dmp', *args)
 
+    def sections(self):
+        return self._build_rq('sec')
+
 
 class ConfigResponse(BaseResponse):
     def __init__(self, target=None, request=None, config=None, *args):
@@ -63,6 +66,11 @@ class ConfigResponse(BaseResponse):
             section = None
         self.value = self._config.dump(str(section))
 
+    def get_sections(self):
+        self.method = self._methods['sec']
+
+        self.value = self._config.sections()
+
     def handle(self):
         args = self.request.args
         if self.request.method == self._methods['set']:
@@ -71,6 +79,8 @@ class ConfigResponse(BaseResponse):
             self.get_from_config(*args)
         elif self.request.method == self._methods['dmp']:
             self.dump_config(*args)
+        elif self.request.method == self._methods['sec']:
+            self.get_sections(*args)
         else:
             raise ValueError('Unexcepted method: %s', self.request.method)
 

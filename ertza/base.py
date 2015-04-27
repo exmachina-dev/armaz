@@ -62,8 +62,9 @@ class BaseCommunicationObject(object):
     _command = {
             'get':                      0b00000001,
             'set':                      0b00000010,
+            'sec':                      0b00000011,
             'dmp':                      0b00000100,
-            'reg':                      0b00001000,
+            'reg':                      0b00000101,
             }
     _methods = {
             'get_status':               (0b00000001 << 8) + _command['get'],
