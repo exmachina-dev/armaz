@@ -317,9 +317,11 @@ class ModbusBackend(object):
         if rtn is -1:
             return False
 
-        if format_function:
-            return format_function(rtn[0]+rtn[1])
-        return rtn[0]+rtn[1]
+        if not rtn is None:
+            if format_function:
+                return format_function(rtn[0]+rtn[1])
+            return rtn[0]+rtn[1]
+        return None
 
     def _set(self, key, value, format_function, check=None):
         rtn = self.write_comm(self.netdata[key], format_function(value))
