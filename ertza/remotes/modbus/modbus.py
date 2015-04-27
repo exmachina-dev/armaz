@@ -125,10 +125,12 @@ class ModbusBackend(object):
                     (self.device, self.port,))
             try:
                 self.end = ModbusClient(host=self.device, port=self.port)
-                if self.end.connect():
+                self.end.connect()
+                if self.check_connectivity():
                     self.connected.set()
                     self.retry = self.max_retry
-                elif not self.connected.is_set() and self.retry < 0:
+
+                if not self.connected.is_set() and self.retry < 0:
                     self.lg.warn('Init failed, restarting in %s second' %
                             self.restart_delay)
                     self.retry -= 1
@@ -284,8 +286,8 @@ class ModbusBackend(object):
             return self.get_command()
         return rtn
 
-    def get_status(self):
-        status = self.read_comm(self.netdata['status'])
+    def get_status(self, force=False):
+        status = self.read_comm(self.netdata['status'], force)
         if status is -1:
             return False
 
@@ -389,11 +391,20 @@ world_lenght: %s, reg_by_comms: %s' % \
 
         return self.wmr(start, value)
 
-    def read_comm(self, comms):
+    def read_comm(self, comms, force=False):
         self._check_comms(comms)
         start = comms * self.nb_reg_by_comms
 
-        return self.rhr(start, self.nb_reg_by_comms)
+        return self.rhr(start, self.nb_reg_by_comms, force)
+
+    def check_connectivity(self):
+        try:
+            status = self.get_status(force=True)
+            if type(status) == dict:
+                return True
+        except ModbusMasterError:
+            pass
+        return False
 
     def _check_comms(self, comms):
         if self.min_comms <= comms <= self.max_comms:
@@ -439,10 +450,10 @@ world_lenght: %s, reg_by_comms: %s' % \
         bits = bitstring.Bits(bin=bin_str)
         return bits.unpack('uintbe:16, uintbe')
 
-    def _read_holding_registers(self, address, count):
+    def _read_holding_registers(self, address, count, force=False):
             rq = ReadHoldingRegistersRequest(
                     address, count, unit_id=self.node_id)
-            return self._rq(rq)
+            return self._rq(rq, force)
 
     def _read_input_registers(self, address, count):
             rq = ReadInputRegistersRequest(
@@ -471,9 +482,9 @@ world_lenght: %s, reg_by_comms: %s' % \
     wmr = _write_multiple_registers
     rwmr = _read_write_multiple_registers
 
-    def _rq(self, rq):
+    def _rq(self, rq, force=False):
         try:
-            if not self.connected.is_set():
+            if not force and not self.connected.is_set():
                 return -1
             response = self.end.execute(rq)
             rpt = type(response)
