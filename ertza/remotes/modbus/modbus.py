@@ -500,7 +500,7 @@ world_lenght: %s, reg_by_comms: %s' % \
                 return regs
         except pmde.ConnectionException as e:
             self.connected.clear()
-            raise ModbusMasterError('Unable to connect to slave')
+            raise ModbusMasterError('Unable to connect to slave', self.lg)
 
 
 if __name__ == "__main__":
