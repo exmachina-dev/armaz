@@ -5,6 +5,10 @@ from ...errors import TimeoutError, ModbusMasterError
 from ...utils import timeout
 
 class ModbusRequest(BaseRequest):
+    def __init__(self, target, slave=None, *args, **kwargs):
+        super(ModbusRequest, self).__init__(target, *args, **kwargs)
+        self.slave = slave
+
     @property
     def status(self):
         return self._build_rq('get_status')
