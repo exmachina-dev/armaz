@@ -78,8 +78,8 @@ class MainInitializer(object):
                     args=(self,)),
                 mp.Process(target=ModbusWorker, name='ertza.mdb',
                     args=(self,)),
-                mp.Process(target=SlaveWorker, name='ertza.slv',
-                    args=(self,)),
+#                mp.Process(target=SlaveWorker, name='ertza.slv',
+#                    args=(self,)),
                 ]
 
     def start(self):
