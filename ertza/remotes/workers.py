@@ -179,6 +179,9 @@ class ModbusWorker(BaseWorker):
     def init_modbus(self, restart=False):
         if restart:
             del self.modbus_master
+            if hasattr(self, 'modbus_slave'):
+                del self.modbus_slave
+
         self.modbus_master = ModbusMaster(self.cnf_pipe, self.lg,
                 self.restart_mdb_event, self.blockall_event, **self.cmd_args)
         self.modbus_master.start()
