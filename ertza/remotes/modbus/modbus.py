@@ -68,6 +68,7 @@ class ModbusBackend(object):
             }
 
     watcher_interval = 0.001
+    watcher_interval = 1
 
 
     def __init__(self, config, logger, restart_event, block_event=None,
@@ -231,6 +232,7 @@ class ModbusBackend(object):
                         pass
                 else:
                     try:
+                        master.lg.warn('%s: device not connected.' % self.device)
                         master.block_event.set()
                     except AttributeError:
                         pass
