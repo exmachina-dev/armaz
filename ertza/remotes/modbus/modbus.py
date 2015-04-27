@@ -185,6 +185,7 @@ class ModbusBackend(object):
         except ValueError as e:
             raise ConfigError('Port must be an int.') from e
 
+        # Drive config
         try:
             self.encoder_ratio = int(self.config_request.get(
                 section, 'encoder_ratio', 1000))
@@ -197,6 +198,13 @@ class ModbusBackend(object):
         except ValueError as e:
             raise ConfigError('Node id must be an int.') from e
 
+        try:
+            self.auto_enable = bool(self.config_request.get(
+                'modbus', 'auto_enable', False))
+        except ValueError as e:
+            raise ConfigError('Auto enable must be a bool.') from e
+
+        # Modbus protocol config
         try:
             self.word_lenght = int(self.config_request.get(
                 'modbus', 'word_lenght', 16))
@@ -220,6 +228,10 @@ class ModbusBackend(object):
             try:
                 if master.connected.is_set():
                     master.get_command()
+                    if master.auto_enable is True and \
+                            master.command['drive_enable'] is False:
+
+                        master.set_command(drive_enable=1)
                     master.get_status()
                     master.get_speed()
                     master.get_velocity()
