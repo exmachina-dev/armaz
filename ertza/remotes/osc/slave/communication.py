@@ -25,7 +25,7 @@ class SlaveRequest(BaseRequest):
 
 
 class SlaveResponse(BaseResponse):
-    def __init__(self, target, request, end=None, *args):
+    def __init__(self, target=None, request=None, end=None, *args):
         super(SlaveResponse, self).__init__(target, *args)
         self.request = request
         self._end = end

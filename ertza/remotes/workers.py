@@ -246,7 +246,8 @@ class SlaveWorker(BaseWorker):
                             rq = pipe.recv()
                             if not type(rq) is SlaveRequest:
                                 raise ValueError('Unexcepted type: %s' % type(rq))
-                            rs = SlaveResponse(pipe, rq, self.slave_server)
+                            rs = self.slrs.set_request(rq)
+                            rs.target = pipe
                             rs.handle()
                             rs.send()
 
@@ -260,8 +261,10 @@ class SlaveWorker(BaseWorker):
         self.slave_server = SlaveServer(self.cnf_pipe, self.lg,
                 self.restart_slv_event, self.blockall_event, self.mdb_pipe,
                 **self.cmd_args)
+        self.slrs = SlaveResponse(end=self.slave_server)
         self.slave_server.start(blocking=False)
         self.slave_server.announce()
+        rs = SlaveResponse(self.slave_server)
 
 
 __all__ = ['RemoteWorker', 'OSCWorker', 'ModbusWorker', 'SlaveWorker']
