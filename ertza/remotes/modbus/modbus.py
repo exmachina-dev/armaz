@@ -94,6 +94,7 @@ class ModbusBackend(object):
         self.config_request = None
         self.max_retry = 5
         self.retry = self.max_retry
+        self.restart_init_delay = 10
         self.restart_delay = 10
         self.restart_backoff = 2
 
@@ -168,6 +169,7 @@ class ModbusBackend(object):
                     return False
 
                 self.retry = self.max_retry
+                self.restart_delay = self.restart_init_delay
                 return True
             except pmde.ConnectionException as e:
                 self.lg.warn(repr(ModbusMasterError(
