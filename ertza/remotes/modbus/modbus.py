@@ -535,10 +535,12 @@ world_lenght: %s, reg_by_comms: %s' % \
             target = 'all'
 
         if target == 'all':
+            rqs = list()
             for t in self.devices:
                 rq = ReadHoldingRegistersRequest(
-                        address, count, unit_id=t.node_id)
-                yield self._rq(rq, force, target=t)
+                        address, count, unit_id=t.config.node_id)
+                rqs.append(self._rq(rq, force, target=t.driver))
+            return rqs
         else:
             rq = ReadHoldingRegistersRequest(
                     address, count, unit_id=target.config.node_id)
@@ -551,10 +553,12 @@ world_lenght: %s, reg_by_comms: %s' % \
             target = 'all'
 
         if target == 'all':
+            rqs = list()
             for t in self.devices:
                 rq = ReadInputRegistersRequest(
-                        address, count, unit_id=t.node_id)
-                yield self._rq(rq, target=t)
+                        address, count, unit_id=t.config.node_id)
+                rqs.append(self._rq(rq, target=t.driver))
+            return rqs
         else:
             rq = ReadInputRegistersRequest(
                     address, count, unit_id=target.config.node_id)
@@ -567,10 +571,12 @@ world_lenght: %s, reg_by_comms: %s' % \
             target = 'all'
 
         if target == 'all':
+            rqs = list()
             for t in self.devices:
                 rq = WriteSingleRegisterRequest(
-                        address, value, unit_id=t.node_id)
-                yield self._rq(rq, target=t)
+                        address, value, unit_id=t.config.node_id)
+                rqs.append(self._rq(rq, target=t.driver))
+            return rqs
         else:
             rq = WriteSingleRegisterRequest(
                     address, value, unit_id=target.config.node_id)
@@ -583,10 +589,12 @@ world_lenght: %s, reg_by_comms: %s' % \
             target = 'all'
 
         if target == 'all':
+            rqs = list()
             for t in self.devices:
                 rq = WriteMultipleRegistersRequest(
-                        address, value, unit_id=t.node_id)
-                yield self._rq(rq, target=t)
+                        address, value)
+                rqs.append(self._rq(rq, target=t.driver))
+            return rqs
         else:
             rq = WriteMultipleRegistersRequest(
                     address, value, unit_id=target.config.node_id)
@@ -599,10 +607,12 @@ world_lenght: %s, reg_by_comms: %s' % \
             target = 'all'
 
         if target == 'all':
+            rqs = list()
             for t in self.devices:
                 rq = ReadWriteMultipleRequest(
-                        address, value, unit_id=t.node_id)
-                yield self._rq(rq, target=t)
+                        address, value, unit_id=t.config.node_id)
+                rqs.append(self._rq(rq, target=t.driver))
+            return rqs
         else:
             rq = ReadWriteMultipleRegistersRequest(
                     address, value, unit_id=target.config.node_id)
