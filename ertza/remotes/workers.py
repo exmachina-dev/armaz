@@ -143,11 +143,6 @@ class ModbusWorker(BaseWorker):
 
         self.config_request = ConfigRequest(self.cnf_pipe)
 
-        self.has_slaves = False
-        if ('direct_enslave' in self.cmd_args and
-                self.cmd_args['direct_enslave'] == True):
-            self.has_slaves = True
-
         self.run()
 
     def run(self):
@@ -171,21 +166,9 @@ class ModbusWorker(BaseWorker):
                                 raise ValueError('Unexcepted type: %s' %
                                         type(rq), self.lg)
 
-                            if self.has_slaves:
-                                rs = self.modbus_response.set_request(rq)
-                                rs.target = pipe
-                                rs.value = list()
-                                for mdhl in self.modbus_handlers:
-                                    _rs = mdhl.set_request(rq)
-                                    _rs.target = pipe
-                                    _rs.handle()
-                                    rs.value.append(rs.value)
-                                rs.value = tuple(rs.value)
-                            else:
-                                rs = self.mdrp_master.set_request(rq)
-                                rs.target = pipe
-                                rs.handle()
-
+                            rs = self.mdrp_master.set_request(rq)
+                            rs.target = pipe
+                            rs.handle()
                             rs.send()
 
                 self.exit_event.wait(self.interval)
@@ -201,34 +184,8 @@ class ModbusWorker(BaseWorker):
         self.modbus_master = ModbusMaster(self.cnf_pipe, self.lg,
                 self.restart_mdb_event, self.blockall_event, **self.cmd_args)
 
-        if self.has_slaves:
-            if restart:
-                del self.modbus_slave
-
-            for s in self.config_request.sections():
-                if 'slave ' in s:
-                    self.slave = s.split()[1]
-                    break
-            if not hasattr(self, 'slave'):
-                self.has_slaves = False
-                raise ModbusMasterError(
-                        'Cannot start direct enslave mode, missing config.',
-                        self.lg)
-
-            self.modbus_slave = ModbusMaster(self.cnf_pipe, self.lg,
-                    self.restart_mdb_event, self.blockall_event,
-                    slave=self.slave, **self.cmd_args)
-
-            self.modbus_master.start()
-            self.modbus_slave.start()
-            self.modbus_response = ModbusResponse(end=None)
-            self.modbus_handlers = (
-                    ModbusResponse(end=self.modbus_master.back),
-                    ModbusResponse(end=self.modbus_slave.back),
-                    )
-        else:
-            self.modbus_master.start()
-            self.modbus_response = ModbusResponse(end=self.modbus_master.back)
+        self.modbus_master.start()
+        self.modbus_response = ModbusResponse(end=self.modbus_master.back)
 
 
 class SlaveWorker(BaseWorker):
