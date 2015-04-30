@@ -24,6 +24,8 @@ class BaseWorker(object):
         self.blockall_event = sm.blockall_event
         self.cnf_ready_event = sm.cnf_ready_event
         self.slv_ready_event = sm.slv_ready_event
+        self.mdb_connected_event = sm.mdb_connected_event
+        self.mdb_watch_event = sm.mdb_watch_event
 
         self.restart_osc_event = sm.restart_osc_event
         self.restart_mdb_event = sm.restart_mdb_event

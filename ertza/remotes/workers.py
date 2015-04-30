@@ -129,6 +129,7 @@ class ModbusWorker(BaseWorker):
 
     def __init__(self, sm):
         super(ModbusWorker, self).__init__(sm)
+        self.manager = sm.manager
         self.interval = 1 / MDB_REFRESH_RATE
 
         self.cnf_pipe = self.initializer.cnf_mdb_pipe[1]
@@ -153,6 +154,7 @@ class ModbusWorker(BaseWorker):
 
         try:
             while not self.exit_event.is_set():
+                self.modbus_master.run()
                 if self.restart_mdb_event.is_set():
                     self.lg.info('Modbus master restarting…')
                     self.init_modbus(True)
@@ -166,13 +168,19 @@ class ModbusWorker(BaseWorker):
                                 raise ValueError('Unexcepted type: %s' %
                                         type(rq), self.lg)
 
-                            rs = self.mdrp_master.set_request(rq)
-                            rs.target = pipe
+                            rs = ModbusResponse(pipe, rq)
                             rs.handle()
-                            rs.send()
+                            try:
+                                pipe.send(rs)
+                            except Exception as e:
+                                self.lg.error('Control crashed with: %s' % e)
+                                raise e
+                                self.lg.error('Stopping.')
+                                self.modbus_master.back.close()
 
                 self.exit_event.wait(self.interval)
         except (ConnectionError, EOFError):
+            self.modbus_master.back.close()
             sys.exit()
 
     def init_modbus(self, restart=False):
@@ -182,10 +190,15 @@ class ModbusWorker(BaseWorker):
                 del self.modbus_slave
 
         self.modbus_master = ModbusMaster(self.cnf_pipe, self.lg,
-                self.restart_mdb_event, self.blockall_event, **self.cmd_args)
+                self.restart_mdb_event, self.blockall_event,
+                connected_event=self.mdb_connected_event,
+                watch_event=self.mdb_watch_event, **self.cmd_args)
 
         self.modbus_master.start()
-        self.modbus_response = ModbusResponse(end=self.modbus_master.back)
+        ModbusResponse.end = self.modbus_master.back
+
+    def __del__(self):
+        self.modbus_master.back.close()
 
 
 class SlaveWorker(BaseWorker):

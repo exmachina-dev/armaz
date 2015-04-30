@@ -9,6 +9,8 @@ import pymodbus.exceptions as pmde
 
 import bitstring
 
+from ...errors import ModbusMasterError
+
 
 class MicroFlexE100Backend(object):
     def __init__(self):
@@ -33,9 +35,11 @@ class MicroFlexE100Backend(object):
             rtn_data[h] = dc
         return rtn_data
 
-    def set_command(self, check=True, target=None, **kwargs):
-        if target is None:
-            return False
+    def set_command(self, check=True, **kwargs):
+        if 'target' in kwargs and kwargs is not None:
+            target = kwargs['target']
+        else:
+            return None
 
         new_cmd = [False,]*32
         h = target.config.host
@@ -173,12 +177,12 @@ class MicroFlexE100Backend(object):
     def _set(self, key, value, format_function, check=None, **kwargs):
         rtn_set = self.write_comm(self.netdata[key], format_function(value),
                 **kwargs)
-        if rtn is -1:
+        if rtn_set is -1:
             return False
 
         if check:
             return self._get(key, check)
-        return rtn
+        return rtn_set
 
     def _check_comms(self, comms):
         if self.min_comms <= comms <= self.max_comms:

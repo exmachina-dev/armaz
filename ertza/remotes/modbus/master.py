@@ -32,8 +32,7 @@ class ModbusMaster(object):
 
     def run(self):
         if not self.fake:
-            self.back.get_status()
-            self.back.get_command()
+            self.back.state_watcher()
 
     def stop(self):
         if not self.fake:

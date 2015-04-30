@@ -3,7 +3,7 @@
 from time import sleep
 from collections import namedtuple, OrderedDict
 
-from multiprocessing import Process, Event
+from multiprocessing import Event
 
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 import pymodbus.exceptions as pmde
@@ -15,15 +15,14 @@ from ...errors import ConfigError, ModbusMasterError
 from ...utils import retry
 
 
-class ModbusBackend(MicroFlexE100Backend):
-    modbusDevice = namedtuple('ModbusDevice', ['config', 'driver', 'watcher'])
-    modbusDeviceConfig = namedtuple('ModbusDeviceConfig', ['host', 'port',
-    'node_id', 'motor_config'])
-    modbusDeviceDriver = namedtuple('ModbusDeviceDriver', ['config',
-        'connected_event', 'error_event', 'drive_enable_event', 'end'])
-    modbusDeviceWatcher = namedtuple('ModbusDeviceWatcher', ['config',
-    'watch_event', 'process'])
+ModbusDevice = namedtuple('ModbusDevice', ['config', 'driver', 'watcher'])
+ModbusDeviceConfig = namedtuple('ModbusDeviceConfig', ['host', 'port',
+'node_id', 'motor_config'])
+ModbusDeviceDriver = namedtuple('ModbusDeviceDriver', ['config', 'state',
+    'end'])
 
+
+class ModbusBackend(MicroFlexE100Backend):
     netdata = {
             'command':              1,
             'status':               2,
@@ -71,7 +70,7 @@ class ModbusBackend(MicroFlexE100Backend):
                 False,),
             }
 
-    modbusDeviceState = OrderedDict.fromkeys(netdata.keys())
+    ModbusDeviceState = OrderedDict.fromkeys(netdata.keys())
 
     watcher_interval = 0.01
 
@@ -80,15 +79,22 @@ class ModbusBackend(MicroFlexE100Backend):
             **kwargs):
         self.errorcode = None
         self.end = None
-        self.connected = Event()
-        self.watch = Event()
-        self.watcher = None
         self.config_request = None
         self.max_retry = 5
         self.retry = self.max_retry
         self.restart_init_delay = 10
         self.restart_delay = 10
         self.restart_backoff = 2
+
+        if 'connected_event' in kwargs:
+            self.connected = kwargs['connected_event']
+        else:
+            self.connected = Event()
+
+        if 'watch_event' in kwargs:
+            self.watch = kwargs['watch_event']
+        else:
+            self.watch = Event()
 
         self.devices = list()
         self.devices_config = list()
@@ -131,24 +137,13 @@ class ModbusBackend(MicroFlexE100Backend):
             try:
                 self.create_devices()
                 for d in self.devices:
-                    if d.driver.end.connect():
-                        d.driver.connected_event.set()
-                    d.driver.connected_event.wait(0.1)
+                    self.connect_device(d)
 
                 self.lg.debug('Starting modbus watchers.')
-                for d in self.devices:
-                    if d.watcher.process.is_alive() and not d.watcher.watch_event.is_set():
-                        self.lg.debug('Waiting for existing watcher to exit.')
-                        d.watcher.watch_event.set()
-                        d.watcher.process.join()
-
-                    d.watcher.process.daemon = True
-                    d.watcher.watch_event.clear()
-                    d.watcher.process.start()
 
                 self.connected.set()
                 for d in self.devices:
-                    if not d.driver.connected_event.is_set():
+                    if not d.driver.state['connected']:
                         self.connected.clear()
                         self.lg.warn('%s not connected.' % d.config.host)
 
@@ -165,16 +160,15 @@ class ModbusBackend(MicroFlexE100Backend):
                 self.restart_delay = self.restart_init_delay
                 return True
             except pmde.ConnectionException as e:
-                self.lg.warn(repr(ModbusMasterError(
-                        'Unable to connect to slave: %s' % e)))
+                raise ModbusMasterError('Unable to connect to slave: %s' % e)
 
             self.connected.clear()
 
     def close(self):
         for d in self.devices:
-            d.driver.set_speed(0)
-            d.driver.set_command(drive_enable=0)
-            d.watcher.watch_event.set()
+            self.set_speed(0, target=d.driver)
+            self.set_command(drive_enable=0, target=d.driver)
+            d.watcher['watch'] = False
             d.driver.end.close()
 
         self.connected.clear()
@@ -190,22 +184,23 @@ class ModbusBackend(MicroFlexE100Backend):
             self.lg.debug('Creating %s:%s:%s device.' % (_c.host, _c.port,
                 _c.node_id))
             _driver = ModbusClient(host=_c.host, port=_c.port)
-            _d = ModbusBackend.modbusDeviceDriver(_c,
-                connected_event=Event(), error_event=Event(),
-                drive_enable_event=Event(), end=_driver)
+            _d = ModbusDeviceDriver(_c,
+                    state={'connected': False,}, end=_driver)
 
-            _watcher = Process(target=self._state_watcher,
-                    name='ertza.mw%s' % _c.node_id, args=(self, _c, _d,))
-            _w = ModbusBackend.modbusDeviceWatcher(_c, watch_event=Event(),
-                    process=_watcher)
+            _w = {'config': _c, 'watch': True,}
 
-            self.devices.append(ModbusBackend.modbusDevice( _c, _d, _w))
+            self.devices.append(ModbusDevice( _c, _d, _w))
             self.devices_state[_c.host] = OrderedDict.fromkeys(
                     ModbusBackend.netdata.keys())
             #for k in self.command_keys:
             #    self.devices_state[_c.host].command[k] = None
             #for k in self.status_keys:
             #    self.devices_state[_c.host].status[k] = None
+
+    def connect_device(self, device):
+        if device.driver.end.connect():
+            device.driver.state['connected'] = True
+            return True
 
     def load_config(self):
 
@@ -271,42 +266,47 @@ class ModbusBackend(MicroFlexE100Backend):
         except ValueError as e:
             raise ConfigError('Encoder ratio must be an int.') from e
 
-        return ModbusBackend.modbusDeviceConfig(_device, _port, _node_id,
+        return ModbusDeviceConfig(_device, _port, _node_id,
                 {'encoder_ratio': _encoder_ratio,})
 
-    def _state_watcher(self, master, config, device):
-        while not master.watch.is_set():
-            try:
-                if master.connected.is_set():
-                    master.update_state(target=device)
+    def state_watcher(self):
+        for device in self.devices:
+            if device.watcher['watch']:
+                try:
+                    if self.connected.is_set():
+                        self.update_state(target=device.driver)
 
-                    if master.block_event.is_set():
-                        #master.set_command(drive_enable=0, target=device)
-                        pass
-                    elif master.can_be_enabled(device.config.host) is True:
-                        master.set_command(drive_enable=1, target=device)
+                        if self.block_event.is_set():
+                            self.set_speed(0, target=device.driver)
+                            self.set_command(drive_enable=0,
+                                    target=device.driver)
+                        elif self.can_be_enabled(device.config.host) is True:
+                            self.set_speed(0, target=device.driver)
+                            self.set_command(drive_enable=1,
+                                    target=device.driver)
 
-                    print(config.host)
-                    print(self.devices_state[config.host])
-                    try:
-                        master.block_event.clear()
-                    except AttributeError:
-                        pass
-                else:
-                    try:
-                        master.lg.warn('%s: device not connected.' %
-                                device.host)
-                        master.block_event.set()
-                    except AttributeError:
-                        pass
-                    master.connected.wait(5)
-            except ModbusMasterError as e:
-                master.lg.warn('State watcher got %s' % repr(e))
-
-            master.watch.wait(ModbusBackend.watcher_interval)
-
-        master.set_speed(0, target=device)
-        master.set_command(drive_enable=0, target=device)
+                        print(device.config.host)
+                        print(self.devices_state[device.config.host])
+                        try:
+                            self.block_event.clear()
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            if self.connect_device(device):
+                                self.connected.set()
+                            else:
+                                self.lg.warn('%s device not connected.' %
+                                        device.config.host)
+                                self.block_event.set()
+                        except AttributeError:
+                            self.lg.warn(
+                                    'Block event does not exist. Unable \
+                                    to block all devices.')
+                        self.connected.wait(5)
+                except ModbusMasterError as e:
+                    device.driver.state['connected'] = False
+                    self.lg.warn('State watcher got %s' % repr(e))
 
     def can_be_enabled(self, host):
         if self.devices_state[host]['status']['drive_enable'] is True:
@@ -349,6 +349,9 @@ world_lenght: %s, reg_by_comms: %s' % \
                 self.word_lenght, self.nb_reg_by_comms)
         return cf
 
+    def __del__(self):
+        self.close()
+
 
 if __name__ == "__main__":
     mb = ModbusBackend(None, None, None, Event())
@@ -359,6 +362,6 @@ if __name__ == "__main__":
     mb.nb_reg_by_comms = int(mb.word_lenght / mb.data_bit)
     mb.auto_enable = True
 
-    device_config = mb.modbusDeviceConfig('192.168.100.3', 502, 3,
+    device_config = ModbusDeviceConfig('192.168.100.3', 502, 3,
             {'encoder_ratio': 1000,})
     mb.devices_config.append(device_config)

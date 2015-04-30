@@ -42,6 +42,9 @@ class MainInitializer(object):
     restart_mdb_event = manager.Event()
     restart_slv_event = manager.Event()
 
+    mdb_connected_event = manager.Event()
+    mdb_watch_event = manager.Event()
+
     # Some locks
     config_lock = manager.Lock()
     init_lock = manager.Lock()

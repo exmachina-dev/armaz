@@ -51,10 +51,12 @@ class ModbusRequest(BaseRequest):
 
 
 class ModbusResponse(BaseResponse):
-    def __init__(self, target=None, end=None, request=None, *args, **kwargs):
+    end = None
+
+    def __init__(self, target=None, request=None, *args, **kwargs):
         super(ModbusResponse, self).__init__(target, *args, **kwargs)
         self.request = request
-        self._end = end
+        self._end = self.end
 
     @timeout(1, "Slave didn't respond.")
     def get_from_device(self, *args):
