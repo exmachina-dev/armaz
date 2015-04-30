@@ -485,7 +485,7 @@ world_lenght: %s, reg_by_comms: %s' % \
         command_set = get_function(*f_args, **kwargs)
         if command_set is -1:
             return -1
-        elif type(command_set) is tuple:
+        elif not type(command_set) is tuple:
             command_set = (command_set,)
 
         return command_set
