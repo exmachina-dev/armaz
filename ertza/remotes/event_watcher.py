@@ -48,6 +48,7 @@ class EventWatcher(object):
         self.t = Thread(target=self._wait_for_event)
         self.t.daemon = True
         self.hit = False
+        self.state = None
         self.t.start()
 
     def get_gpio_bank_and_pin(self):
@@ -68,15 +69,28 @@ class EventWatcher(object):
             direction = "down" if ord(evt[12]) else "up"
             if code == self.key_code:
                 if self.invert is True and direction == "down":
-                    self.hit = True 
+                    self.hit = True
+                    self.state = True
                     if EventWatcher.callback is not None:
                         EventWatcher.callback(self)
                 elif self.invert is False and direction == "up":
                     self.hit = True
+                    self.state = True
+                    if EventWatcher.callback is not None:
+                        EventWatcher.callback(self)
+                elif self.invert is True and direction == "up":
+                    self.hit = True
+                    self.state = False
+                    if EventWatcher.callback is not None:
+                        EventWatcher.callback(self)
+                elif self.invert is False and direction == "down":
+                    self.hit = True
+                    self.state = False
                     if EventWatcher.callback is not None:
                         EventWatcher.callback(self)
                 else:
                     self.hit = False
+                    self.state = None
 
     def read_direction_mask_value(self):
         """
@@ -85,10 +99,10 @@ class EventWatcher(object):
         """
         with open("/dev/mem", "r+b") as f:
             ddr_mem = mmap.mmap(f.fileno(), self.PRU_ICSS_LEN,
-                                offset=self.PRU_ICSS)
+                    offset=self.PRU_ICSS)
             state = struct.unpack('LL',
-                                  ddr_mem[self.RAM2_START:self.RAM2_START + 8])
-            
+                    ddr_mem[self.RAM2_START:self.RAM2_START + 8])
+
             return state[1]
 
     def read_value(self):
