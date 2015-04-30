@@ -51,7 +51,7 @@ class OSCBaseServer(lo.Server):
             self.client_port = int(self.config_request.get(
                     'osc', 'client_port', 7901))
             self.broadcast_address = self.config_request.get(
-                    'osc', 'broadcast', '192.168.1.255')
+                    'osc', 'broadcast', '192.168.100.255')
             self.control_mode = self.config_request.get(
                     'control', 'mode')
 
