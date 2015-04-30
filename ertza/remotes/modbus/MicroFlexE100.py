@@ -33,13 +33,17 @@ class MicroFlexE100Backend(object):
             rtn_data[h] = dc
         return rtn_data
 
-    def set_command(self, check=True, **kwargs):
-        new_cmd = [None,]*32
+    def set_command(self, check=True, target=None, **kwargs):
+        if target is None:
+            return False
+
+        new_cmd = [False,]*32
+        h = target.config.host
         for i, k in enumerate(self.command_keys):
             if k in kwargs.keys():
                 v = bool(kwargs[k])
             else:
-                v = self.command[k]
+                v = self.devices_state[h]['command'][k]
             new_cmd[i] = (v)
 
         new_cmd = self._from_bools(new_cmd)
@@ -48,7 +52,7 @@ class MicroFlexE100Backend(object):
             return False
 
         if check:
-            return self.get_command()
+            return self.get_command(target=target)
         return rtn
 
     def get_status(self, force=False, **kwargs):
