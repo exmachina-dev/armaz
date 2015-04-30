@@ -20,6 +20,9 @@ class ModbusMaster(object):
             if self.fake:
                 self.lg.warn('Starting modbus master in fake mode.')
 
+        if 'direct_enslave' in kwargs and kwargs['direct_enslave'] is True:
+            kwargs['slave'] = '192.168.100.3'
+
         self.back = ModbusBackend(config, self.lg, restart_event, block_event,
                 **kwargs)
 
