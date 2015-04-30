@@ -8,7 +8,7 @@ from ..config import ConfigRequest
 from ..errors import RemoteError
 from .modbus import ModbusRequest
 #from .temp_chart import NTCLE100E3103JB0 as temp_chart
-from .event_watcher import EventWatcher
+from .event_watcher import EventWatcher as SwitchHandler
 
 ## PWM config
 ## code taken from https://bitbucket.org/intelligentagent/redeem
@@ -66,6 +66,9 @@ class RemoteServer(object):
 
         self.config_request = ConfigRequest(self._config)
 
+        self.switchs = {}
+        self.switchs_actions = {}
+
         try:
             self.run(init=True)
         except RemoteError:
@@ -95,18 +98,25 @@ class RemoteServer(object):
 
     def create_switch_pins(self):
         if not self.fake_mode:
-            sw = list()
+            SwitchHandler.callback = self.switch_callback
+            SwitchHandler.inputdev = '/dev/input/event1'
             for p in SWITCH_PINS:
                 a = self.config_request.get(p[1], 'action', None)
                 r = self.config_request.get(p[1], 'reverse', False)
-                sw.append(SwitchHandler(*p,
-                    callback=self.switch_callback(a), invert=r))
+                self.switchs[p[1]] = SwitchHandler(*p, invert=r)
+                self.switchs_actions[p[1]] = a
             self.switchs = tuple(sw)
             return True
         return False
 
     def switch_callback(self, event):
-        pass
+        state = bool(event.state)
+        if self.switchs_actions[event.name] == 'reverse':
+            self.lg.info('Reversing direction.')
+            self.mdb_request.reverse(state)
+        elif self.switchs_actions[event.name] == 'activate':
+            self.lg.info('Activating control.')
+            self.mdb_request.activate(state)
 
     def create_temp_watchers(self):
         if TEMP_PINS and not self.fake_mode:
@@ -125,11 +135,6 @@ class RemoteServer(object):
         for p in self.switch_pins:
             if p.update_state(): # if something change, trigger
                 self.mdb_request.trigger(p.action, p.state)
-
-class SwitchHandler(EventWatcher):
-    def __init__(self, pin, key_code, name, callback=None, invert=False):
-        super(SwitchHandler, self).__init__(pin, key_code, name, invert)
-        self.callback = callback
 
 
 class TempWatcher(object):
