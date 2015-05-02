@@ -125,7 +125,7 @@ class SerialWorker(BaseWorker):
         if restart:
             del self.serial_link
         self.serial_link = SerialControlLink(self.serial_device)
-        self.serial_link.daemon_event = self.exit_event
+
 
 class OSCWorker(BaseWorker):
     """
@@ -192,7 +192,8 @@ class ModbusWorker(BaseWorker):
         self.cnf_pipe = self.initializer.cnf_mdb_pipe[1]
         self.osc_pipe = self.initializer.mdb_osc_pipe[0]
         self.rmt_pipe = self.initializer.mdb_rmt_pipe[0]
-        self.pipes = (self.osc_pipe, self.rmt_pipe)
+        self.ser_pipe = self.initializer.mdb_ser_pipe[0]
+        self.pipes = (self.osc_pipe, self.rmt_pipe, self.ser_pipe)
 
         self.get_logger()
         self.lg.debug("Init of ModbusWorker")

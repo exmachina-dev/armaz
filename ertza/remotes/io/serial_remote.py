@@ -28,7 +28,7 @@ class SerialControlLink(serial.Serial):
     max_ticks = 1000
 
     def __init__(self, port=None, baudrate=57600):
-        super(RemoteControlLink, self).__init__(port=port, baudrate=baudrate)
+        super(SerialControlLink, self).__init__(port=port, baudrate=baudrate)
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
