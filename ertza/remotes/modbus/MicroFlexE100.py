@@ -20,7 +20,8 @@ class MicroFlexE100Backend(object):
         command_set = self._get_comms_set(self.read_comm,
                 (self.netdata['command'],), **kwargs)
         if command_set is -1:
-            return False
+            h = kwargs['target'].config.host
+            return {h: -1,}
 
         rtn_data = {}
         for command in command_set:
@@ -64,7 +65,8 @@ class MicroFlexE100Backend(object):
         status_set = self._get_comms_set(self.read_comm, (self.netdata['status'],
             force,), **kwargs)
         if status_set is -1:
-            return False
+            h = kwargs['target'].config.host
+            return {h: -1,}
 
         rtn_data = {}
         for status in status_set:
@@ -169,7 +171,8 @@ class MicroFlexE100Backend(object):
     def _get(self, key, format_function=None, **kwargs):
         rtn_set = self._get_comms_set(self.read_comm, (self.netdata[key],), **kwargs)
         if rtn_set is -1:
-            return False
+            h = kwargs['target'].config.host
+            return {h: -1,}
 
         rtn_data = {}
         for rtn in rtn_set:
