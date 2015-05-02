@@ -101,6 +101,7 @@ class SerialWorker(BaseWorker):
 
     def run(self):
         try:
+            self.lg.debug('Init of serial link on %s.' % self.serial_device)
             self.init_serial_link()
         except SerialError as e:
             self.lg.warn(e)
