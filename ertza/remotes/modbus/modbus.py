@@ -324,7 +324,7 @@ class ModbusBackend(MicroFlexE100Backend):
         return True
 
     def update_state(self, target='all'):
-        if target == 'all':
+        if target is 'all':
             for d in self.devices:
                 self._update_state(target=d)
                 self._reset_timeout(target=d)
