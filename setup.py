@@ -23,6 +23,7 @@ packages = [
 scripts = [
     'bin/ertza',
     'bin/modbus_rw',
+    'bin/pedale',
 ]
 
 def file_content(filename):

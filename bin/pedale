@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from ertza.remotes.modbus.modbus import ModbusBackend, ModbusDeviceConfig
+from ertza.remotes.io.serial_remote import SerialControlLink
+
+from multiprocessing import Event
+
+def main(direction=0):
+    mb = ModbusBackend(None, None, None, Event())
+
+    mb.word_lenght = 16
+    mb.data_bit = 8
+    mb.encoder_ration = 10000
+    mb.nb_reg_by_comms = int(mb.word_lenght / mb.data_bit)
+    mb.auto_enable = True
+
+    device_config = ModbusDeviceConfig('192.168.100.2', 502, 2,
+        {'encoder_ratio' : 10000,})
+    mb.devices_config.append(device_config)
+    device_config = ModbusDeviceConfig('192.168.100.3', 502, 3,
+        {'encoder_ratio' : 10000,})
+    mb.devices_config.append(device_config)
+
+    mb.connect()
+
+    dev = '/dev/ttyO2'
+    s = SerialControlLink(dev)
+    s.daemon_event = Event()
+
+    mb.set_command(drive_enable=1)
+    mb.set_direction(direction)
+
+    while True:
+        s.get_last_data()
+        s.get_ticks()
+        s.map_to_speed(s.last_ticks)
+        mb.set_speed(s.last_mapped_speed)
+
+    mb.set_speed(0)
+    mb.set_command(drive_enable=0)
+
+if __name__ == '__main__':
+    direction = input('Direction [0 = avant / 1 = arriere] ? ')
+    main(direction)
