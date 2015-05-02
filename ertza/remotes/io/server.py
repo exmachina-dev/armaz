@@ -6,8 +6,9 @@ import subprocess
 from ...config import ConfigRequest
 from ...errors import RemoteError
 from ..modbus import ModbusRequest
-from .event_watcher import EventWatcher as SwitchHandler
 
+from .serial_remote import RemoteControlLink
+from .event_watcher import EventWatcher as SwitchHandler
 
 SWITCH_PINS = (("GPIO0_30", 'switch_0', 112), ("GPIO0_31", 'switch_1', 113))
 
@@ -51,7 +52,6 @@ class RemoteServer(object):
                 self.lg.info('Updating remote server…')
             try:
                 self.create_switch_pins()
-                #self.create_temp_watchers()
                 if self.restart_event:
                     self.restart_event.clear()
             except (NameError, RuntimeError) as e:
