@@ -7,6 +7,8 @@ from ...config import ConfigRequest
 from ...errors import RemoteError
 from ..modbus import ModbusRequest
 
+from threading import Thread
+
 from .event_watcher import EventWatcher as SwitchHandler
 
 SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
@@ -48,7 +50,9 @@ class RemoteServer(object):
 
     def run(self, interval=None, init=False):
         for s in self.switchs:
-            s.wait_for_event()
+            t = Thread(target=s.wait_for_event)
+            t.daemon = True
+            t.start()
 
     def create_switch_pins(self):
         if not self.fake_mode:
