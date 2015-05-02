@@ -29,6 +29,10 @@ class ModbusRequest(BaseRequest):
     def speed(self):
         return self._build_rq('get_speed')
 
+    @property
+    def direction(self):
+        return self._build_rq('get_direction')
+
     def get(self, command, *args):
         if command not in self._methods:
             return ValueError('Unexcepted method: %s' % command)
@@ -39,6 +43,9 @@ class ModbusRequest(BaseRequest):
 
     def set_speed(self, *args):
         return self._build_rq('set_speed', *args)
+
+    def set_direction(self, *args):
+        return self._build_rq('set_direction', *args)
 
     def set_acceleration(self, *args):
         return self._build_rq('set_acceleration', *args)
@@ -69,6 +76,7 @@ class ModbusResponse(BaseResponse):
                 mth['get_command']: self._end.get_command,
                 mth['get_error_code']: self._end.get_error_code,
                 mth['get_speed']: self._end.get_speed,
+                mth['get_direction']: self._end.get_direction,
                 mth['get_acceleration']: self._end.get_acceleration,
                 mth['get_deceleration']: self._end.get_deceleration,
                 mth['get_encoder_velocity']: self._end.get_encoder_velocity,
@@ -93,6 +101,7 @@ class ModbusResponse(BaseResponse):
         s_opts = {
                 mth['set_command']: self._end.set_command,
                 mth['set_speed']: self._end.set_speed,
+                mth['set_direction']: self._end.set_direction,
                 mth['set_acceleration']: self._end.set_acceleration,
                 mth['set_deceleration']: self._end.set_deceleration,
                 }

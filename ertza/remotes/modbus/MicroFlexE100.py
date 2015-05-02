@@ -13,6 +13,8 @@ from ...errors import ModbusMasterError
 
 
 class MicroFlexE100Backend(object):
+    reverse = False
+
     def __init__(self):
         pass
 
@@ -106,7 +108,16 @@ class MicroFlexE100Backend(object):
         return self.get_float('speed', **kwargs)
 
     def set_speed(self, new_speed, check=False, **kwargs):
+        if self.reverse:
+            new_speed *= -1
         return self.set_float('speed', new_speed, check, **kwargs)
+
+    def get_direction(self, **kwargs):
+        return self.reverse
+
+    def set_direction(self, direction):
+        self.reverse = bool(direction)
+        return True
 
     def get_acceleration(self, **kwargs):
         return self.get_float('acceleration', **kwargs)
