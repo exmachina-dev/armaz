@@ -274,39 +274,45 @@ class ModbusBackend(MicroFlexE100Backend):
 
     def state_watcher(self):
         for device in self.devices:
-            if device.watcher['watch']:
-                try:
-                    if self.connected.is_set():
-                        self.update_state(target=device)
+            if not device.watcher['watch']:
+                return False
 
-                        if self.block_event.is_set():
-                            self.set_speed(0, target=device)
-                            self.set_command(drive_enable=0,
-                                    target=device)
-                        elif self.can_be_enabled(device.config.host) is True:
+        try:
+            if self.connected.is_set():
+                self.update_state()
+
+                if self.block_event.is_set():
+                    self.set_speed(0)
+                    self.set_command(drive_enable=0)
+                else:
+                    for device in self.devices:
+                        if self.can_be_enabled(device.config.host) is True:
                             self.set_speed(0, target=device)
                             self.set_command(drive_enable=1,
                                     target=device)
-                        try:
-                            self.block_event.clear()
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            if self.connect_device(device):
-                                self.connected.set()
-                            else:
-                                self.lg.warn('%s device not connected.' %
-                                        device.config.host)
-                                self.block_event.set()
-                        except AttributeError:
-                            self.lg.warn(
-                                    'Block event does not exist. Unable \
-                                    to block all devices.')
-                        self.connected.wait(5)
-                except ModbusMasterError as e:
-                    device.driver.state['connected'] = False
-                    self.lg.warn('State watcher got %s' % repr(e))
+                try:
+                    self.block_event.clear()
+                except AttributeError:
+                    pass
+            else:
+                try:
+                    for device in self.devices:
+                        if self.connect_device(device):
+                            self.connected.set()
+                        else:
+                            self.lg.warn('%s device not connected.' %
+                                    device.config.host)
+                            self.connected.clear()
+                            self.block_event.set()
+                except AttributeError:
+                    self.lg.warn(
+                            'Block event does not exist. Unable \
+                            to block all devices.')
+                self.connected.wait(5)
+        except ModbusMasterError as e:
+            for d in self.devices:
+                d.driver.state['connected'] = False
+            self.lg.warn('State watcher got %s' % repr(e))
 
     def can_be_enabled(self, host):
         if self.devices_state[host]['status']['drive_enable'] is True:
