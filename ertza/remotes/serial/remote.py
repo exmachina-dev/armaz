@@ -12,15 +12,22 @@ class RemoteControlLink(serial.Serial):
     command_keys = namedtuple('Command', ['ticks', 'turns', 'speed'])(
             'K', 'T', 'S')
 
-    word_lenght = 48
+    word_lenght = 4 # bytes
+    command_lenght = 2 # bytes
     word_number = 3
+
+    line_lenght = 20 # bytes
+
+    daemon_refresh = 0.4
+
+    remote_mode = 'continuous'
 
     def __init__(self, port=None, baudrate=57600):
         super(RemoteControlLink, self).__init__(port=port, baudrate=baudrate)
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
-        self.timeout = None
+        self.timeout = 0.1
         self.xonxoff = True
 
         self.product_infos = {}
@@ -55,7 +62,9 @@ class RemoteControlLink(serial.Serial):
         self.flushInput()
         if self.remote_mode == 'continuous':
             while not self.daemon_event.is_set():
-                self.last_data = self.readline()
+                print(self.get_last_data())
+                print(self.get_ticks())
+                print(self.get_turns())
                 self.daemon_event.wait(self.daemon_refresh)
         elif self.remote_mode == 'on_command':
             while not self.daemon_event.is_set():
@@ -80,17 +89,17 @@ class RemoteControlLink(serial.Serial):
 
     def get_speed(self):
         speed_c = self._get_data(self.word_keys.speed, 'float')
-        self.last_speed = speed_c.float
+        self.last_speed = speed_c
         return self.last_speed
 
     def get_ticks(self):
         ticks_c = self._get_data(self.word_keys.ticks, 'long')
-        self.last_ticks = ticks_c.long
+        self.last_ticks = ticks_c
         return self.last_ticks
 
     def get_turns(self):
         turns_c = self._get_data(self.word_keys.turns, 'float')
-        self.last_turns = turns_c.float
+        self.last_turns = turns_c
         return self.last_turns
 
     def request_speed(self):
@@ -102,34 +111,48 @@ class RemoteControlLink(serial.Serial):
     def request_turns(self):
         raise NotImplementedError
 
+    def get_last_data(self):
+        data = self.readline()
+        if len(data) == 20:
+            self.last_data = data
+            return True
+        else:
+            self.last_data = None
+        return False
+
     def _get_data(self, word, data_type):
-        offset = self.word_lenght * word
+        if self.last_data in (False, None):
+            return False
+
+        offset = (self.word_lenght + self.command_lenght) * word
 
         if data_type == 'long':
-            data_format = '>l'
+            data_format = '<l'
         elif data_type == 'float':
-            data_format = '>f'
+            data_format = '<f'
         else:
             return False
 
-        command = self.last_data[offset:offset+16]
-        data = self.last_data[offset+16:offset+self.world_lenght]
-        bits = bitstring.Bits(bytes=data).unpack(data_format)
+        command = self.last_data[offset:offset+2]
+        data_offset = offset+2
+        data = self.last_data[data_offset:data_offset+self.word_lenght]
+        print(data)
+        try:
+            bits = bitstring.Bits(bytes=data).unpack(data_format)[0]
+        except bitstring.ReadError:
+            return False
         return bits
-
-
 
 
 if __name__ == '__main__':
     test = input('Start serial test [y/N] ? ')
-    if not test and test == 'y':
+    if test and test == 'y':
         default_device = '/dev/ttyUSB0'
         dev = input('Serial device [%s]: ' % default_device)
         if not dev:
             dev = default_device
+        from multiprocessing import Event
         s = RemoteControlLink(dev)
-        print('Product', s.get_product_infos())
-        while True:
-            print(s.get_ticks())
+        s.daemon_event = Event()
     else:
         s = RemoteControlLink()
