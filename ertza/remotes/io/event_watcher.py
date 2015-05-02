@@ -62,8 +62,8 @@ class EventWatcher(object):
         while True:
             evt = evt_file.read(16) # Read the event
             evt_file.read(16)       # Discard the debounce event (or whatever)
-            code = ord(evt[10])            
-            direction = "down" if ord(evt[12]) else "up"
+            code = evt[10]
+            direction = "down" if evt[12] else "up"
             if code == self.key_code:
                 if self.invert is True and direction == "down":
                     self.hit = True
@@ -118,3 +118,12 @@ class EventWatcher(object):
             else:
                 raise RuntimeError('Invalid switch name')
         return self.hit
+
+if __name__ == '__main__':
+    def cb(event):
+        print(event.name)
+        print(event.state)
+
+    EventWatcher.callback = cb
+    ew = EventWatcher('GPIO3_30', 1, 'switch_0', True)
+    ew.wait_for_event()
