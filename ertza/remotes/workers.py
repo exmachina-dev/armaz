@@ -4,7 +4,7 @@ from ..base import BaseWorker
 from .osc import OSCServer
 from .osc.slave import SlaveServer, SlaveRequest, SlaveResponse
 from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
-from .gpio import RemoteServer
+from .io import RemoteServer
 from ..errors import RemoteServerError, RemoteError
 from ..errors import OSCServerError
 from ..errors import ModbusMasterError, SlaveError

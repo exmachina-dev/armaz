@@ -4,9 +4,9 @@
 import time
 import subprocess
 
-from ..config import ConfigRequest
-from ..errors import RemoteError
-from .modbus import ModbusRequest
+from ...config import ConfigRequest
+from ...errors import RemoteError
+from ..modbus import ModbusRequest
 #from .temp_chart import NTCLE100E3103JB0 as temp_chart
 from .event_watcher import EventWatcher as SwitchHandler
 
