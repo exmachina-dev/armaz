@@ -3,10 +3,13 @@
 
 from ertza.remotes.modbus.modbus import ModbusBackend, ModbusDeviceConfig
 from ertza.remotes.io.serial_remote import SerialControlLink
+from ertza.remotes.io.event_watcher import EventWatcher as SwitchHandler
 
-from multiprocessing import Event
+from threading import Event, Thread
 
-def main(direction=0):
+import atexit
+
+def init():
     mb = ModbusBackend(None, None, None, Event())
 
     mb.word_lenght = 16
@@ -28,18 +31,53 @@ def main(direction=0):
     s = SerialControlLink(dev)
     s.daemon_event = Event()
 
-    mb.set_command(drive_enable=1)
-    mb.set_direction(direction)
+    mt = Thread(target=modbus_thread)
+    st = Thread(target=swill_thread)
+    io_launch()
 
-    while True:
+@atexit.register
+def exit():
+    s.daemon_event.set()
+
+
+def modbus_thread():
+    while not s.daemon_event.is_set():
+        mb.state_watcher()
+        s.daemon_event.wait(1/500)
+    mb.close()
+
+def swill_thread():
+    while not s.daemon_event.is_set():
         s.get_last_data()
         s.get_ticks()
         s.map_to_speed(s.last_ticks)
         mb.set_speed(s.last_mapped_speed)
 
-    mb.set_speed(0)
-    mb.set_command(drive_enable=0)
+def io_launch():
+    SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
+
+    switchs = list()
+    switchs_actions = {}
+
+    SwitchHandler.callback = io_callback
+    SwitchHandler.inputdev = '/dev/input/event1'
+
+    switchs.append(SwitchHandler('GPIO0_30', 1, 'switch_0'))
+    switchs_actions['switch_0'] = 'reverse'
+    switchs.append(SwitchHandler('GPIO0_31', 2, 'switch_1'))
+    switchs_actions['switch_0'] = 'activate'
+    switchs = tuple(switchs)
+
+    for sw in switchs:
+        t = Thread(target=sw.wait_for_event)
+        t.daemon = True
+        t.start()
+
+def io_callback(ev):
+    if switchs_actions[event.name] == 'reverse':
+        mb.set_direction(state)
+    elif switchs_actions[event.name] == 'activate':
+        mb.set_command(drive_enable=state)
 
 if __name__ == '__main__':
-    direction = input('Direction [0 = avant / 1 = arriere] ? ')
-    main(direction)
+    init()
