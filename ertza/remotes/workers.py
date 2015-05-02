@@ -203,7 +203,12 @@ class ModbusWorker(BaseWorker):
 
         self.config_request = ConfigRequest(self.cnf_pipe)
 
-        self.run()
+        try:
+            self.run()
+        except KeyboardInterrupt:
+            self.exit_event.set()
+            self.lg.info("Keyboard interrupt received: exiting.")
+            exit(0)
 
     def run(self):
         try:
@@ -238,7 +243,7 @@ class ModbusWorker(BaseWorker):
                                 self.modbus_master.back.close()
 
                 self.exit_event.wait(self.interval)
-        except (ConnectionError, EOFError):
+        except (ConnectionError, EOFError, BrokenPipeError):
             self.modbus_master.back.close()
             sys.exit()
 
