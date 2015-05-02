@@ -79,8 +79,8 @@ class RemoteServer(object):
     def switch_callback(self, event):
         state = bool(event.state)
         if self.switchs_actions[event.name] == 'reverse':
-            self.lg.info('Reversing direction.')
-            self.mdb_request.reverse(state)
+            self.lg.info('Direction control: %s' % state)
+            self.mdb_request.set_direction(state)
         elif self.switchs_actions[event.name] == 'activate':
-            self.lg.info('Activating control.')
-            self.mdb_request.activate(state)
+            self.lg.info('RF Control: %s' % state)
+            self.mdb_request.set_command(drive_enable=state)
