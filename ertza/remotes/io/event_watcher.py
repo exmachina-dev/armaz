@@ -45,11 +45,8 @@ class EventWatcher(object):
         self.key_code = key_code
         self.name = name
         self.invert = invert
-        self.t = Thread(target=self._wait_for_event)
-        self.t.daemon = True
         self.hit = False
         self.state = None
-        self.t.start()
 
     def get_gpio_bank_and_pin(self):
         matches = re.compile(r'GPIO([0-9])_([0-9]+)').search(self.pin)
@@ -60,7 +57,7 @@ class EventWatcher(object):
     def get_pin(self):
         return self.pin
 
-    def _wait_for_event(self):
+    def wait_for_event(self):
         evt_file = open(EventWatcher.inputdev, "rb")
         while True:
             evt = evt_file.read(16) # Read the event

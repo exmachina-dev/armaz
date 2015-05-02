@@ -37,31 +37,19 @@ class RemoteServer(object):
 
         self.config_request = ConfigRequest(self._config)
 
-        self.switchs = {}
+        self.switchs = list()
         self.switchs_actions = {}
 
         try:
-            self.run(init=True)
-        except RemoteError:
-            self.fake_mode = True
-            self.run(init=True)
+            self.create_switch_pins()
+        except (NameError, RuntimeError) as e:
+            raise RemoteError(
+                    'Error reading event, am I on a beaglebone ?',
+                    self.lg) from e
 
     def run(self, interval=None, init=False):
-        if (self.restart_event and self.restart_event.is_set()) or init:
-            if not init:
-                self.lg.info('Updating remote server…')
-            try:
-                self.create_switch_pins()
-                if self.restart_event:
-                    self.restart_event.clear()
-            except (NameError, RuntimeError) as e:
-                raise RemoteError(
-                        'Error configuring pins, am I on a beaglebone ?',
-                        self.lg) from e
-                if not self.fake_mode:
-                    self.lg.warn('Starting failed. Fallback to fake mode.')
-                    self.fake_mode = True
-                    self.run()
+        for s in self.switchs:
+            s.wait_for_event()
 
     def create_switch_pins(self):
         if not self.fake_mode:
@@ -70,9 +58,9 @@ class RemoteServer(object):
             for p in SWITCH_PINS:
                 a = self.config_request.get(p[1], 'action', None)
                 r = self.config_request.get(p[1], 'reverse', False)
-                self.switchs[p[1]] = SwitchHandler(*p, invert=r)
+                self.switchs.append(SwitchHandler(*p, invert=r))
                 self.switchs_actions[p[1]] = a
-            self.switchs = tuple(sw)
+            self.switchs = tuple(self.switchs)
             return True
         return False
 

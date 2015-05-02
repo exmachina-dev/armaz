@@ -63,12 +63,9 @@ class RemoteWorker(BaseWorker):
         if restart:
             self.rmt_server.restart()
             return True
-        try:
-            self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
-                    restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
-                    slave=self.slv_pipe)
-        except RemoteError:
-            pass
+        self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
+                restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
+                slave=self.slv_pipe)
 
 class OSCWorker(BaseWorker):
     """
