@@ -6,7 +6,7 @@ from ...errors import SerialError
 
 import serial, bitstring
 
-class RemoteControlLink(serial.Serial):
+class SerialControlLink(serial.Serial):
     product_keys = ('product_id', 'device_id', None, None)
     word_keys = namedtuple('WordKeys', ['ticks', 'turns', 'speed'])(0, 1, 2)
     command_keys = namedtuple('Command', ['ticks', 'turns', 'speed'])(
@@ -36,6 +36,13 @@ class RemoteControlLink(serial.Serial):
         self.xonxoff = True
 
         self.product_infos = {}
+
+        self.last_ticks = 0
+        self.last_turns = 0
+        self.last_speed = 0
+        self.last_mapped_speed = 0
+
+        self.flushInput()
 
     def _send_command(self, cmd, data=None):
         if not type(cmd) in (str, bytes):
@@ -76,6 +83,17 @@ class RemoteControlLink(serial.Serial):
                 self.request_ticks()
                 self.request_turns()
                 self.daemon_event.wait(self.daemon_refresh)
+
+    def run(self):
+        if self.remote_mode == 'continuous':
+            print(self.get_last_data())
+            print(self.get_ticks())
+            print(self.get_turns())
+            print(self.map_to_speed(self.last_ticks))
+        elif self.remote_mode == 'on_command':
+            self.request_speed()
+            self.request_ticks()
+            self.request_turns()
 
     def get_product_infos(self):
         self._send_command("R")
@@ -159,6 +177,7 @@ class RemoteControlLink(serial.Serial):
         mapped_speed = self.max_speed * rate_ticks
         if mapped_speed <= self.min_speed:
             mapped_speed = self.min_speed
+        self.last_mapped_speed = mapped_speed
         return mapped_speed
 
 
@@ -170,7 +189,7 @@ if __name__ == '__main__':
         if not dev:
             dev = default_device
         from multiprocessing import Event
-        s = RemoteControlLink(dev)
+        s = SerialControlLink(dev)
         s.daemon_event = Event()
     else:
-        s = RemoteControlLink()
+        s = SerialControlLink()
