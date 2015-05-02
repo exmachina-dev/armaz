@@ -26,8 +26,9 @@ class ConfigWorker(BaseWorker):
         self.osc_pipe = self.initializer.cnf_osc_pipe[0]
         self.mdb_pipe = self.initializer.cnf_mdb_pipe[0]
         self.slv_pipe = self.initializer.cnf_slv_pipe[0]
+        self.ser_pipe = self.initializer.cnf_ser_pipe[0]
         self.pipes = (self.log_pipe, self.rmt_pipe, self.osc_pipe,
-                self.mdb_pipe, self.slv_pipe)
+                self.mdb_pipe, self.slv_pipe, self.ser_pipe)
 
         self.interval = 1 / CNF_REFRESH_RATE
 
