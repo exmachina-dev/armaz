@@ -9,7 +9,7 @@ from ..modbus import ModbusRequest
 
 from .event_watcher import EventWatcher as SwitchHandler
 
-SWITCH_PINS = (("GPIO0_30", 'switch_0', 112), ("GPIO0_31", 'switch_1', 113))
+SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
 
 
 class RemoteServer(object):
