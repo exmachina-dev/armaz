@@ -7,7 +7,6 @@ from ...config import ConfigRequest
 from ...errors import RemoteError
 from ..modbus import ModbusRequest
 
-from .serial_remote import RemoteControlLink
 from .event_watcher import EventWatcher as SwitchHandler
 
 SWITCH_PINS = (("GPIO0_30", 'switch_0', 112), ("GPIO0_31", 'switch_1', 113))

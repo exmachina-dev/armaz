@@ -31,6 +31,7 @@ class BaseWorker(object):
         self.restart_mdb_event = sm.restart_mdb_event
         self.restart_slv_event = sm.restart_slv_event
         self.restart_rmt_event = sm.restart_rmt_event
+        self.restart_ser_event = sm.restart_ser_event
 
         self.config_lock = sm.config_lock
         self.init_lock = sm.init_lock

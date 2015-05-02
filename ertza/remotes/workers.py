@@ -5,12 +5,15 @@ from .osc import OSCServer
 from .osc.slave import SlaveServer, SlaveRequest, SlaveResponse
 from .modbus import ModbusMaster, ModbusRequest, ModbusResponse
 from .io import RemoteServer
+from .io import SerialControlLink
 from ..errors import RemoteServerError, RemoteError
 from ..errors import OSCServerError
 from ..errors import ModbusMasterError, SlaveError
+from ..errors import SerialError
 from ..config import ConfigRequest
 from ..config.defaults import (RMT_REFRESH_RATE, OSC_REFRESH_RATE,
-        MDB_REFRESH_RATE, SLV_REFRESH_RATE)
+        MDB_REFRESH_RATE, SLV_REFRESH_RATE, SER_REFRESH_RATE)
+from ..config import DEFAULT_CONTROL_MODE
 
 import time
 import sys
@@ -66,6 +69,63 @@ class RemoteWorker(BaseWorker):
         self.rmt_server = RemoteServer(self.cnf_pipe, logger=self.lg,
                 restart_event=self.restart_rmt_event, modbus=self.mdb_pipe,
                 slave=self.slv_pipe)
+
+class SerialWorker(BaseWorker):
+    """
+    Process controling serial communications.
+    """
+    
+    def __init__(self, sm):
+        super(SerialWorker, self).__init__(sm)
+        self.interval = 1 / SER_REFRESH_RATE
+
+        self.cnf_pipe = self.initializer.cnf_ser_pipe[1]
+        self.mdb_pipe = self.initializer.mdb_ser_pipe[1]
+
+        self.cnf_request = ConfigRequest(self.cnf_pipe)
+        self.mdb_request = ModbusRequest(self.mdb_pipe)
+
+        self.get_logger()
+        self.lg.debug("Init of SerialWorker")
+
+        self.wait_for_config()
+        try:
+            self.control_mode = self.cnf_request.get('control', 'mode',
+                    DEFAULT_CONTROL_MODE)
+            self.serial_device = self.cnf_request.get('serial', 'device',
+                    '/dev/ttyO2')
+            self.run()
+        except KeyboardInterrupt:
+            self.lg.info("Keyboard interrupt received: exiting.")
+            exit(0)
+
+    def run(self):
+        try:
+            self.init_serial_link()
+        except SerialError as e:
+            self.lg.warn(e)
+            self.exit()
+
+        try:
+            while not self.exit_event.is_set():
+                self.serial_link.run()
+                if self.control_mode is 'swill':
+                    self.mdb_request.set_speed(
+                            self.serial_link.last_mapped_speed)
+                if self.restart_ser_event.is_set():
+                    self.lg.info('Serial link restarting…')
+                    self.init_serial_link(True)
+                    self.restart_ser_event.clear()
+
+                self.exit_event.wait(self.interval)
+        except (ConnectionError, EOFError):
+            sys.exit()
+
+    def init_serial_link(self, restart=False):
+        if restart:
+            del self.serial_link
+        self.serial_link = SerialControlLink(self.serial_device)
+        self.serial_link.daemon_event = self.exit_event
 
 class OSCWorker(BaseWorker):
     """
@@ -260,4 +320,4 @@ class SlaveWorker(BaseWorker):
         rs = SlaveResponse(self.slave_server)
 
 
-__all__ = ['RemoteWorker', 'OSCWorker', 'ModbusWorker', 'SlaveWorker']
+__all__ = ['RemoteWorker', 'SerialWorker', 'OSCWorker', 'ModbusWorker', 'SlaveWorker']

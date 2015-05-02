@@ -12,6 +12,7 @@ from .remotes import RemoteWorker
 from .remotes import OSCWorker
 from .remotes import ModbusWorker
 from .remotes import SlaveWorker
+from .remotes import SerialWorker
 
 from .errors import FatalError
 
@@ -41,6 +42,7 @@ class MainInitializer(object):
     restart_rmt_event = manager.Event()
     restart_mdb_event = manager.Event()
     restart_slv_event = manager.Event()
+    restart_ser_event = manager.Event()
 
     mdb_connected_event = manager.Event()
     mdb_watch_event = manager.Event()
@@ -52,6 +54,7 @@ class MainInitializer(object):
     # Config pipes
     cnf_log_pipe = mp.Pipe()
     cnf_rmt_pipe = mp.Pipe()
+    cnf_ser_pipe = mp.Pipe()
     cnf_osc_pipe = mp.Pipe()
     cnf_mdb_pipe = mp.Pipe()
     cnf_slv_pipe = mp.Pipe()
@@ -59,6 +62,7 @@ class MainInitializer(object):
     mdb_osc_pipe = mp.Pipe()
     mdb_slv_pipe = mp.Pipe()
     mdb_rmt_pipe = mp.Pipe()
+    mdb_ser_pipe = mp.Pipe()
     slv_osc_pipe = mp.Pipe()
     slv_rmt_pipe = mp.Pipe()
 
@@ -83,6 +87,8 @@ class MainInitializer(object):
                     args=(self,)),
 #                mp.Process(target=SlaveWorker, name='ertza.slv',
 #                    args=(self,)),
+                mp.Process(target=SerialWorker, name='ertza.ser',
+                    args=(self,)),
                 ]
 
     def start(self):
