@@ -32,7 +32,7 @@ class SerialControlLink(serial.Serial):
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
-        self.timeout = 0.1
+        self.timeout = 2
         self.xonxoff = True
 
         self.product_infos = {}
@@ -69,7 +69,6 @@ class SerialControlLink(serial.Serial):
         return self.write(final_bytes.tobytes())
 
     def _serial_daemon(self):
-        self.flushInput()
         if self.remote_mode == 'continuous':
             while not self.daemon_event.is_set():
                 print(self.get_last_data())
@@ -134,6 +133,7 @@ class SerialControlLink(serial.Serial):
         raise NotImplementedError
 
     def get_last_data(self):
+        self.flushInput()
         data = self.readline()
         if len(data) == 20:
             self.last_data = data
