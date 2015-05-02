@@ -21,6 +21,11 @@ class RemoteControlLink(serial.Serial):
     daemon_refresh = 0.4
 
     remote_mode = 'continuous'
+    min_speed = 0
+    max_speed = 75
+
+    min_ticks = 0
+    max_ticks = 1000
 
     def __init__(self, port=None, baudrate=57600):
         super(RemoteControlLink, self).__init__(port=port, baudrate=baudrate)
@@ -54,8 +59,6 @@ class RemoteControlLink(serial.Serial):
         final_bytes = bitstring.pack(
                 'uint:8, bits, uint:8',
                 ord(cmd), bits, ord('\n'))
-        print(bits)
-        print(final_bytes.bin)
         return self.write(final_bytes.tobytes())
 
     def _serial_daemon(self):
@@ -65,6 +68,7 @@ class RemoteControlLink(serial.Serial):
                 print(self.get_last_data())
                 print(self.get_ticks())
                 print(self.get_turns())
+                print(self.map_to_speed(self.last_ticks))
                 self.daemon_event.wait(self.daemon_refresh)
         elif self.remote_mode == 'on_command':
             while not self.daemon_event.is_set():
@@ -142,6 +146,20 @@ class RemoteControlLink(serial.Serial):
         except bitstring.ReadError:
             return False
         return bits
+
+    def map_to_speed(self, ticks):
+        if ticks < self.min_ticks:
+            self.min_ticks = ticks
+        if ticks > self.max_ticks:
+            self.max_ticks = ticks
+
+        rate_ticks = (self.min_ticks - ticks) / (self.min_ticks - \
+                self.max_ticks)
+
+        mapped_speed = self.max_speed * rate_ticks
+        if mapped_speed <= self.min_speed:
+            mapped_speed = self.min_speed
+        return mapped_speed
 
 
 if __name__ == '__main__':
