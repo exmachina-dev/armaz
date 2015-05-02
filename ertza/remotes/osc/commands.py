@@ -148,7 +148,7 @@ class OSCCommands(OSCBaseServer):
         sp, = args
         try:
             rtn = self.mdb_request.set_speed(sp)
-            self.status_reply(sender, '/debug/drive/return', rtn)
+            self.status_reply(sender, '/debug/drive/return', *rtn)
         except TimeoutError as e:
             self.timeout_reply(sender, path, repr(e))
             pass

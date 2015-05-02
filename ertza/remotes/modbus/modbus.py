@@ -37,6 +37,7 @@ class ModbusBackend(MicroFlexE100Backend):
             'effort':               13,
             'command_number':       20,
             'drive_temperature':    21,
+            'timeout':              22,
             'dropped_frames':       50,
             }
     netdata = OrderedDict(sorted(netdata.items(), key=lambda t: t[1]))
@@ -156,6 +157,8 @@ class ModbusBackend(MicroFlexE100Backend):
                     self.connect()
                     return False
 
+                self.update_state()
+
                 self.retry = self.max_retry
                 self.restart_delay = self.restart_init_delay
                 return True
@@ -165,9 +168,9 @@ class ModbusBackend(MicroFlexE100Backend):
             self.connected.clear()
 
     def close(self):
+        self.set_speed(0)
+        self.set_command(drive_enable=0)
         for d in self.devices:
-            self.set_speed(0, target=d.driver)
-            self.set_command(drive_enable=0, target=d.driver)
             d.watcher['watch'] = False
             d.driver.end.close()
 
@@ -274,19 +277,16 @@ class ModbusBackend(MicroFlexE100Backend):
             if device.watcher['watch']:
                 try:
                     if self.connected.is_set():
-                        self.update_state(target=device.driver)
+                        self.update_state(target=device)
 
                         if self.block_event.is_set():
-                            self.set_speed(0, target=device.driver)
+                            self.set_speed(0, target=device)
                             self.set_command(drive_enable=0,
-                                    target=device.driver)
+                                    target=device)
                         elif self.can_be_enabled(device.config.host) is True:
-                            self.set_speed(0, target=device.driver)
+                            self.set_speed(0, target=device)
                             self.set_command(drive_enable=1,
-                                    target=device.driver)
-
-                        print(device.config.host)
-                        print(self.devices_state[device.config.host])
+                                    target=device)
                         try:
                             self.block_event.clear()
                         except AttributeError:
@@ -321,26 +321,50 @@ class ModbusBackend(MicroFlexE100Backend):
         if target == 'all':
             for d in self.devices:
                 self._update_state(target=d)
+                self._reset_timeout(target=d)
         else:
             self._update_state(target=target)
+            self._reset_timeout(target=target)
             
     def _update_state(self, target):
         h = target.config.host
-        self.devices_state[h]['command'] = self.get_command(target=target)[h]
-        self.devices_state[h]['status'] = self.get_status(target=target)[h]
-        self.devices_state[h]['error_code'] = self.get_error_code(target=target)[h]
-        self.devices_state[h]['speed'] = self.get_speed(target=target)[h]
-        self.devices_state[h]['acceleration'] = self.get_acceleration(target=target)[h]
-        self.devices_state[h]['deceleration'] = self.get_deceleration(target=target)[h]
-        self.devices_state[h]['velocity'] = self.get_velocity(target=target)[h]
-        self.devices_state[h]['encoder_velocity'] = \
-                self.get_encoder_velocity(target=target)[h] / \
-                target.config.motor_config['encoder_ratio']
-        self.devices_state[h]['encoder_position'] = self.get_encoder_position(target=target)[h]
-        self.devices_state[h]['follow_error'] = self.get_follow_error(target=target)[h]
-        self.devices_state[h]['effort'] = self.get_effort(target=target)[h]
-        self.devices_state[h]['drive_temperature'] = self.get_drive_temperature(target=target)[h]
-        self.devices_state[h]['dropped_frames'] = self.get_dropped_frames(target=target)[h]
+        d = target
+        try:
+            self.devices_state[h]['command'] = self.get_command(target=d)[h]
+            self.devices_state[h]['status'] = self.get_status(target=d)[h]
+            self.devices_state[h]['error_code'] = self.get_error_code(target=d)[h]
+            self.devices_state[h]['speed'] = self.get_speed(target=d)[h]
+            self.devices_state[h]['acceleration'] = self.get_acceleration(target=d)[h]
+            self.devices_state[h]['deceleration'] = self.get_deceleration(target=d)[h]
+            self.devices_state[h]['velocity'] = self.get_velocity(target=d)[h]
+            self.devices_state[h]['encoder_velocity'] = \
+                    self.get_encoder_velocity(target=d)[h] / \
+                    target.config.motor_config['encoder_ratio']
+            self.devices_state[h]['encoder_position'] = self.get_encoder_position(target=d)[h]
+            self.devices_state[h]['follow_error'] = self.get_follow_error(target=d)[h]
+            self.devices_state[h]['effort'] = self.get_effort(target=d)[h]
+            self.devices_state[h]['drive_temperature'] = self.get_drive_temperature(target=d)[h]
+            self.devices_state[h]['dropped_frames'] = self.get_dropped_frames(target=d)[h]
+        except KeyError as e:
+            self.lg.warn('%s was removed from devices', h)
+            print('Crash devices list')
+            print(self.devices)
+            print('Crash devices state')
+            print(self.devices_state)
+            raise e
+        except TypeError as e:
+            print(self.devices)
+            print(self.devices_state)
+            target.watcher['watch'] = False
+            raise e
+
+    def _reset_timeout(self, target):
+        h = target.config.host
+        d = target
+
+        t = bool(self.get_timeout(target=d)[h])
+        self.devices_state[h]['timeout'] = t
+        self.set_timeout(not t, target=d)
 
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
@@ -362,6 +386,9 @@ if __name__ == "__main__":
     mb.nb_reg_by_comms = int(mb.word_lenght / mb.data_bit)
     mb.auto_enable = True
 
+    device_config = ModbusDeviceConfig('192.168.100.2', 502, 2,
+            {'encoder_ratio': 1000,})
+    mb.devices_config.append(device_config)
     device_config = ModbusDeviceConfig('192.168.100.3', 502, 3,
             {'encoder_ratio': 1000,})
     mb.devices_config.append(device_config)

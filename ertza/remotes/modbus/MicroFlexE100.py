@@ -35,29 +35,30 @@ class MicroFlexE100Backend(object):
             rtn_data[h] = dc
         return rtn_data
 
-    def set_command(self, check=True, **kwargs):
-        if 'target' in kwargs and kwargs is not None:
-            target = kwargs['target']
+    def set_command(self, **kwargs):
+        if 'target' not in kwargs:
+            kwargs['target'] = 'all'
+        if kwargs['target'] == 'all':
+            target = self.devices
         else:
-            return None
+            target = (kwargs['target'],)
 
-        new_cmd = [False,]*32
-        h = target.config.host
-        for i, k in enumerate(self.command_keys):
-            if k in kwargs.keys():
-                v = bool(kwargs[k])
-            else:
-                v = self.devices_state[h]['command'][k]
-            new_cmd[i] = (v)
+        rtn_data = list()
+        for t in target:
+            new_cmd = [False,]*32
+            h = t.config.host
+            for i, k in enumerate(self.command_keys):
+                if k in kwargs.keys():
+                    v = bool(kwargs[k])
+                else:
+                    v = self.devices_state[h]['command'][k]
+                new_cmd[i] = (v)
 
-        new_cmd = self._from_bools(new_cmd)
-        rtn = self.write_comm(self.netdata['command'], new_cmd, **kwargs)
-        if rtn is -1:
-            return False
-
-        if check:
-            return self.get_command(target=target)
-        return rtn
+            new_cmd = self._from_bools(new_cmd)
+            kwargs['target'] = t
+            rtn_data.append(self.write_comm(self.netdata['command'], new_cmd,
+                **kwargs))
+        return rtn_data
 
     def get_status(self, force=False, **kwargs):
         status_set = self._get_comms_set(self.read_comm, (self.netdata['status'],
@@ -135,6 +136,12 @@ class MicroFlexE100Backend(object):
     def get_drive_temperature(self, **kwargs):
         return self.get_float('drive_temperature', **kwargs)
 
+    def get_timeout(self, **kwargs):
+        return self.get_int('timeout', **kwargs)
+
+    def set_timeout(self, new_timeout, **kwargs):
+        return self.set_int('timeout', new_timeout, **kwargs)
+
     def get_dropped_frames(self, **kwargs):
         return self.get_int('dropped_frames', **kwargs)
 
@@ -175,13 +182,14 @@ class MicroFlexE100Backend(object):
         return rtn_data
 
     def _set(self, key, value, format_function, check=None, **kwargs):
-        rtn_set = self.write_comm(self.netdata[key], format_function(value),
-                **kwargs)
+        if 'target' not in kwargs:
+            kwargs['target'] = 'all'
+
+        rtn_set = self._set_comms_set(self.write_comm, (self.netdata[key],
+            format_function(value),), **kwargs)
         if rtn_set is -1:
             return False
 
-        if check:
-            return self._get(key, check)
         return rtn_set
 
     def _check_comms(self, comms):
@@ -193,6 +201,16 @@ class MicroFlexE100Backend(object):
     @staticmethod
     def _get_comms_set(get_function, f_args=(), **kwargs):
         command_set = get_function(*f_args, **kwargs)
+        if command_set is -1:
+            return -1
+        elif not type(command_set) is tuple:
+            command_set = (command_set,)
+
+        return command_set
+
+    @staticmethod
+    def _set_comms_set(set_function, f_args=(), **kwargs):
+        command_set = set_function(*f_args, **kwargs)
         if command_set is -1:
             return -1
         elif not type(command_set) is tuple:
@@ -249,7 +267,7 @@ class MicroFlexE100Backend(object):
             for t in self.devices:
                 rq = ReadHoldingRegistersRequest(
                         address, count, unit_id=t.config.node_id)
-                rqs.append(self._rq(rq, force, target=t.driver))
+                rqs.append(self._rq(rq, force, target=t))
             return rqs
         else:
             rq = ReadHoldingRegistersRequest(
@@ -267,7 +285,7 @@ class MicroFlexE100Backend(object):
             for t in self.devices:
                 rq = ReadInputRegistersRequest(
                         address, count, unit_id=t.config.node_id)
-                rqs.append(self._rq(rq, target=t.driver))
+                rqs.append(self._rq(rq, target=t))
             return rqs
         else:
             rq = ReadInputRegistersRequest(
@@ -285,7 +303,7 @@ class MicroFlexE100Backend(object):
             for t in self.devices:
                 rq = WriteSingleRegisterRequest(
                         address, value, unit_id=t.config.node_id)
-                rqs.append(self._rq(rq, target=t.driver))
+                rqs.append(self._rq(rq, target=t))
             return rqs
         else:
             rq = WriteSingleRegisterRequest(
@@ -303,7 +321,7 @@ class MicroFlexE100Backend(object):
             for t in self.devices:
                 rq = WriteMultipleRegistersRequest(
                         address, value)
-                rqs.append(self._rq(rq, target=t.driver))
+                rqs.append(self._rq(rq, target=t))
             return rqs
         else:
             rq = WriteMultipleRegistersRequest(
@@ -321,7 +339,7 @@ class MicroFlexE100Backend(object):
             for t in self.devices:
                 rq = ReadWriteMultipleRequest(
                         address, value, unit_id=t.config.node_id)
-                rqs.append(self._rq(rq, target=t.driver))
+                rqs.append(self._rq(rq, target=t))
             return rqs
         else:
             rq = ReadWriteMultipleRegistersRequest(
@@ -344,12 +362,12 @@ class MicroFlexE100Backend(object):
         try:
             if not force and not self.connected.is_set():
                 return -1
-            response = target.end.execute(rq)
+            response = target.driver.end.execute(rq)
             rpt = type(response)
             if rpt == ExceptionResponse:
-                return repr(response)
+                raise ModbusMasterError('Exception received during execution.') from response
             elif rpt == WriteMultipleRegistersResponse:
-                return repr(response)
+                return True
             elif rpt == ReadHoldingRegistersResponse:
                 regs = list()
                 fmt = "{:0>"+str(self.word_lenght)+"b}"
