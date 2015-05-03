@@ -43,8 +43,6 @@ class SerialControlLink(serial.Serial):
         self.last_speed = 0
         self.last_mapped_speed = 0
 
-        self.flushInput()
-
     def _send_command(self, cmd, data=None):
         if not type(cmd) in (str, bytes):
             raise TypeError('Cmd must be a string or a byte')
