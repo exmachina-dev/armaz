@@ -316,11 +316,11 @@ class ModbusBackend(MicroFlexE100Backend):
             self.lg.warn('State watcher got %s' % repr(e))
 
     def can_be_enabled(self, host):
-        if self.devices_state[host]['status']['drive_enable'] is True:
+        if self.devices_state.status[host]['drive_enable'] is True:
             return False
-        if self.devices_state[host]['status']['drive_enable_ready'] is not True:
+        if self.devices_state.status[host]['drive_enable_ready'] is not True:
             return False
-        if self.devices_state[host]['command']['drive_cancel'] is True:
+        if self.devices_state.command[host]['drive_cancel'] is True:
             return False
         return True
 
