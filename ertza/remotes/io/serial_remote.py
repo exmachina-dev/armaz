@@ -25,7 +25,8 @@ class SerialControlLink(serial.Serial):
     max_speed = 75
 
     min_ticks = 0
-    max_ticks = 1000
+    max_ticks = 900
+    dead_zone = 10
 
     def __init__(self, port=None, baudrate=57600):
         super(SerialControlLink, self).__init__(port=port, baudrate=baudrate)
@@ -167,8 +168,14 @@ class SerialControlLink(serial.Serial):
         if ticks > self.max_ticks:
             self.max_ticks = ticks
 
-        rate_ticks = (self.min_ticks - ticks) / (self.min_ticks - \
-                self.max_ticks)
+        abs_ticks = (self.min_ticks - ticks)
+        abs_max_ticks = (self.min_ticks - self.max_ticks)
+
+        abs_ticks += self.dead_zone
+        abs_max_ticks += self.dead_zone
+        if abs_ticks <= 0:
+            abs_ticks
+        rate_ticks = abs_ticks / abs_max_ticks
 
         mapped_speed = self.max_speed * rate_ticks
         if mapped_speed <= self.min_speed:
