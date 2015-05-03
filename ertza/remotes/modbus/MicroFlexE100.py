@@ -19,39 +19,7 @@ class MicroFlexE100Backend(object):
         pass
 
     def get_command(self, **kwargs):
-        if 'target' not in kwargs:
-            kwargs['target'] = 'all'
-        if kwargs['target'] == 'all':
-            target = self.devices
-        else:
-            target = (kwargs['target'],)
-
-        command_set = self._get_comms_set(self.read_comm,
-                (self.netdata['command'],), **kwargs)
-        if command_set is -1:
-            rtn = dict()
-            for t in target:
-                h = t.config.host
-                rtn[h] = -1
-            return rtn
-
-        rtn_data = {}
-        for i, command in enumerate(command_set):
-            h = target[i].config.host
-
-            if not command is None:
-                command = self._to_bools(command[0]+command[1])
-                command.reverse()
-
-                dc = {}
-                for k, v in zip(self.command_keys, command):
-                    dc[k] = bool(int(v))
-
-                rtn_data[h] = dc
-            else:
-                e = ModbusMasterError('Got None value for %s' % h, self.lg)
-                rtn_data[h] = False
-        return rtn_data
+        return self._get_multi_bools('command', **kwargs)
 
     def set_command(self, **kwargs):
         if 'target' not in kwargs:
@@ -82,39 +50,7 @@ class MicroFlexE100Backend(object):
         return rtn_data
 
     def get_status(self, force=False, **kwargs):
-        if 'target' not in kwargs:
-            kwargs['target'] = 'all'
-        if kwargs['target'] == 'all':
-            target = self.devices
-        else:
-            target = (kwargs['target'],)
-
-        status_set = self._get_comms_set(self.read_comm, (self.netdata['status'],
-            force,), **kwargs)
-        if status_set is -1:
-            rtn = dict()
-            for t in target:
-                h = t.config.host
-                rtn[h] = -1
-            return rtn
-
-        rtn_data = {}
-        for i, status in enumerate(status_set):
-            h = target[i].config.host
-
-            if not status is None:
-                status = self._to_bools(status[0]+status[1])
-                status.reverse()
-
-                ds = {}
-                for k, v in zip(self.status_keys, status):
-                    ds[k] = bool(int(v))
-
-                rtn_data[h] = ds
-            else:
-                e = ModbusMasterError('Got None value for %s' % h, self.lg)
-                rtn_data[h] = False
-        return rtn_data
+        return self._get_multi_bools('status', **kwargs)
 
     def get_int(self, key, **kwargs):
         return self._get(key, self._to_int, **kwargs)
@@ -236,12 +172,15 @@ class MicroFlexE100Backend(object):
             h = target[i].config.host
             if not rtn is None:
                 if format_function:
-                    rtn_data[h] = format_function(rtn[0]+rtn[1])
+                    rtn_data[h] = format_function(rtn[0]+rtn[1], key=key)
                 else:
                     rtn_data[h] = rtn[0]+rtn[1]
             else:
                 e = ModbusMasterError('Got None value for %s' % h, self.lg)
         return rtn_data
+
+    def _get_multi_bools(self, key, **kwargs):
+        return self._get(key, self._parse_bools, **kwargs)
 
     def _set(self, key, value, format_function, check=None, **kwargs):
         if 'target' not in kwargs:
@@ -280,28 +219,43 @@ class MicroFlexE100Backend(object):
 
         return command_set
 
+    def _parse_bools(self, data, key):
+        command = self._to_bools(data)
+        command.reverse()
+
+        if key is 'command':
+            keys = self.command_keys
+        elif key is 'status':
+            keys = self.status_keys
+
+        dc = {}
+        for k, v in zip(keys, command):
+            dc[k] = bool(int(v))
+
+        return dc
+
     @staticmethod
-    def _to_int(bits):
+    def _to_int(bits, **kwargs):
         bits = bitstring.Bits(bin=bits)
         return bits.int
 
     @staticmethod
-    def _from_int(int_value):
+    def _from_int(int_value, **kwargs):
         bits = bitstring.Bits(int=int_value, length=32)
         return bits.unpack('uintbe:16, uintbe')
 
     @staticmethod
-    def _to_float(bits):
+    def _to_float(bits, **kwargs):
         bits = bitstring.Bits(bin=bits)
         return bits.float
 
     @staticmethod
-    def _from_float(float_value):
+    def _from_float(float_value, **kwargs):
         bits = bitstring.Bits(float=float_value, length=32)
         return bits.unpack('uintbe:16, uintbe')
 
     @staticmethod
-    def _to_bools(bits):
+    def _to_bools(bits, **kwargs):
         bits = bitstring.Bits(bin=bits)
         l = list()
         for b in bits:
@@ -310,7 +264,7 @@ class MicroFlexE100Backend(object):
         return l
 
     @staticmethod
-    def _from_bools(bools):
+    def _from_bools(bools, **kwargs):
         bin_str = '0b'
         bools.reverse()
         for b in bools:
