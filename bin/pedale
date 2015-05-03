@@ -112,7 +112,11 @@ class GrossePedale(object):
         if self.switchs_actions[ev.name] == 'reverse':
             self.mb.set_direction(ev.state)
         elif self.switchs_actions[ev.name] == 'activate':
-            self.mb.set_command(drive_enable=ev.state)
+            if bool(ev.state) is True:
+                self.block_event.set()
+            else:
+                self.block_event.clear()
+
 
 if __name__ == '__main__':
     gp = GrossePedale()
