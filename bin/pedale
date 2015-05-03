@@ -43,8 +43,6 @@ class GrossePedale(object):
             {'encoder_ratio' : 10000,})
         self.mb.devices_config.append(dev_conf)
 
-        self.mb.connect()
-
         dev = '/dev/ttyO2'
         self.s = SerialControlLink(dev)
         self.s.daemon_event = self.exit_event
@@ -53,11 +51,17 @@ class GrossePedale(object):
         self.st = Thread(target=self.swill_thread)
         self.mt.daemon = True
         self.st.daemon = True
+
+    def start(self):
+        self.mb.connect()
         self.mt.start()
         self.st.start()
         self.io_launch()
 
-        signal.pause()
+        try:
+            signal.pause()
+        except KeyboardInterrupt:
+            lg.info('Keyboard interrupt received, exiting.')
 
     def exit(self):
         self.exit_event.set()
@@ -103,3 +107,4 @@ class GrossePedale(object):
 
 if __name__ == '__main__':
     gp = GrossePedale()
+    gp.start()
