@@ -68,6 +68,7 @@ class GrossePedale(object):
 
     def exit(self):
         self.exit_event.set()
+        self.mb.close()
 
     def modbus_thread(self):
         while not self.exit_event.is_set():
@@ -104,9 +105,9 @@ class GrossePedale(object):
 
     def io_callback(self, ev):
         if self.switchs_actions[ev.name] == 'reverse':
-            self.mb.set_direction(state)
+            self.mb.set_direction(ev.state)
         elif self.switchs_actions[ev.name] == 'activate':
-            self.mb.set_command(drive_enable=state)
+            self.mb.set_command(drive_enable=ev.state)
 
 if __name__ == '__main__':
     gp = GrossePedale()
