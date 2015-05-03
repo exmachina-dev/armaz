@@ -46,15 +46,17 @@ class GrossePedale(object):
 
         dev = '/dev/ttyO2'
         self.s = SerialControlLink(dev)
-        self.s.daemon_event = self.exit_event()
+        self.s.daemon_event = self.exit_event
 
-        self.mt = Thread(target=modbus_thread)
-        self.st = Thread(target=swill_thread)
+        self.mt = Thread(target=self.modbus_thread)
+        self.st = Thread(target=self.swill_thread)
         self.mt.daemon = True
         self.st.daemon = True
         self.mt.start()
         self.st.start()
         self.io_launch()
+
+        signal.pause()
 
     def exit(self):
         self.exit_event.set()
@@ -75,10 +77,10 @@ class GrossePedale(object):
     def io_launch(self):
         SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
 
-        self.switchs = list()
+        switchs = list()
         self.switchs_actions = {}
 
-        SwitchHandler.callback = io_callback
+        SwitchHandler.callback = self.io_callback
         SwitchHandler.inputdev = '/dev/input/event1'
 
         switchs.append(SwitchHandler('GPIO0_30', 1, 'switch_0'))
