@@ -325,7 +325,16 @@ class ModbusBackend(MicroFlexE100Backend):
         return True
 
     def update_state(self, target='all'):
-        new_state = self.ModbusDeviceState(*self._update_state())
+        new_state = tuple(self._update_state())
+        chk_state = list()
+        for i, st in enumerate(new_state):
+            t, s = st
+            if not type(s) is t:
+                chk_state[i] = t()
+            else:
+                chk_state[i] = s
+
+        new_state = self.ModbusDeviceState(*chk_state)
         self.devices_state = new_state
         if target is 'all':
             for d in self.devices:
@@ -335,7 +344,11 @@ class ModbusBackend(MicroFlexE100Backend):
             
     def _update_state(self):
         for nd in self.netdata.keys():
-            yield getattr(self, 'get_%s' % nd)()
+            if 'status' in nd or 'command' in nd:
+                t = dict
+            else:
+                t = int
+            yield t, getattr(self, 'get_%s' % nd)()
 
     def _reset_timeout(self, target):
         h = target.config.host
