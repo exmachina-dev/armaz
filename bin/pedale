@@ -57,7 +57,7 @@ class GrossePedale(object):
 
     def start(self):
         self.mb.connect()
-        self.mb.set_acceleration(40)
+        self.mb.set_acceleration(45)
         self.mb.set_deceleration(20)
         self.mt.start()
         self.st.start()
