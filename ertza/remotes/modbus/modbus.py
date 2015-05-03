@@ -158,15 +158,12 @@ class ModbusBackend(MicroFlexE100Backend):
                     self.connect()
                     return False
 
-                self.update_state()
-
                 self.retry = self.max_retry
                 self.restart_delay = self.restart_init_delay
                 return True
             except pmde.ConnectionException as e:
                 raise ModbusMasterError('Unable to connect to slave: %s' % e)
-
-            self.connected.clear()
+                self.connected.clear()
 
     def close(self):
         self.set_speed(0)

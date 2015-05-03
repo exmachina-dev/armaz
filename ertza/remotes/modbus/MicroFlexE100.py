@@ -37,15 +37,20 @@ class MicroFlexE100Backend(object):
 
         rtn_data = {}
         for i, command in enumerate(command_set):
-            command = self._to_bools(command[0]+command[1])
-            command.reverse()
-
             h = target[i].config.host
-            dc = {}
-            for k, v in zip(self.command_keys, command):
-                dc[k] = bool(int(v))
 
-            rtn_data[h] = dc
+            if not command is None:
+                command = self._to_bools(command[0]+command[1])
+                command.reverse()
+
+                dc = {}
+                for k, v in zip(self.command_keys, command):
+                    dc[k] = bool(int(v))
+
+                rtn_data[h] = dc
+            else:
+                e = ModbusMasterError('Got None value for %s' % h, self.lg)
+                rtn_data[h] = False
         return rtn_data
 
     def set_command(self, **kwargs):
@@ -95,15 +100,20 @@ class MicroFlexE100Backend(object):
 
         rtn_data = {}
         for i, status in enumerate(status_set):
-            status = self._to_bools(status[0]+status[1])
-            status.reverse()
-
             h = target[i].config.host
-            ds = {}
-            for k, v in zip(self.status_keys, status):
-                ds[k] = bool(int(v))
 
-            rtn_data[h] = ds
+            if not status is None:
+                status = self._to_bools(status[0]+status[1])
+                status.reverse()
+
+                ds = {}
+                for k, v in zip(self.status_keys, status):
+                    ds[k] = bool(int(v))
+
+                rtn_data[h] = ds
+            else:
+                e = ModbusMasterError('Got None value for %s' % h, self.lg)
+                rtn_data[h] = False
         return rtn_data
 
     def get_int(self, key, **kwargs):
@@ -229,6 +239,8 @@ class MicroFlexE100Backend(object):
                     rtn_data[h] = format_function(rtn[0]+rtn[1])
                 else:
                     rtn_data[h] = rtn[0]+rtn[1]
+            else:
+                e = ModbusMasterError('Got None value for %s' % h, self.lg)
         return rtn_data
 
     def _set(self, key, value, format_function, check=None, **kwargs):
