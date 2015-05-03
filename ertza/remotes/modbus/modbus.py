@@ -348,11 +348,7 @@ class ModbusBackend(MicroFlexE100Backend):
             
     def _update_state(self):
         for nd in self.netdata.keys():
-            if 'status' in nd or 'command' in nd:
-                t = dict
-            else:
-                t = int
-            yield t, getattr(self, 'get_%s' % nd)()
+            yield getattr(self, 'get_%s' % nd)()
 
     def _reset_timeout(self, target):
         h = target.config.host
