@@ -8,76 +8,95 @@ from ertza.remotes.io.event_watcher import EventWatcher as SwitchHandler
 from threading import Event, Thread
 
 import atexit
+import signal
+import logging
 
-def init():
-    mb = ModbusBackend(None, None, None, Event())
+lg = logging.getLogger(__name__)
 
-    mb.word_lenght = 16
-    mb.data_bit = 8
-    mb.encoder_ration = 10000
-    mb.nb_reg_by_comms = int(mb.word_lenght / mb.data_bit)
-    mb.auto_enable = True
+class GrossePedale(object):
+    def __init__(self):
 
-    device_config = ModbusDeviceConfig('192.168.100.2', 502, 2,
-        {'encoder_ratio' : 10000,})
-    mb.devices_config.append(device_config)
-    device_config = ModbusDeviceConfig('192.168.100.3', 502, 3,
-        {'encoder_ratio' : 10000,})
-    mb.devices_config.append(device_config)
+        self.exit_event = Event()
+        self.block_event = Event()
+        self.connected_event = Event()
+        self.ready_event = Event()
+        self.restart_event = Event()
 
-    mb.connect()
+        atexit.register(self.exit)
 
-    dev = '/dev/ttyO2'
-    s = SerialControlLink(dev)
-    s.daemon_event = Event()
+        self.mb = ModbusBackend(None, None, restart_event=self.restart_event,
+                block_event=self.block_event,
+                connected_event=self.connected_event,
+                watch_event=self.exit_event)
 
-    mt = Thread(target=modbus_thread)
-    st = Thread(target=swill_thread)
-    io_launch()
+        self.mb.word_lenght = 16
+        self.mb.data_bit = 8
+        self.mb.encoder_ration = 10000
+        self.mb.nb_reg_by_comms = int(self.mb.word_lenght / self.mb.data_bit)
+        self.mb.auto_enable = True
 
-@atexit.register
-def exit():
-    s.daemon_event.set()
+        dev_conf = ModbusDeviceConfig('192.168.100.2', 502, 2,
+            {'encoder_ratio' : 10000,})
+        self.mb.devices_config.append(dev_conf)
+        dev_conf = ModbusDeviceConfig('192.168.100.3', 502, 3,
+            {'encoder_ratio' : 10000,})
+        self.mb.devices_config.append(dev_conf)
 
+        self.mb.connect()
 
-def modbus_thread():
-    while not s.daemon_event.is_set():
-        mb.state_watcher()
-        s.daemon_event.wait(1/500)
-    mb.close()
+        dev = '/dev/ttyO2'
+        self.s = SerialControlLink(dev)
+        self.s.daemon_event = self.exit_event()
 
-def swill_thread():
-    while not s.daemon_event.is_set():
-        s.get_last_data()
-        s.get_ticks()
-        s.map_to_speed(s.last_ticks)
-        mb.set_speed(s.last_mapped_speed)
+        self.mt = Thread(target=modbus_thread)
+        self.st = Thread(target=swill_thread)
+        self.mt.daemon = True
+        self.st.daemon = True
+        self.mt.start()
+        self.st.start()
+        self.io_launch()
 
-def io_launch():
-    SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
+    def exit(self):
+        self.exit_event.set()
 
-    switchs = list()
-    switchs_actions = {}
+    def modbus_thread(self):
+        while not self.exit_event.is_set():
+            self.mb.state_watcher()
+            self.exit_event.wait(1/500)
+        self.mb.close()
 
-    SwitchHandler.callback = io_callback
-    SwitchHandler.inputdev = '/dev/input/event1'
+    def swill_thread(self):
+        while not self.exit_event.is_set():
+            self.s.get_last_data()
+            self.s.get_ticks()
+            self.s.map_to_speed(self.s.last_ticks)
+            self.mb.set_speed(self.s.last_mapped_speed)
 
-    switchs.append(SwitchHandler('GPIO0_30', 1, 'switch_0'))
-    switchs_actions['switch_0'] = 'reverse'
-    switchs.append(SwitchHandler('GPIO0_31', 2, 'switch_1'))
-    switchs_actions['switch_0'] = 'activate'
-    switchs = tuple(switchs)
+    def io_launch(self):
+        SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
 
-    for sw in switchs:
-        t = Thread(target=sw.wait_for_event)
-        t.daemon = True
-        t.start()
+        self.switchs = list()
+        self.switchs_actions = {}
 
-def io_callback(ev):
-    if switchs_actions[event.name] == 'reverse':
-        mb.set_direction(state)
-    elif switchs_actions[event.name] == 'activate':
-        mb.set_command(drive_enable=state)
+        SwitchHandler.callback = io_callback
+        SwitchHandler.inputdev = '/dev/input/event1'
+
+        switchs.append(SwitchHandler('GPIO0_30', 1, 'switch_0'))
+        self.switchs_actions['switch_0'] = 'reverse'
+        switchs.append(SwitchHandler('GPIO0_31', 2, 'switch_1'))
+        self.switchs_actions['switch_0'] = 'activate'
+        self.switchs = tuple(switchs)
+
+        for sw in self.switchs:
+            t = Thread(target=sw.wait_for_event)
+            t.daemon = True
+            t.start()
+
+    def io_callback(self, ev):
+        if self.switchs_actions[ev.name] == 'reverse':
+            self.mb.set_direction(state)
+        elif self.switchs_actions[ev.name] == 'activate':
+            self.mb.set_command(drive_enable=state)
 
 if __name__ == '__main__':
-    init()
+    gp = GrossePedale()
