@@ -12,6 +12,7 @@ import signal
 import logging
 
 lg = logging.getLogger(__name__)
+lg.setLevel(logging.DEBUG)
 
 class GrossePedale(object):
     def __init__(self):
@@ -24,7 +25,7 @@ class GrossePedale(object):
 
         atexit.register(self.exit)
 
-        self.mb = ModbusBackend(None, None, restart_event=self.restart_event,
+        self.mb = ModbusBackend(None, lg, restart_event=self.restart_event,
                 block_event=self.block_event,
                 connected_event=self.connected_event,
                 watch_event=self.exit_event)
