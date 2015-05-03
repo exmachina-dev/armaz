@@ -98,14 +98,11 @@ class SerialControlLink(serial.Serial):
         self._send_command("R")
         r = self.readline()
         d = bitstring.Bits(bytes=r)
-        print(d.bin, d.hex)
         if r[0] == ord('R'):
             d = bitstring.Bits(bytes=r[1:]).unpack('>BBBBB')
             for k, v in zip(self.product_keys, d):
                 self.product_infos[k] = v
             return self.product_infos
-        print(d)
-        print(r)
         raise SerialError("Unexpected serial command")
 
     def get_speed(self):
@@ -158,7 +155,6 @@ class SerialControlLink(serial.Serial):
         command = self.last_data[offset:offset+2]
         data_offset = offset+2
         data = self.last_data[data_offset:data_offset+self.word_lenght]
-        print(data)
         try:
             bits = bitstring.Bits(bytes=data).unpack(data_format)[0]
         except bitstring.ReadError:
