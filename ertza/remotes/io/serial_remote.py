@@ -26,14 +26,14 @@ class SerialControlLink(serial.Serial):
 
     min_ticks = 0
     max_ticks = 900
-    dead_zone = 10
+    dead_zone = 20
 
     def __init__(self, port=None, baudrate=57600):
         super(SerialControlLink, self).__init__(port=port, baudrate=baudrate)
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
-        self.timeout = 2
+        self.timeout = 0.1
         self.xonxoff = True
 
         self.product_infos = {}
@@ -42,6 +42,9 @@ class SerialControlLink(serial.Serial):
         self.last_turns = 0
         self.last_speed = 0
         self.last_mapped_speed = 0
+
+        self.lost_data = 0
+        self.max_lost_data = 10
 
     def _send_command(self, cmd, data=None):
         if not type(cmd) in (str, bytes):
@@ -70,10 +73,7 @@ class SerialControlLink(serial.Serial):
     def _serial_daemon(self):
         if self.remote_mode == 'continuous':
             while not self.daemon_event.is_set():
-                print(self.get_last_data())
-                print(self.get_ticks())
-                print(self.get_turns())
-                print(self.map_to_speed(self.last_ticks))
+                print(self.safe_get())
                 self.daemon_event.wait(self.daemon_refresh)
         elif self.remote_mode == 'on_command':
             while not self.daemon_event.is_set():
@@ -81,6 +81,20 @@ class SerialControlLink(serial.Serial):
                 self.request_ticks()
                 self.request_turns()
                 self.daemon_event.wait(self.daemon_refresh)
+
+    def safe_get(self):
+        if self.get_last_data():
+            self.lost_data = 0
+            self.get_ticks()
+            self.get_turns()
+            self.map_to_speed(self.last_ticks)
+            return self.last_ticks, self.last_turns, self.last_mapped_speed
+        else:
+            self.lost_data += 1
+            print('Data missed.')
+            if self.lost_data >= self.max_lost_data:
+                raise SerialError('Too much failed data get.')
+            return self.last_ticks, self.last_turns, self.last_mapped_speed
 
     def run(self):
         if self.remote_mode == 'continuous':
