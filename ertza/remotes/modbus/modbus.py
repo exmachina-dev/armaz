@@ -326,13 +326,12 @@ class ModbusBackend(MicroFlexE100Backend):
 
     def update_state(self, target='all'):
         new_state = tuple(self._update_state())
-        chk_state = list()
-        for i, st in enumerate(new_state):
+        for st in new_state:
             t, s = st
             if not type(s) is t:
-                chk_state[i] = t()
+                chk_state.append({})
             else:
-                chk_state[i] = s
+                chk_state.append(st)
 
         new_state = self.ModbusDeviceState(*chk_state)
         self.devices_state = new_state
