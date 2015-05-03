@@ -341,9 +341,11 @@ class ModbusBackend(MicroFlexE100Backend):
         h = target.config.host
         d = target
 
-        t = bool(self.get_timeout(target=d)[h])
-        self.devices_state.timeout[h] = t
-        self.set_timeout(not t, target=d)
+        try:
+            t = bool(self.devices_state.timeout[h])
+            self.set_timeout(not t, target=d)
+        except KeyError:
+            pass
 
     def dump_config(self):
         cf = 'dev: %s, port: %s, data_bit: %s, \
