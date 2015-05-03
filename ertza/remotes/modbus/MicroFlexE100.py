@@ -19,18 +19,28 @@ class MicroFlexE100Backend(object):
         pass
 
     def get_command(self, **kwargs):
+        if 'target' not in kwargs:
+            kwargs['target'] = 'all'
+        if kwargs['target'] == 'all':
+            target = self.devices
+        else:
+            target = (kwargs['target'],)
+
         command_set = self._get_comms_set(self.read_comm,
                 (self.netdata['command'],), **kwargs)
         if command_set is -1:
-            h = kwargs['target'].config.host
-            return {h: -1,}
+            rtn = dict()
+            for t in target:
+                h = t.config.host
+                rtn[h] = -1
+            return rtn
 
         rtn_data = {}
-        for command in command_set:
+        for i, command in enumerate(command_set):
             command = self._to_bools(command[0]+command[1])
             command.reverse()
 
-            h = kwargs['target'].config.host
+            h = target[i].config.host
             dc = {}
             for k, v in zip(self.command_keys, command):
                 dc[k] = bool(int(v))
@@ -54,7 +64,10 @@ class MicroFlexE100Backend(object):
                 if k in kwargs.keys():
                     v = bool(kwargs[k])
                 else:
-                    v = self.devices_state[h]['command'][k]
+                    try:
+                        v = self.devices_state.command[h][k]
+                    except KeyError:
+                        v = None
                 new_cmd[i] = (v)
 
             new_cmd = self._from_bools(new_cmd)
@@ -64,18 +77,28 @@ class MicroFlexE100Backend(object):
         return rtn_data
 
     def get_status(self, force=False, **kwargs):
+        if 'target' not in kwargs:
+            kwargs['target'] = 'all'
+        if kwargs['target'] == 'all':
+            target = self.devices
+        else:
+            target = (kwargs['target'],)
+
         status_set = self._get_comms_set(self.read_comm, (self.netdata['status'],
             force,), **kwargs)
         if status_set is -1:
-            h = kwargs['target'].config.host
-            return {h: -1,}
+            rtn = dict()
+            for t in target:
+                h = t.config.host
+                rtn[h] = -1
+            return rtn
 
         rtn_data = {}
-        for status in status_set:
+        for i, status in enumerate(status_set):
             status = self._to_bools(status[0]+status[1])
             status.reverse()
 
-            h = kwargs['target'].config.host
+            h = target[i].config.host
             ds = {}
             for k, v in zip(self.status_keys, status):
                 ds[k] = bool(int(v))
@@ -146,6 +169,9 @@ class MicroFlexE100Backend(object):
     def get_effort(self, **kwargs):
         return self.get_float('effort', **kwargs)
 
+    def get_command_number(self, **kwargs):
+        return self.get_int('command_number', **kwargs)
+
     def get_drive_temperature(self, **kwargs):
         return self.get_float('drive_temperature', **kwargs)
 
@@ -180,14 +206,24 @@ class MicroFlexE100Backend(object):
         return False
 
     def _get(self, key, format_function=None, **kwargs):
+        if 'target' not in kwargs:
+            kwargs['target'] = 'all'
+        if kwargs['target'] == 'all':
+            target = self.devices
+        else:
+            target = (kwargs['target'],)
+
         rtn_set = self._get_comms_set(self.read_comm, (self.netdata[key],), **kwargs)
         if rtn_set is -1:
-            h = kwargs['target'].config.host
-            return {h: -1,}
+            rtn = dict()
+            for t in target:
+                h = t.config.host
+                rtn[h] = -1
+            return rtn
 
         rtn_data = {}
-        for rtn in rtn_set:
-            h = kwargs['target'].config.host
+        for i, rtn in enumerate(rtn_set):
+            h = target[i].config.host
             if not rtn is None:
                 if format_function:
                     rtn_data[h] = format_function(rtn[0]+rtn[1])
@@ -282,7 +318,7 @@ class MicroFlexE100Backend(object):
                 rq = ReadHoldingRegistersRequest(
                         address, count, unit_id=t.config.node_id)
                 rqs.append(self._rq(rq, force, target=t))
-            return rqs
+            return tuple(rqs)
         else:
             rq = ReadHoldingRegistersRequest(
                     address, count, unit_id=target.config.node_id)
@@ -300,7 +336,7 @@ class MicroFlexE100Backend(object):
                 rq = ReadInputRegistersRequest(
                         address, count, unit_id=t.config.node_id)
                 rqs.append(self._rq(rq, target=t))
-            return rqs
+            return tuple(rqs)
         else:
             rq = ReadInputRegistersRequest(
                     address, count, unit_id=target.config.node_id)
@@ -318,7 +354,7 @@ class MicroFlexE100Backend(object):
                 rq = WriteSingleRegisterRequest(
                         address, value, unit_id=t.config.node_id)
                 rqs.append(self._rq(rq, target=t))
-            return rqs
+            return tuple(rqs)
         else:
             rq = WriteSingleRegisterRequest(
                     address, value, unit_id=target.config.node_id)
@@ -336,7 +372,7 @@ class MicroFlexE100Backend(object):
                 rq = WriteMultipleRegistersRequest(
                         address, value)
                 rqs.append(self._rq(rq, target=t))
-            return rqs
+            return tuple(rqs)
         else:
             rq = WriteMultipleRegistersRequest(
                     address, value)
@@ -354,7 +390,7 @@ class MicroFlexE100Backend(object):
                 rq = ReadWriteMultipleRequest(
                         address, value, unit_id=t.config.node_id)
                 rqs.append(self._rq(rq, target=t))
-            return rqs
+            return tuple(rqs)
         else:
             rq = ReadWriteMultipleRegistersRequest(
                     address, value, unit_id=target.config.node_id)

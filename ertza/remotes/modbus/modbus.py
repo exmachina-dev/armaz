@@ -71,7 +71,7 @@ class ModbusBackend(MicroFlexE100Backend):
                 False,),
             }
 
-    ModbusDeviceState = OrderedDict.fromkeys(netdata.keys())
+    ModbusDeviceState = namedtuple('ModbusDeviceState', netdata.keys())
 
     watcher_interval = 0.01
 
@@ -99,7 +99,8 @@ class ModbusBackend(MicroFlexE100Backend):
 
         self.devices = list()
         self.devices_config = list()
-        self.devices_state = {}
+        self.devices_state = self.ModbusDeviceState(
+                *[{} for i in range(len(self.netdata))])
 
         self.kwargs = kwargs
 
@@ -183,7 +184,7 @@ class ModbusBackend(MicroFlexE100Backend):
         self.connect()
 
     def create_devices(self):
-        for _c in self.devices_config:
+        for i, _c in enumerate(self.devices_config):
             self.lg.debug('Creating %s:%s:%s device.' % (_c.host, _c.port,
                 _c.node_id))
             _driver = ModbusClient(host=_c.host, port=_c.port)
@@ -193,8 +194,11 @@ class ModbusBackend(MicroFlexE100Backend):
             _w = {'config': _c, 'watch': True,}
 
             self.devices.append(ModbusDevice( _c, _d, _w))
-            self.devices_state[_c.host] = OrderedDict.fromkeys(
-                    ModbusBackend.netdata.keys())
+            for s in self.devices_state:
+                s[_c.host] = None
+
+            self.devices_state.command[_c.host] = {}
+            self.devices_state.status[_c.host] = {}
             #for k in self.command_keys:
             #    self.devices_state[_c.host].command[k] = None
             #for k in self.status_keys:
@@ -324,52 +328,24 @@ class ModbusBackend(MicroFlexE100Backend):
         return True
 
     def update_state(self, target='all'):
+        new_state = self.ModbusDeviceState(*self._update_state())
+        self.devices_state = new_state
         if target is 'all':
             for d in self.devices:
-                self._update_state(target=d)
                 self._reset_timeout(target=d)
         else:
-            self._update_state(target=target)
             self._reset_timeout(target=target)
             
-    def _update_state(self, target):
-        h = target.config.host
-        d = target
-        try:
-            self.devices_state[h]['command'] = self.get_command(target=d)[h]
-            self.devices_state[h]['status'] = self.get_status(target=d)[h]
-            self.devices_state[h]['error_code'] = self.get_error_code(target=d)[h]
-            self.devices_state[h]['speed'] = self.get_speed(target=d)[h]
-            self.devices_state[h]['acceleration'] = self.get_acceleration(target=d)[h]
-            self.devices_state[h]['deceleration'] = self.get_deceleration(target=d)[h]
-            self.devices_state[h]['velocity'] = self.get_velocity(target=d)[h]
-            self.devices_state[h]['encoder_velocity'] = \
-                    self.get_encoder_velocity(target=d)[h] / \
-                    target.config.motor_config['encoder_ratio']
-            self.devices_state[h]['encoder_position'] = self.get_encoder_position(target=d)[h]
-            self.devices_state[h]['follow_error'] = self.get_follow_error(target=d)[h]
-            self.devices_state[h]['effort'] = self.get_effort(target=d)[h]
-            self.devices_state[h]['drive_temperature'] = self.get_drive_temperature(target=d)[h]
-            self.devices_state[h]['dropped_frames'] = self.get_dropped_frames(target=d)[h]
-        except KeyError as e:
-            self.lg.warn('%s was removed from devices', h)
-            print('Crash devices list')
-            print(self.devices)
-            print('Crash devices state')
-            print(self.devices_state)
-            raise e
-        except TypeError as e:
-            print(self.devices)
-            print(self.devices_state)
-            target.watcher['watch'] = False
-            raise e
+    def _update_state(self):
+        for nd in self.netdata.keys():
+            yield getattr(self, 'get_%s' % nd)()
 
     def _reset_timeout(self, target):
         h = target.config.host
         d = target
 
         t = bool(self.get_timeout(target=d)[h])
-        self.devices_state[h]['timeout'] = t
+        self.devices_state.timeout[h] = t
         self.set_timeout(not t, target=d)
 
     def dump_config(self):
