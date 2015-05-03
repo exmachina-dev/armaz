@@ -326,9 +326,9 @@ class ModbusBackend(MicroFlexE100Backend):
 
     def update_state(self, target='all'):
         new_state = tuple(self._update_state())
+        chk_state = list()
         for st in new_state:
-            t, s = st
-            if not type(s) is t:
+            if not type(st) is dict:
                 chk_state.append({})
             else:
                 chk_state.append(st)
