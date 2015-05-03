@@ -5,6 +5,8 @@ from ertza.remotes.modbus.modbus import ModbusBackend, ModbusDeviceConfig
 from ertza.remotes.io.serial_remote import SerialControlLink
 from ertza.remotes.io.event_watcher import EventWatcher as SwitchHandler
 
+from ertza.error import SerialError
+
 from threading import Event, Thread
 
 import atexit
@@ -78,10 +80,13 @@ class GrossePedale(object):
 
     def swill_thread(self):
         while not self.exit_event.is_set():
-            self.s.get_last_data()
-            self.s.get_ticks()
-            self.s.map_to_speed(self.s.last_ticks)
-            self.mb.set_speed(self.s.last_mapped_speed)
+            try:
+                tk, tu, ms = self.s.safe_get()
+                if not self.block_event.is_set():
+                    self.mb.set_speed(ms)
+            except SerialError:
+                self.lg.warn('Swill mised to much data. Stopping.')
+                self.mb.set_speed(0)
 
     def io_launch(self):
         SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
