@@ -21,6 +21,7 @@ class GrossePedale(object):
 
         self.exit_event = Event()
         self.block_event = Event()
+        self.rfok_event = Event()
         self.connected_event = Event()
         self.ready_event = Event()
         self.restart_event = Event()
@@ -82,8 +83,10 @@ class GrossePedale(object):
         while not self.exit_event.is_set():
             try:
                 tk, tu, ms = self.s.safe_get()
-                if not self.block_event.is_set():
+                if self.rfok_event.is_set():
                     self.mb.set_speed(ms)
+                else:
+                    self.mb.set_speed(0)
             except SerialError:
                 self.lg.warn('Swill mised to much data. Stopping.')
                 self.mb.set_speed(0)
@@ -113,9 +116,9 @@ class GrossePedale(object):
             self.mb.set_direction(ev.state)
         elif self.switchs_actions[ev.name] == 'activate':
             if bool(ev.state) is True:
-                self.block_event.set()
+                self.rfok_event.set()
             else:
-                self.block_event.clear()
+                self.rfok_event.clear()
 
 
 if __name__ == '__main__':
