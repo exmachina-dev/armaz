@@ -88,13 +88,14 @@ class EventWatcher(object):
                     self.hit = False
                     self.state = None
 
-    def debounce(self):
+    def debounce(self, state):
         if self.debounce_time:
             if (t.time() - self.last_time) > self.debounce_time:
                 self.debounced = True
             else:
                 self.debounced = False
 
+        self.state = state
         self.last_time = t.time()
         if EventWatcher.callback is not None:
             EventWatcher.callback(self)
