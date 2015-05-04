@@ -114,7 +114,8 @@ class GrossePedale(object):
 
         switchs.append(SwitchHandler('GPIO0_30', 1, 'switch_0', invert=True))
         self.switchs_actions['switch_0'] = 'reverse'
-        switchs.append(SwitchHandler('GPIO0_31', 2, 'switch_1', invert=True))
+        switchs.append(SwitchHandler('GPIO0_31', 2, 'switch_1', invert=True,
+            debounce_time=0.25))
         self.switchs_actions['switch_1'] = 'activate'
         self.switchs = tuple(switchs)
 
@@ -127,13 +128,12 @@ class GrossePedale(object):
         if self.switchs_actions[ev.name] == 'reverse':
             self.mb.set_direction(ev.state)
         elif self.switchs_actions[ev.name] == 'activate':
-            if (time.time() - self.rf_last_time) > self.rf_debounce_time:
-                if bool(ev.state) is True:
-                    self.rfok_event.set()
-                else:
-                    self.rfok_event.clear()
-
-                self.rf_last_time = time.time()
+            if bool(ev.state) is True and ev.debounced is True:
+                self.rfok_event.set()
+                self.block_event.clear()
+            else:
+                self.rfok_event.clear()
+                self.block_event.set()
 
 
 if __name__ == '__main__':
