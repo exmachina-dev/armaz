@@ -116,6 +116,15 @@ class EventWatcher(object):
                 raise RuntimeError('Invalid switch name')
         return self.hit
 
+    def __repr__(self):
+        _v = {
+                'p': self.pin, 'k': self.key_code, 'n': self.name,
+                'i': self.invert, 'dt': self.debounce_time, 's': self.state,
+                'd': self.debounced,}
+        return('EventWatcher: {p} {k} {n}, inverted: {i}, debounce_time: {dt}, state: {s}, debounced: {d}'.format(_v))
+
+    __str__ = __repr__
+
 if __name__ == '__main__':
     def cb(event):
         print(event.name)
