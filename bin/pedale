@@ -68,7 +68,7 @@ class GrossePedale(object):
         try:
             signal.pause()
         except KeyboardInterrupt:
-            lg.info('Keyboard interrupt received, exiting.')
+            self.lg.info('Keyboard interrupt received, exiting.')
 
     def exit(self):
         self.exit_event.set()
