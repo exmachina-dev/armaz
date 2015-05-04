@@ -18,6 +18,7 @@ lg.setLevel(logging.DEBUG)
 
 class GrossePedale(object):
     def __init__(self):
+        self.lg = lg
 
         self.exit_event = Event()
         self.block_event = Event()
