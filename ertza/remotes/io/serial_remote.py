@@ -24,8 +24,6 @@ class SerialControlLink(serial.Serial):
     min_speed = 0
     max_speed = 75
 
-    min_ticks = 0
-    max_ticks = 900
     dead_zone = 20
 
     def __init__(self, port=None, baudrate=57600):
@@ -175,9 +173,13 @@ class SerialControlLink(serial.Serial):
         return bits
 
     def map_to_speed(self, ticks):
-        if ticks < self.min_ticks:
+        try:
+            if ticks < self.min_ticks:
+                self.min_ticks = ticks
+            if ticks > self.max_ticks:
+                self.max_ticks = ticks
+        except AttributeError:
             self.min_ticks = ticks
-        if ticks > self.max_ticks:
             self.max_ticks = ticks
 
         abs_ticks = (self.min_ticks - ticks)
