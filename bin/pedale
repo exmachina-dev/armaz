@@ -68,11 +68,13 @@ class GrossePedale(object):
         self.mb.connect()
         self.mb.set_acceleration(self.acceleration)
         self.mb.set_deceleration(self.deceleration)
+        self.ready_event.wait(2)
         n_acc = self.mb.get_acceleration()))))
         n_dec = self.mb.get_deceleration()))))
         self.mt.start()
         self.st.start()
         self.io_launch()
+        self.ready_event.set()
 
         try:
             signal.pause()
@@ -93,7 +95,7 @@ class GrossePedale(object):
         while not self.exit_event.is_set():
             try:
                 tk, tu, ms = self.s.safe_get()
-                if self.rfok_event.is_set():
+                if self.ready_event.is_set() and self.rfok_event.is_set():
                     self.mb.set_speed(ms)
                 else:
                     self.mb.set_speed(0)
