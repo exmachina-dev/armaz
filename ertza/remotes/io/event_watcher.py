@@ -29,6 +29,7 @@ from threading import Thread
 import mmap
 import struct
 import re
+import time as t
 
 
 class EventWatcher(object):
@@ -55,9 +56,6 @@ class EventWatcher(object):
         self.last_time = 0
         if 'debounce_time' in kwargs:
             self.debounce_time = kwargs['debounce_time']
-
-        if self.debounce_time:
-            import time as t
 
     def get_gpio_bank_and_pin(self):
         matches = re.compile(r'GPIO([0-9])_([0-9]+)').search(self.pin)
