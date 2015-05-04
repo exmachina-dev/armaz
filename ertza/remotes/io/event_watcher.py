@@ -40,13 +40,24 @@ class EventWatcher(object):
     callback = None                 # Override this to get events
     inputdev = "/dev/input/event0"  # File to listen to events
 
-    def __init__(self, pin, key_code, name, invert=False):
+    def __init__(self, pin, key_code, name, **kwargs):
         self.pin = pin
         self.key_code = key_code
         self.name = name
-        self.invert = invert
+        self.invert = False
+        if 'invert' in kwargs:
+            self.invert = kwargs['invert']
         self.hit = False
         self.state = None
+        self.debounced = None
+
+        self.debounce_time = 0
+        self.last_time = 0
+        if 'debounce_time' in kwargs:
+            self.debounce_time = kwargs['debounce_time']
+
+        if self.debounce_time:
+            import time as t
 
     def get_gpio_bank_and_pin(self):
         matches = re.compile(r'GPIO([0-9])_([0-9]+)').search(self.pin)
@@ -66,41 +77,27 @@ class EventWatcher(object):
             direction = "down" if evt[12] else "up"
             if code == self.key_code:
                 if self.invert is True and direction == "down":
-                    self.hit = True
-                    self.state = True
-                    if EventWatcher.callback is not None:
-                        EventWatcher.callback(self)
+                    self.debounce(True)
                 elif self.invert is False and direction == "up":
-                    self.hit = True
-                    self.state = True
-                    if EventWatcher.callback is not None:
-                        EventWatcher.callback(self)
+                    self.debounce(True)
                 elif self.invert is True and direction == "up":
-                    self.hit = True
-                    self.state = False
-                    if EventWatcher.callback is not None:
-                        EventWatcher.callback(self)
+                    self.debounce(False)
                 elif self.invert is False and direction == "down":
-                    self.hit = True
-                    self.state = False
-                    if EventWatcher.callback is not None:
-                        EventWatcher.callback(self)
+                    self.debounce(False)
                 else:
                     self.hit = False
                     self.state = None
 
-    def read_direction_mask_value(self):
-        """
-        Read the current direction mask value using PRU1.
-        For debugging purposes.
-        """
-        with open("/dev/mem", "r+b") as f:
-            ddr_mem = mmap.mmap(f.fileno(), self.PRU_ICSS_LEN,
-                    offset=self.PRU_ICSS)
-            state = struct.unpack('LL',
-                    ddr_mem[self.RAM2_START:self.RAM2_START + 8])
+    def debounce(self):
+        if self.debounce_time:
+            if (t.time() - self.last_time) > self.debounce_time:
+                self.debounced = True
+            else:
+                self.debounced = False
 
-            return state[1]
+        self.last_time = t.time()
+        if EventWatcher.callback is not None:
+            EventWatcher.callback(self)
 
     def read_value(self):
         """ Read the current endstop value from GPIO using PRU1 """
