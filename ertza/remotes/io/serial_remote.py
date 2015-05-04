@@ -25,6 +25,7 @@ class SerialControlLink(serial.Serial):
     max_speed = 75
 
     dead_zone = 20
+    init_range = 800
 
     def __init__(self, port=None, baudrate=57600):
         super(SerialControlLink, self).__init__(port=port, baudrate=baudrate)
@@ -181,7 +182,7 @@ class SerialControlLink(serial.Serial):
                 self.max_ticks = ticks
         except AttributeError:
             self.min_ticks = ticks
-            self.max_ticks = ticks
+            self.max_ticks = ticks + self.init_range
 
         abs_ticks = (self.min_ticks - ticks)
         abs_max_ticks = (self.min_ticks - self.max_ticks)
