@@ -147,6 +147,7 @@ class SerialControlLink(serial.Serial):
             self.last_data = data
             return True
         else:
+            print(data, len(data))
             self.last_data = None
         return False
 
