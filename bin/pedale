@@ -95,7 +95,11 @@ class GrossePedale(object):
 
     def modbus_thread(self):
         while not self.exit_event.is_set():
+            self.mb.set_acceleration(self.acceleration)
+            self.mb.set_deceleration(self.deceleration)
             self.mb.state_watcher()
+            self.lg.info('Running at: {} {}'.format(
+                        *self.mb.devices_state.speed))
             self.exit_event.wait(1/500)
         self.mb.close()
 
