@@ -146,19 +146,12 @@ class SerialControlLink(serial.Serial):
     def read_latest_data_frame(self):
         """maxsize is ignored, timeout in seconds is the max time
         that is way for a complete line"""
-        tries = 0
-        timeout = 0.2
-        self.flushInput()
-        while 1:
-            self.data_buffer += self.read(32)
-            pos = self.data_buffer.rfind(b'\r\n')
-            if pos >= 0:
-                line, after = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
-                return line[-self.line_lenght:]
-            tries += 1
-
-            if tries * self.timeout > timeout:
-                break
+        temp_data = self.read(40)
+        pos = self.temp_data.rfind(b'\r\nR')
+        if pos >= 0:
+            line, after = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
+            self.flushInput()
+            return line[-self.line_lenght:]
         return bytes()
 
     def get_last_data(self):
