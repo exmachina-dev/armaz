@@ -32,8 +32,10 @@ class SerialControlLink(serial.Serial):
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
-        self.timeout = 0.1
+        self.timeout = 0.05
         self.xonxoff = True
+
+        self.data_buffer = b''
 
         self.product_infos = {}
 
@@ -141,9 +143,27 @@ class SerialControlLink(serial.Serial):
     def request_turns(self):
         raise NotImplementedError
 
+    def read_latest_data_frame(self):
+        """maxsize is ignored, timeout in seconds is the max time
+        that is way for a complete line"""
+        tries = 0
+        timeout = 0.2
+        while 1:
+            self.data_buffer += self.read(512)
+            pos = self.data_buffer.rfind(b'\r\nRK')
+            if pos >= 0:
+                line, self.data_buffer = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
+                return line[:self.line_lenght]
+            tries += 1
+
+            if tries * self.timeout > timeout:
+                break
+            line, self.data_buffer = self.data_buffer, ''
+        return line
+
     def get_last_data(self):
         self.flushInput()
-        data = self.read(self.line_lenght)
+        data = self.read_latest_data_frame()
         if len(data) == self.line_lenght:
             self.last_data = data
             return True
