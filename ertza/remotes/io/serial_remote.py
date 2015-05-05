@@ -149,11 +149,11 @@ class SerialControlLink(serial.Serial):
         tries = 0
         timeout = 0.2
         while 1:
-            self.data_buffer += self.read(512)
+            self.data_buffer += self.read(32)
             pos = self.data_buffer.rfind(b'\r\nRK')
             if pos >= 0:
                 line, self.data_buffer = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
-                return line[:self.line_lenght]
+                return line[-self.line_lenght:]
             tries += 1
 
             if tries * self.timeout > timeout:
