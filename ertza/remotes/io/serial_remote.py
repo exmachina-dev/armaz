@@ -147,7 +147,7 @@ class SerialControlLink(serial.Serial):
         """maxsize is ignored, timeout in seconds is the max time
         that is way for a complete line"""
         temp_data = self.read(40)
-        pos = self.temp_data.rfind(b'\r\nR')
+        pos = temp_data.rfind(b'\r\nR')
         if pos >= 0:
             line, after = temp_data[:pos+2], temp_data[pos+2:]
             self.flushInput()
