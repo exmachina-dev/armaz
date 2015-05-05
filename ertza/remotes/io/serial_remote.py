@@ -171,7 +171,7 @@ class SerialControlLink(serial.Serial):
         next_cmd = b'R' + self.command_keys[word+1]
         pos_start = self.last_data.find(cmd)
         pos_end = self.last_data.find(next_cmd)
-        if -i in (pos_start, pos_end):
+        if -1 in (pos_start, pos_end):
             return False
         data = self.last_data[pos_start+2:pos_end]
         if len(data) != 4:
