@@ -128,7 +128,6 @@ class GrossePedale(object):
             try:
                 tk, tu, ms = self.s.safe_get()
                 if not self.block_event.is_set() and \
-                        self.ready_event.is_set() and \
                         self.rfok_event.is_set():
                     self.mb.set_speed(ms)
                     self.lg.info('Actual speed: {}'.format(ms))
@@ -164,10 +163,7 @@ class GrossePedale(object):
     def radio_thread(self):
         self.lg.info('RF thread started.')
         while not self.exit_event.is_set():
-            if self.rfok_event.wait(self.rf_timeout):
-                self.block_event.clear()
-            else:
-                self.block_event.set()
+            if not self.rfok_event.wait(self.rf_timeout):
                 self.rfok_event.clear()
 
     def io_callback(self, ev):
