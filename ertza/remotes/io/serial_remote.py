@@ -163,7 +163,7 @@ class SerialControlLink(serial.Serial):
 
     def get_last_data(self):
         self.flushInput()
-        data = self.read_latest_data_frame()
+        data = tuple(self.read_latest_data_frame())
         if len(data) == self.line_lenght:
             self.last_data = data
             return True

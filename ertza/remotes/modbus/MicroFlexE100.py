@@ -170,7 +170,7 @@ class MicroFlexE100Backend(object):
         rtn_data = {}
         for i, rtn in enumerate(rtn_set):
             h = target[i].config.host
-            if not rtn is None:
+            if not rtn in (-1, None):
                 if format_function:
                     rtn_data[h] = format_function(rtn[0]+rtn[1], key=key)
                 else:
