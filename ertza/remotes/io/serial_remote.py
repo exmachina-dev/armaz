@@ -10,7 +10,7 @@ class SerialControlLink(serial.Serial):
     product_keys = ('product_id', 'device_id', None, None)
     word_keys = namedtuple('WordKeys', ['ticks', 'turns', 'speed'])(0, 1, 2)
     command_keys = namedtuple('Command', ['ticks', 'turns', 'speed'])(
-            'K', 'T', 'S')
+            b'K', b'T', b'S')
 
     word_lenght = 4 # bytes
     command_lenght = 2 # bytes
@@ -92,7 +92,7 @@ class SerialControlLink(serial.Serial):
             return self.last_ticks, self.last_turns, self.last_mapped_speed
         else:
             self.lost_data += 1
-            print('Data missed.')
+            print('Data skipped.')
             if self.lost_data >= self.max_lost_data:
                 raise SerialError('Too much failed data get.')
             return self.last_ticks, self.last_turns, self.last_mapped_speed
@@ -169,7 +169,15 @@ class SerialControlLink(serial.Serial):
         if self.last_data in (False, None):
             return False
 
-        offset = (self.word_lenght + self.command_lenght) * word
+        cmd = b'R' + self.command_keys[word]
+        next_cmd = b'R' + self.command_keys[word+1]
+        pos_start = self.last_data.find(cmd)
+        pos_end = self.last_data.find(next_cmd)
+        if -i in (pos_start, pos_end):
+            return False
+        data = self.last_data[pos_start+2:pos_end]
+        if len(data) != 4:
+            return False
 
         if data_type == 'long':
             data_format = '<l'
@@ -178,9 +186,6 @@ class SerialControlLink(serial.Serial):
         else:
             return False
 
-        command = self.last_data[offset:offset+2]
-        data_offset = offset+2
-        data = self.last_data[data_offset:data_offset+self.word_lenght]
         try:
             bits = bitstring.Bits(bytes=data).unpack(data_format)[0]
         except bitstring.ReadError:
