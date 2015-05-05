@@ -12,11 +12,11 @@ class SerialControlLink(serial.Serial):
     command_keys = namedtuple('Command', ['ticks', 'turns', 'speed'])(
             b'K', b'T', b'S')
 
-    word_lenght = 4 # bytes
-    command_lenght = 2 # bytes
+    word_length = 4 # bytes
+    command_length = 2 # bytes
     word_number = 3
 
-    line_lenght = 20 # bytes
+    line_length = 20 # bytes
 
     daemon_refresh = 0.4
 
@@ -51,7 +51,7 @@ class SerialControlLink(serial.Serial):
         if not type(cmd) in (str, bytes):
             raise TypeError('Cmd must be a string or a byte')
         if len(cmd) != 1:
-            raise ValueError('Cmd must be a string of lenght 1.')
+            raise ValueError('Cmd must be a string of length 1.')
 
         if type(cmd) is str:
             cmd.encode()
@@ -144,19 +144,17 @@ class SerialControlLink(serial.Serial):
         raise NotImplementedError
 
     def read_latest_data_frame(self):
-        """maxsize is ignored, timeout in seconds is the max time
-        that is way for a complete line"""
         temp_data = self.read(40)
         pos = temp_data.rfind(b'\r\nR')
         if pos >= 0:
             line, after = temp_data[:pos+2], temp_data[pos+2:]
             self.flushInput()
-            return line[-self.line_lenght:]
+            return line[-self.line_length:]
         return bytes()
 
     def get_last_data(self):
         data = self.read_latest_data_frame()
-        if len(data) == self.line_lenght:
+        if len(data) == self.line_length:
             pos = data.find(b'RK')
             self.last_data = data[pos:]
             return True
