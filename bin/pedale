@@ -56,6 +56,7 @@ class GrossePedale(object):
 
         dev = '/dev/ttyO2'
         self.s = SerialControlLink(dev)
+        self.s.daemon_refresh = 0.1
         self.s.daemon_event = self.exit_event
 
         self.mt = Thread(target=self.modbus_thread)
