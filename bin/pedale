@@ -28,8 +28,7 @@ class GrossePedale(object):
         self.ready_event = Event()
         self.restart_event = Event()
 
-        self.rf_debounce_time = 0.5
-        self.rf_last_time = 0
+        self.rf_timeout = 0.25
 
         atexit.register(self.exit)
 
@@ -61,8 +60,10 @@ class GrossePedale(object):
 
         self.mt = Thread(target=self.modbus_thread)
         self.st = Thread(target=self.swill_thread)
+        self.rt = Thread(target=self.radio_thread)
         self.mt.daemon = True
         self.st.daemon = True
+        self.rt.daemon = True
 
     def start(self):
         self.mb.connect()
@@ -73,6 +74,7 @@ class GrossePedale(object):
         n_dec = self.mb.get_deceleration()
         self.mt.start()
         self.st.start()
+        self.rt.start()
         self.io_launch()
         self.ready_event.set()
 
@@ -124,16 +126,19 @@ class GrossePedale(object):
             t.daemon = True
             t.start()
 
+    def radio_thread(self):
+        while not self.exit_event.is_set():
+            if self.rfok_event.wait(self.rf_timeout):
+                self.block_event.clear()
+            else:
+                self.block_event.set()
+                self.rfok_event.clear()
+
     def io_callback(self, ev):
         if self.switchs_actions[ev.name] == 'reverse':
             self.mb.set_direction(ev.state)
         elif self.switchs_actions[ev.name] == 'activate':
-            if bool(ev.state) is True and ev.debounced is True:
-                self.rfok_event.set()
-                self.block_event.clear()
-            else:
-                self.rfok_event.clear()
-                self.block_event.set()
+            self.rfok_event.set()
 
 
 if __name__ == '__main__':
