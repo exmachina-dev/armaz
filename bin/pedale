@@ -165,7 +165,7 @@ class GrossePedale(object):
         while not self.exit_event.wait(1/50):
             if (time.time() - self.rf_lasttime) >= self.rf_timeout:
                 self.rfok_event.clear()
-                self.lg.info('RF timeout.')
+                self.lg.debug('RF timeout.')
 
     def io_callback(self, ev):
         if self.switchs_actions[ev.name] == 'reverse':
