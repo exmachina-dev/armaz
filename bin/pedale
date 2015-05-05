@@ -107,8 +107,11 @@ class GrossePedale(object):
         while not self.exit_event.is_set():
             try:
                 tk, tu, ms = self.s.safe_get()
-                if self.ready_event.is_set() and self.rfok_event.is_set():
+                if not self.block_event.is_set() and \
+                        self.ready_event.is_set() and \
+                        self.rfok_event.is_set():
                     self.mb.set_speed(ms)
+                    self.lg.info('Actual speed: {}'.format(ms))
                 else:
                     self.mb.set_speed(0)
             except SerialError:
