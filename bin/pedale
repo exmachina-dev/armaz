@@ -9,6 +9,8 @@ from ertza.errors import SerialError
 
 from threading import Event, Thread
 
+from serial.serialutil import SerialException
+
 import atexit
 import signal
 import time
@@ -55,9 +57,12 @@ class GrossePedale(object):
         self.mb.devices_config.append(dev_conf)
 
         dev = '/dev/ttyO2'
-        self.s = SerialControlLink(dev)
-        self.s.daemon_refresh = 0.1
-        self.s.daemon_event = self.exit_event
+        try:
+            self.s = SerialControlLink(dev)
+            self.s.daemon_refresh = 0.1
+            self.s.daemon_event = self.exit_event
+        except SerialException:
+            self.ready_event.clear()
 
         self.mt = Thread(target=self.modbus_thread)
         self.st = Thread(target=self.swill_thread)
