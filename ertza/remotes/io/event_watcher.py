@@ -130,5 +130,5 @@ if __name__ == '__main__':
         print(event.state)
 
     EventWatcher.callback = cb
-    ew = EventWatcher('GPIO3_30', 1, 'switch_0', True)
+    ew = EventWatcher('GPIO3_30', 1, 'switch_0', invert=True)
     ew.wait_for_event()
