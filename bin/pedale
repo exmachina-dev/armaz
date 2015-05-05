@@ -66,9 +66,11 @@ class GrossePedale(object):
             self.ready_event.clear()
 
         self.mt = Thread(target=self.modbus_thread)
+        self.mw = Thread(target=self.modbus_watchdog)
         self.st = Thread(target=self.swill_thread)
         self.rt = Thread(target=self.radio_thread)
         self.mt.daemon = True
+        self.mw.daemon = True
         self.st.daemon = True
         self.rt.daemon = True
 
@@ -80,6 +82,7 @@ class GrossePedale(object):
         n_acc = self.mb.get_acceleration()
         n_dec = self.mb.get_deceleration()
         self.mt.start()
+        self.mw.start()
         self.st.start()
         self.rt.start()
         self.io_launch()
@@ -104,6 +107,20 @@ class GrossePedale(object):
                         self.mb.devices_state.speed))
             self.exit_event.wait(1/500)
         self.mb.close()
+
+    def modbus_watchdog(self):
+        self.lg.info('Modbus watchdog started.')
+        while not self.exit_event.wait(1/50):
+            if not self.rfok_event.is_set() or self.block_event.is_set():
+                self.lg.info('Modbus watchdog is blocking.')
+                self.mb.set_speed(0)
+                self.exit_event.wait(0.5)
+                self.mb.set_command(drive_enable=0)
+            else:
+                for d in self.mb.devices:
+                    if self.mb.can_be_enabled(d.config.host) is True:
+                        self.mb.set_speed(0, target=d)
+                        self.mb.set_command(drive_enable=1, target=d)
 
     def swill_thread(self):
         self.lg.info('Swill thread started.')
