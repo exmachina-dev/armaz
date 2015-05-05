@@ -32,6 +32,7 @@ class GrossePedale(object):
         self.restart_event = Event()
 
         self.rf_timeout = 0.25
+        self.rf_lasttime = 0
 
         atexit.register(self.exit)
 
@@ -161,9 +162,10 @@ class GrossePedale(object):
 
     def radio_thread(self):
         self.lg.info('RF thread started.')
-        while not self.exit_event.is_set():
-            if not self.rfok_event.wait(self.rf_timeout):
+        while not self.exit_event.wait(1/50):
+            if (time.time() - self.rf_lasttime) >= self.rf_timeout:
                 self.rfok_event.clear()
+                self.lg.info('RF timeout.')
 
     def io_callback(self, ev):
         if self.switchs_actions[ev.name] == 'reverse':
@@ -172,6 +174,7 @@ class GrossePedale(object):
             self.lg.info('Setting direction to %s.' % dr)
         elif self.switchs_actions[ev.name] == 'activate':
             self.rfok_event.set()
+            self.rf_lasttime = time.time()
 
 
 if __name__ == '__main__':
