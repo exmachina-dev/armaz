@@ -5,7 +5,7 @@ from ertza.remotes.modbus.modbus import ModbusBackend, ModbusDeviceConfig
 from ertza.remotes.io.serial_remote import SerialControlLink
 from ertza.remotes.io.event_watcher import EventWatcher as SwitchHandler
 
-from ertza.errors import SerialError
+from ertza.errors import SerialError, ModbusMasterError
 
 from threading import Event, Thread
 
@@ -101,8 +101,11 @@ class GrossePedale(object):
     def modbus_thread(self):
         self.lg.info('Modbus thread started.')
         while not self.exit_event.is_set():
-            self.mb.set_acceleration(self.acceleration)
-            self.mb.set_deceleration(self.deceleration)
+            try:
+                self.mb.set_acceleration(self.acceleration)
+                self.mb.set_deceleration(self.deceleration)
+            except ModbusMasterError as e:
+                self.lg.error(e)
             self.mb.state_watcher()
             self.lg.info('Running at: {}'.format(
                         self.mb.devices_state.speed))
@@ -112,16 +115,19 @@ class GrossePedale(object):
     def modbus_watchdog(self):
         self.lg.info('Modbus watchdog started.')
         while not self.exit_event.wait(1/50):
-            if not self.rfok_event.is_set() or self.block_event.is_set():
-                self.lg.info('Modbus watchdog is blocking.')
-                self.mb.set_speed(0)
-                self.exit_event.wait(0.5)
-                self.mb.set_command(drive_enable=0)
-            else:
-                for d in self.mb.devices:
-                    if self.mb.can_be_enabled(d.config.host) is True:
-                        self.mb.set_speed(0, target=d)
-                        self.mb.set_command(drive_enable=1, target=d)
+            try:
+                if not self.rfok_event.is_set() or self.block_event.is_set():
+                    self.lg.info('Modbus watchdog is blocking.')
+                    self.mb.set_speed(0)
+                    self.exit_event.wait(0.5)
+                    self.mb.set_command(drive_enable=0)
+                else:
+                    for d in self.mb.devices:
+                        if self.mb.can_be_enabled(d.config.host) is True:
+                            self.mb.set_speed(0, target=d)
+                            self.mb.set_command(drive_enable=1, target=d)
+            except ModbusMasterError as e:
+                self.lg.error(e)
 
     def swill_thread(self):
         self.lg.info('Swill thread started.')
@@ -137,6 +143,8 @@ class GrossePedale(object):
             except SerialError:
                 self.lg.warn('Swill mised to much data. Stopping.')
                 self.mb.set_speed(0)
+            except ModbusMasterError as e:
+                self.lg.error(e)
 
     def io_launch(self):
         SWITCH_PINS = (("GPIO0_30", 1, 'switch_0'), ("GPIO0_31", 2, 'switch_1'))
