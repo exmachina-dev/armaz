@@ -148,18 +148,18 @@ class SerialControlLink(serial.Serial):
         that is way for a complete line"""
         tries = 0
         timeout = 0.2
+        self.flushInput()
         while 1:
             self.data_buffer += self.read(32)
-            pos = self.data_buffer.rfind(b'\r\nRK')
+            pos = self.data_buffer.rfind(b'\r\n')
             if pos >= 0:
-                line, self.data_buffer = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
+                line, after = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
                 return line[-self.line_lenght:]
             tries += 1
 
             if tries * self.timeout > timeout:
                 break
-            line, self.data_buffer = self.data_buffer, ''
-        return line
+        return bytes()
 
     def get_last_data(self):
         data = tuple(self.read_latest_data_frame())
