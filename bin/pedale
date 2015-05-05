@@ -16,7 +16,7 @@ import signal
 import time
 import logging
 
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 lg = logging.getLogger('LaVoiture')
 lg.setLevel(logging.INFO)
 
