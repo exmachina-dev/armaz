@@ -268,6 +268,8 @@ class MicroFlexE100Backend(object):
         bin_str = '0b'
         bools.reverse()
         for b in bools:
+            if b is None:
+                b = False
             bin_str += str(int(b))
         bits = bitstring.Bits(bin=bin_str)
         return bits.unpack('uintbe:16, uintbe')
