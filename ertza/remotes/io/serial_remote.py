@@ -149,15 +149,16 @@ class SerialControlLink(serial.Serial):
         temp_data = self.read(40)
         pos = self.temp_data.rfind(b'\r\nR')
         if pos >= 0:
-            line, after = self.data_buffer[:pos+2], self.data_buffer[pos+2:]
+            line, after = temp_data[:pos+2], temp_data[pos+2:]
             self.flushInput()
             return line[-self.line_lenght:]
         return bytes()
 
     def get_last_data(self):
-        data = tuple(self.read_latest_data_frame())
+        data = self.read_latest_data_frame()
         if len(data) == self.line_lenght:
-            self.last_data = data
+            pos = data.find(b'RK')
+            self.last_data = data[pos:]
             return True
         else:
             print(data, len(data))
