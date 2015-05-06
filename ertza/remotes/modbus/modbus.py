@@ -143,14 +143,18 @@ class ModbusBackend(MicroFlexE100Backend):
 
                 self.lg.debug('Starting modbus watchers.')
 
-                self.connected.set()
+                all_connected = True
                 for d in self.devices:
                     if not d.driver.state['connected']:
-                        self.connected.clear()
+                        all_connected = False
                         self.lg.warn('%s not connected.' % d.config.host)
+                if all_connected:
+                    self.connected.set()
+                else:
+                    self.connected.clear()
 
                 if not self.connected.is_set() and self.retry < 0:
-                    self.lg.warn('Init failed, restarting in %s second' %
+                    self.lg.warn('Connecting failed, retrying in %s second' %
                             self.restart_delay)
                     self.retry -= 1
                     self.connected.wait(self.restart_delay)
