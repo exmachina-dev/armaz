@@ -170,13 +170,13 @@ class MicroFlexE100Backend(object):
         rtn_data = {}
         for i, rtn in enumerate(rtn_set):
             h = target[i].config.host
-            if not rtn in (-1, None):
+            if not rtn in (-1, None, False):
                 if format_function:
                     rtn_data[h] = format_function(rtn[0]+rtn[1], key=key)
                 else:
                     rtn_data[h] = rtn[0]+rtn[1]
             else:
-                e = ModbusMasterError('Got None value for %s' % h, self.lg)
+                e = ModbusMasterError('Got %s value for %s' % (rtn, h), self.lg)
         return rtn_data
 
     def _get_multi_bools(self, key, **kwargs):
