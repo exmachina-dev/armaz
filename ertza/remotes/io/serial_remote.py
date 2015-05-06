@@ -22,7 +22,7 @@ class SerialControlLink(serial.Serial):
 
     remote_mode = 'continuous'
     min_speed = 0
-    max_speed = 75
+    max_speed = 0
 
     dead_zone = 20
     init_range = 800
@@ -223,7 +223,8 @@ if __name__ == '__main__':
         dev = input('Serial device [%s]: ' % default_device)
         if not dev:
             dev = default_device
-        from multiprocessing import Event
+        from threading import Event
+        SerialControlLink.max_speed = 72.5
         s = SerialControlLink(dev)
         s.daemon_event = Event()
     else:

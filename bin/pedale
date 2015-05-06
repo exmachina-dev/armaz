@@ -61,6 +61,7 @@ class GrossePedale(object):
 
         dev = '/dev/ttyO2'
         try:
+            SerialControlLink.max_speed = 72.5
             self.s = SerialControlLink(dev)
             self.s.daemon_refresh = (1/50)
             self.s.daemon_event = self.exit_event
