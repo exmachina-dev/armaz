@@ -21,7 +21,8 @@ lg = logging.getLogger('LaVoiture')
 lg.setLevel(logging.INFO)
 
 class GrossePedale(object):
-    def __init__(self):
+    def __init__(self, cmdargs=None):
+        self.without_rf = cmdargs.get('disable_rf', False)
         self.lg = lg
 
         self.exit_event = Event()
@@ -66,14 +67,17 @@ class GrossePedale(object):
         except SerialException:
             self.ready_event.clear()
 
-        self.mt = Thread(target=self.modbus_thread)
-        self.mw = Thread(target=self.modbus_watchdog)
-        self.st = Thread(target=self.swill_thread)
-        self.rt = Thread(target=self.radio_thread)
-        self.mt.daemon = True
-        self.mw.daemon = True
-        self.st.daemon = True
-        self.rt.daemon = True
+        if self.without_rf:
+            self.thread_targets = (self.modbus_thread, self.modbus_watchdog,
+                    self.swill_thread,)
+        else:
+            self.thread_targets = (self.modbus_thread, self.modbus_watchdog,
+                    self.swill_thread, self.radio_thread,)
+
+        self.threads = list()
+        for i, tt in enumerate(self.thread_targets):
+            self.threads.append(Thread(target=tt))
+            self.threads[i].daemon = True
 
     def start(self):
         self.mb.connect()
@@ -82,11 +86,12 @@ class GrossePedale(object):
         self.ready_event.wait(2)
         n_acc = self.mb.get_acceleration()
         n_dec = self.mb.get_deceleration()
-        self.mt.start()
-        self.mw.start()
-        self.st.start()
-        self.rt.start()
-        self.io_launch()
+        for t in self.threads:
+            t.start()
+
+        if self.without_rf:
+            self.rfok_event.set()
+
         self.ready_event.set()
 
         try:
@@ -104,11 +109,11 @@ class GrossePedale(object):
             try:
                 self.mb.set_acceleration(self.acceleration)
                 self.mb.set_deceleration(self.deceleration)
+                self.mb.state_watcher()
+                self.lg.info('Running at: {}'.format(
+                            self.mb.devices_state.speed))
             except ModbusMasterError as e:
                 self.lg.error(e)
-            self.mb.state_watcher()
-            self.lg.info('Running at: {}'.format(
-                        self.mb.devices_state.speed))
             self.exit_event.wait(1/50)
         self.mb.close()
 
@@ -186,5 +191,11 @@ class GrossePedale(object):
 
 
 if __name__ == '__main__':
-    gp = GrossePedale()
+    import argparse
+    parser = argparse.ArgumentParser(prog='pedale')
+    parser.add_argument('--disable-rf', action='store_true',
+            help='disable rf switch')
+    args = parser.parse_args()
+
+    gp = GrossePedale(vars(args))
     gp.start()
