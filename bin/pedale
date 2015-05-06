@@ -86,6 +86,7 @@ class GrossePedale(object):
         self.ready_event.wait(2)
         n_acc = self.mb.get_acceleration()
         n_dec = self.mb.get_deceleration()
+        self.io_launch()
         for t in self.threads:
             t.start()
 
