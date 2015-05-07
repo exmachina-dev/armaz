@@ -49,8 +49,8 @@ class GrossePedale(object):
         self.mb.auto_enable = True
         self.mb.set_direction(0) # Move forward by default
 
-        self.acceleration = 60
-        self.deceleration = 40
+        self.acceleration = 65
+        self.deceleration = 50
 
         dev_conf = ModbusDeviceConfig('192.168.100.2', 502, 2,
             {'encoder_ratio' : 10000,})
