@@ -32,6 +32,7 @@ class GrossePedale(object):
         self.ready_event = Event()
         self.restart_event = Event()
 
+        self.switchs = ()
         self.rf_timeout = 0.25
         self.rf_lasttime = 0
 
@@ -104,6 +105,8 @@ class GrossePedale(object):
             self.lg.info('Keyboard interrupt received, exiting.')
 
     def exit(self):
+        for sw in self.switchs:
+            sw.run = False
         self.exit_event.set()
         self.mb.close()
 

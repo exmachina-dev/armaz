@@ -57,6 +57,8 @@ class EventWatcher(object):
         if 'debounce_time' in kwargs:
             self.debounce_time = kwargs['debounce_time']
 
+        self.run = True
+
     def get_gpio_bank_and_pin(self):
         matches = re.compile(r'GPIO([0-9])_([0-9]+)').search(self.pin)
         tup = matches.group(1, 2)
@@ -68,7 +70,7 @@ class EventWatcher(object):
 
     def wait_for_event(self):
         evt_file = open(EventWatcher.inputdev, "rb")
-        while True:
+        while self.run:
             evt = evt_file.read(16) # Read the event
             evt_file.read(16)       # Discard the debounce event (or whatever)
             code = evt[10]
