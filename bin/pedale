@@ -53,9 +53,9 @@ class GrossePedale(object):
         self.acceleration = 65
         self.deceleration = 50
 
-        dev_conf = ModbusDeviceConfig('192.168.100.2', 502, 2,
-            {'encoder_ratio' : 10000,})
-        self.mb.devices_config.append(dev_conf)
+        #dev_conf = ModbusDeviceConfig('192.168.100.2', 502, 2,
+        #    {'encoder_ratio' : 10000,})
+        #self.mb.devices_config.append(dev_conf)
         dev_conf = ModbusDeviceConfig('192.168.100.3', 502, 3,
             {'encoder_ratio' : 10000,})
         self.mb.devices_config.append(dev_conf)
