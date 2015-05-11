@@ -136,7 +136,6 @@ class GrossePedale(object):
             try:
                 if not self.rfok_event.is_set() or self.block_event.is_set():
                     self.lg.info('Modbus watchdog is blocking.')
-                    self.block_event.set()
                     self.mb.set_speed(0)
                     self.exit_event.wait(1.25)
                     self.mb.set_command(drive_enable=0)
