@@ -65,7 +65,7 @@ class GrossePedale(object):
 
         dev = '/dev/ttyO2'
         try:
-            SerialControlLink.max_speed = 72.5
+            SerialControlLink.max_speed = 70
             SerialControlLink.dead_zone = 15
             SerialControlLink.init_range = 900
             self.s = SerialControlLink(dev)
