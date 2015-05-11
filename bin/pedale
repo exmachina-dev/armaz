@@ -116,7 +116,7 @@ class GrossePedale(object):
 
     def modbus_thread(self):
         self.lg.info('Modbus thread started.')
-        while not self.exit_event.is_set():
+        while not self.exit_event.wait(1/50):
             try:
                 self.mb.set_acceleration(self.acceleration)
                 self.mb.set_deceleration(self.deceleration)
@@ -125,7 +125,7 @@ class GrossePedale(object):
                             self.mb.devices_state.speed))
             except ModbusMasterError as e:
                 self.lg.error(e)
-            self.exit_event.wait(1/50)
+
         self.mb.close()
 
     def modbus_watchdog(self):
