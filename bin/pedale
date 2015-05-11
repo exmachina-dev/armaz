@@ -34,7 +34,7 @@ class GrossePedale(object):
 
         self.thread_refresh = 1/50
         self.switchs = ()
-        self.rf_timeout = 0.25
+        self.rf_timeout = 0.20
         self.rf_lasttime = 0
 
         atexit.register(self.exit)
@@ -68,7 +68,7 @@ class GrossePedale(object):
         dev = '/dev/ttyO2'
         try:
             SerialControlLink.max_speed = 70
-            SerialControlLink.dead_zone = 15
+            SerialControlLink.dead_zone = 20
             SerialControlLink.init_range = 900
             self.s = SerialControlLink(dev)
             self.s.daemon_refresh = self.thread_refresh
@@ -138,7 +138,7 @@ class GrossePedale(object):
                     self.lg.info('Modbus watchdog is blocking.')
                     self.block_event.set()
                     self.mb.set_speed(0)
-                    self.exit_event.wait(0.5)
+                    self.exit_event.wait(1.25)
                     self.mb.set_command(drive_enable=0)
                 else:
                     for d in self.mb.devices:
