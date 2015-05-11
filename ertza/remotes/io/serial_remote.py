@@ -33,7 +33,7 @@ class SerialControlLink(serial.Serial):
         self.parity = serial.PARITY_NONE
         self.stopbits = serial.STOPBITS_ONE
         self.timeout = 0.05
-        self.xonxoff = True
+        self.xonxoff = False
 
         self.data_buffer = b''
 
