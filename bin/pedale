@@ -55,6 +55,7 @@ class GrossePedale(object):
 
         self.max_sends = 2
         self.ms_sends = 0
+        self.last_ms = None
 
         #dev_conf = ModbusDeviceConfig('192.168.100.2', 502, 2,
         #    {'encoder_ratio' : 10000,})
