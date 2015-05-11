@@ -53,6 +53,9 @@ class GrossePedale(object):
         self.acceleration = 65
         self.deceleration = 50
 
+        self.max_sends = 2
+        self.ms_sends = 0
+
         #dev_conf = ModbusDeviceConfig('192.168.100.2', 502, 2,
         #    {'encoder_ratio' : 10000,})
         #self.mb.devices_config.append(dev_conf)
@@ -148,9 +151,17 @@ class GrossePedale(object):
                 tk, tu, ms = self.s.safe_get()
                 if not self.block_event.is_set() and \
                         self.rfok_event.is_set():
-                    if tk is not False:
-                        self.mb.set_speed(ms)
-                    self.lg.info('Actual speed: {}'.format(ms))
+                    if ms != self.last_ms:
+                        if tk is not False:
+                            self.mb.set_speed(ms)
+                            self.last_ms = ms
+                            self.ms_sends = 0
+                            self.lg.info('Actual speed: {}'.format(ms))
+                    elif self.ms_sends < self.max_sends:
+                        self.mb.set_speed(self.last_ms)
+                        self.ms_sends += 1
+                        self.lg.info('Actual speed: {} ({})'.format(ms,
+                            self.ms_sends))
                 else:
                     self.mb.set_speed(0)
             except SerialError:
