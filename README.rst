@@ -1,9 +1,12 @@
-    _|_|_|_|   _|_|_|     _|_|_|_|_|   _|_|_|_|_|     _|_|    
+```
+#!text
+_|_|_|_|   _|_|_|     _|_|_|_|_|   _|_|_|_|_|     _|_|  
     _|         _|    _|       _|             _|     _|    _|  
     _|_|_|     _|_|_|         _|           _|       _|_|_|_|  
     _|         _|    _|       _|         _|         _|    _|  
-    _|_|_|_|   _|    _|       _|       _|_|_|_|_|   _|    _|
- 
+    _|_|_|_|   _|    _|       _|       _|_|_|_|_|   _|    _| 
+```
+
 =====
 ertza
 =====
@@ -11,6 +14,6 @@ ertza
     :target: https://travis-ci.org/exmachina-dev/ertza
 
 Python program that run Armaz motor block.
-This program is tested under Python v3.3 v3.4
+This program is tested under Python v3.3 & v3.4
 
 Required packages - see requirements.txt
