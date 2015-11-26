@@ -1,48 +1,36 @@
 # -*- coding: utf-8 -*-
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 
 import codecs
 
-__version__ = '0.0.1'
-
-packages = [
-    'ertza',
-    'ertza.utils',
-    'ertza.config',
-    'ertza.remotes',
-    'ertza.remotes.osc',
-    'ertza.remotes.osc.slave',
-    'ertza.remotes.modbus',
-    'ertza.remotes.serial',
-]
-
-scripts = [
-    'bin/ertza',
-    'bin/modbus_rw',
-]
+__version__ = '0.0.2'
 
 def file_content(filename):
     return codecs.open(filename, 'r', 'utf-8').read()
 
 setup(
-    name='ertza',
+    name='Ertza',
     version=__version__,
-    description="Armaz main program",
+    packages = find_packages(),
+    description="Firmware found in Eisla product range by ExMachina SAS.",
     long_description=file_content('README.rst'),
-    author="Benoit Rapidel",
+    author="Benoit Rapidel, ExMachina SAS",
     author_email="benoit.rapidel+devs@exmachina.fr",
-    url="http://libmodbus.org",
-    packages=packages,
+    url="http://github.org/exmachina-dev/ertza.git",
     package_data={'': ['COPYING']},
     include_package_data=True,
     install_requires=[],
     license=file_content('COPYING'),
-    scripts=scripts,
-    zip_safe=False,
+    platforms = ["Beaglebone"],
+    entry_points = {
+        'console_scripts': [
+            'ertza = ertza.Ertza:main'
+        ]
+    },
     classifiers=(
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
