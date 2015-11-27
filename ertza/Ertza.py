@@ -13,6 +13,9 @@ from threading import Thread
 from ConfigParser import ConfigParser
 from Machine import Machine
 from PWM import PWM
+from Thermistor import Thermistor
+from Fan import Fan
+from TempWatcher import TempWatcher
 
 version = "0.0.2~Firstimer"
 
@@ -46,6 +49,43 @@ class Ertza(object):
         machine.config = ConfigParser(_DEFAULT_CONF, _MACHINE_CONF, _CUSTOM_CONF)
 
         PWM.set_frequency(100)
+
+        # Get available thermistors
+        machine.thermistors = []
+        th_p = 0
+        while machine.config.has_option("thermistors", "port_TH%d" % th_p):
+            adc_channel = machine.config.getint("thermistors", "port_TH%d" % th_p)
+            machine.thermistors.append(Thermistor(adc_channel, "TH%d" % th_p))
+            logging.debug("Found thermistor TH%d at ADC channel %d" % (th_p, adc_channel))
+            th_p += 1
+
+
+        machine.fans = None
+        if self.machine.config.getboolean('fans', 'got_fans'):
+            self.machine.fans = []
+            f_p = 0
+            while machine.config.has_option("fans", "address_F%d" % f_p):
+                fan_channel = machine.config.getint("fans", "address_F%d" % f_p)
+                machine.fans.append(Fan(fan_channel))
+                logging.debug("Found fan F%d at channel %d" % (f_p, fan_channel))
+                f_p += 1
+
+        for f in machine.fans:
+            f.set_value(100)
+
+        # Connect fans to thermistors
+        if machine.fans:
+            machine.temperature_watchers = []
+            for t, therm in enumerate(machine.thermistors):
+                for f, fan in enumerate(machine.fans):
+                    if machine.config.getboolean("temperature_watchers",
+                                                 "connect_TH%d_to_F%d" % (t, f),
+                                                 fallback=False):
+                        tw = TempWatcher(therm, fan, "TempWatcher-%d-%d" % (t, f))
+                        tw.set_target_temperature(machine.config.getfloat("thermistors", "target_temperature_TH%d" % t))
+                        tw.set_max_temperature(machine.config.getfloat("thermistors", "max_temperature_TH%d" % t))
+                        tw.enable()
+                        machine.temperature_watchers.append(tw)
 
 
     def start(self):
