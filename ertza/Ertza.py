@@ -12,6 +12,7 @@ from threading import Thread
 
 from ConfigParser import ConfigParser
 from Machine import Machine
+from PWM import PWM
 
 version = "0.0.2~Firstimer"
 
@@ -43,6 +44,8 @@ class Ertza(object):
             sys.exit()
 
         machine.config = ConfigParser(_DEFAULT_CONF, _MACHINE_CONF, _CUSTOM_CONF)
+
+        PWM.set_frequency(100)
 
 
     def start(self):
