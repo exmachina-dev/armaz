@@ -49,6 +49,12 @@ class Ertza(object):
 
         machine.config = ConfigParser(_DEFAULT_CONF, _MACHINE_CONF, _CUSTOM_CONF)
 
+        # Get loglevel from config file
+        level = self.machine.config.getint('system', 'loglevel')
+        if level > 0:
+            logging.info("Setting loglevel to %d" % level)
+            logging.getLogger().setLevel(level)
+
         PWM.set_frequency(100)
 
         # Get available thermistors
