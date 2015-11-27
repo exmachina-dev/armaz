@@ -9,6 +9,7 @@ import os.path
 import sys
 import signal
 from threading import Thread
+from multiprocessing import JoinableQueue
 
 from ConfigParser import ConfigParser
 from Machine import Machine
@@ -86,6 +87,11 @@ class Ertza(object):
                         tw.set_max_temperature(machine.config.getfloat("thermistors", "max_temperature_TH%d" % t))
                         tw.enable()
                         machine.temperature_watchers.append(tw)
+
+        # Create queue of commands
+        self.machine.commands = JoinableQueue(10)
+        self.machine.unbuffered_commands = JoinableQueue(10)
+        self.machine.sync_commands = JoinableQueue()
 
 
     def start(self):
