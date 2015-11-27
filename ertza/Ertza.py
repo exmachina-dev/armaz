@@ -145,5 +145,6 @@ def main():
     signal.pause()
 
 if __name__ == '__main__':
-    _DEFAULT_CONF = './conf/default.conf'
+    _DEFAULT_CONF = '../conf/default.conf'
+    _MACHINE_CONF = '../conf/machine.conf'
     main()
