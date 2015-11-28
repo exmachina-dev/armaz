@@ -153,7 +153,16 @@ def main():
 
     signal.pause()
 
+def profile():
+    import yappi
+    yappi.start()
+    main()
+    yappi.get_func_stats().print_all()
+
 if __name__ == '__main__':
     _DEFAULT_CONF = '../conf/default.conf'
     _MACHINE_CONF = '../conf/machine.conf'
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "profile":
+        profile()
+    else:
+        main()
