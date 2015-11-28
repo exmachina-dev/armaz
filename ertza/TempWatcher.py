@@ -16,8 +16,11 @@ class TempWatcher(object):
         self.current_temp = 0.0
         self.target_temp = 0.0
         self.max_temp = 0.0
-        self.P = 1.0
-        self.ok_range = 4.0
+        self.P = 0.1
+        self.I = 0.005
+        self.error_integral = 0.0
+        self.running_time = 0.0
+        self.interval = 1
 
     def set_target_temperature(self, temp):
         self.target_temp = float(temp)
@@ -56,17 +59,26 @@ class TempWatcher(object):
         while self.enabled:
             self.current_temp = self.thermistor.temperature
             error = self.target_temp - self.current_temp
+            error *= -1
 
             if self.current_temp >= self.max_temp:
-                power = 1.0
                 if self.callback:
                     self.callback()
-            else:
-                power = self.P * error
-                power = max(min(power, 1.0), 0.0)
+            self.running_time += self.interval
+            _P = self.P * error
 
-                power = 1.0 - power
+            self.error_integral += error * self.interval
+            #Clamp error_integral to max output power; More reactive I
+            self.error_integral = max(min(self.error_integral, 100.0), 00.0)
+            _I = self.I * self.error_integral
+
+            power = _P + _I
+            power = max(min(power, 1.0), 0.0)
+
 
             self.fan.set_value(power)
-            time.sleep(1)
+            logging.debug("Current temp for %s: %d, Fan %s set to %s | E: %d I: %d" % (
+                self.thermistor.name, self.current_temp, self.fan.channel,
+                power, error, self.error_integral))
+            time.sleep(self.interval)
         self.disabled = True

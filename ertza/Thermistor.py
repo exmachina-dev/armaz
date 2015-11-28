@@ -34,8 +34,8 @@ class Thermistor(object):
 
         return temp
 
-    def resistance_to_voltage(self, resistor_val):
-        idx = (np.bas(Thermistor.temp_table[1] - resistor_val)).argmin()
+    def resistance_to_degrees(self, resistor_val):
+        idx = (np.abs(Thermistor.temp_table[1] - resistor_val)).argmin()
         return Thermistor.temp_table[0][idx]
 
     def voltage_to_resistance(self, v_sense):
