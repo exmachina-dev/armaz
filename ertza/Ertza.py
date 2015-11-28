@@ -99,6 +99,15 @@ class Ertza(object):
         self.machine.unbuffered_commands = JoinableQueue(10)
         self.machine.sync_commands = JoinableQueue()
 
+        # Create external switches
+        machine.switches = []
+        esw_p = 0
+        while machine.config.has_option("switches", "keycode_ESW%d" % esw_p):
+            esw_keycode = machine.config.getint("switches", "keycode_ESW%d" % esw_p)
+            machine.switches.append(Switch(esw_keycode, "ESW%d" % esw_p))
+            logging.debug("Found switch ESW%s at keycode %d" % (esw_p, esw_keycode))
+            esw_p += 1
+
 
     def start(self):
         """ Start the processes """
