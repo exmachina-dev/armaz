@@ -70,7 +70,7 @@ class Switch(object):
                                                     self.direction,
                                                     self.hit))
 
-if __name__ == '__main__:
+if __name__ == '__main__':
     import logging
     import signal
 
