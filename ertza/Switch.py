@@ -65,8 +65,16 @@ class Switch(object):
             else:
                 self.direction = None
 
+    def __repr__(self):
+        return("Switch: %s at %i: dir %s hit %i" % (self.name, self.key_code,
+                                                    self.direction,
+                                                    self.hit))
+
 if __name__ == '__main__:
+    import logging
+    import signal
+
     def cb(event):
-        name = event.name
-        direction = "up" if event.direction == True else "down"
-        logging.info("Switch %s triggered: direction: %s" % (name, dir))
+        logging.info(event)
+
+    s = Switch(116, 'DV0')
