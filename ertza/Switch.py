@@ -49,15 +49,15 @@ class Switch(object):
         while True:
             evt = evt_file.read(16) # Read the event
             evt_file.read(16)       # Discard the debounce event (or whatever)
-            code = ord(evt[10])
+            code = evt[10]
 
             if code == self.key_code:
-                self.direction = True if ord(evt[12]) else True"
+                self.direction = True if evt[12] else True"
                 self.hit = False
 
-                if self.invert is True and direction == True:
+                if self.invert is True and self.direction == True:
                     self.hit = True
-                elif self.invert is False and direction == False:
+                elif self.invert is False and self.direction == False:
                     self.hit = True
 
                 if Switch.callback is not None:
