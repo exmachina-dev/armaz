@@ -52,7 +52,7 @@ class Switch(object):
             code = evt[10]
 
             if code == self.key_code:
-                self.direction = True if evt[12] else True"
+                self.direction = True if evt[12] else True
                 self.hit = False
 
                 if self.invert is True and self.direction == True:
