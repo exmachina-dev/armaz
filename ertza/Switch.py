@@ -52,7 +52,7 @@ class Switch(object):
             code = evt[10]
 
             if code == self.key_code:
-                self.direction = True if evt[12] else True
+                self.direction = True if evt[12] else False
                 self.hit = False
 
                 if self.invert is True and self.direction == True:
@@ -71,10 +71,15 @@ class Switch(object):
                                                     self.hit))
 
 if __name__ == '__main__':
-    import logging
     import signal
 
     def cb(event):
-        logging.info(event)
+        print(event)
 
-    s = Switch(116, 'DV0')
+    Switch.callback = cb
+    keycodes = (112, 113, 114, 115, 116)
+    for k in keycodes:
+        n = 'SW%i' % k - 112
+        s = Switch(k, n)
+
+    signal.pause()
