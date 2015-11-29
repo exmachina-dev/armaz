@@ -45,7 +45,7 @@ class Switch(object):
         self.t.start()
 
     def _wait_for_event(self):
-        evt_file = open(EndStop.inputdev, "rb")
+        evt_file = open(Switch.inputdev, "rb")
         while True:
             evt = evt_file.read(16) # Read the event
             evt_file.read(16)       # Discard the debounce event (or whatever)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     Switch.callback = cb
     keycodes = (112, 113, 114, 115, 116)
     for k in keycodes:
-        n = 'SW%i' % k - 112
+        n = 'SW%i' % (k - 112)
         s = Switch(k, n)
 
     signal.pause()
