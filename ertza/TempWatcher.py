@@ -49,7 +49,7 @@ class TempWatcher(object):
     def disable(self):
         self.enabled = False
 
-        while self.disabled == False:
+        while self.disabled is False:
             time.sleep(0.5)
 
         self.fan.set_power(0.0)
@@ -68,17 +68,17 @@ class TempWatcher(object):
             _P = self.P * error
 
             self.error_integral += error * self.interval
-            #Clamp error_integral to max output power; More reactive I
+            # Clamp error_integral to max output power; More reactive I
             self.error_integral = max(min(self.error_integral, 100.0), 00.0)
             _I = self.I * self.error_integral
 
             power = _P + _I
             power = max(min(power, 1.0), 0.0)
 
-
             self.fan.set_value(power)
-            logging.debug("Current temp for %s: %d, Fan %s set to %s | E: %d I: %d" % (
-                self.thermistor.name, self.current_temp, self.fan.channel,
-                power, error, self.error_integral))
+            logging.debug("Current temp for %s: %d, Fan \
+                          %s set to %s | E: %d I: %d" %
+                          (self.thermistor.name, self.current_temp,
+                           self.fan.channel, power, error, self.error_integral))
             time.sleep(self.interval)
         self.disabled = True

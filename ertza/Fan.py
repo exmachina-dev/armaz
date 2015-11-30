@@ -21,10 +21,9 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
  along with Redeem.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from Adafruit_I2C import Adafruit_I2C
 import time
-import subprocess
 from PWM import PWM
+
 
 class Fan(PWM):
 
@@ -37,11 +36,11 @@ class Fan(PWM):
         PWM.set_value(value, self.channel)
 
 if __name__ == '__main__':
-    import os
     import logging
 
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        format='%(asctime)s %(name)-12s \
+                        %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M')
 
     PWM.set_frequency(100)
@@ -49,15 +48,13 @@ if __name__ == '__main__':
     fan0 = Fan(0)
     fan1 = Fan(1)
 
-
     while 1:
-        for i in xrange(1,100):
+        for i in xrange(1, 100):
             fan0.set_value(i/100.0)
             fan1.set_value(i/100.0)
             time.sleep(0.01)
-        for i in xrange(100,1,-1):
+        for i in xrange(100, 1, -1):
             fan0.set_value(i/100.0)
             fan1.set_value(i/100.0)
             time.sleep(0.01)
-
 

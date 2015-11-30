@@ -25,7 +25,8 @@ _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    format='%(asctime)s %(name)-12s \
+                    %(levelname)-8s %(message)s',
                     datefmt='%Y/%m/%d %H:%M:%S')
 
 
@@ -33,7 +34,8 @@ class Ertza(object):
     """
     Main class for ertza.
 
-    Handle log, configuration, startup and dispatch others tasks to various processes
+    Handle log, configuration, startup and dispatch others tasks to
+    various processes
     """
 
     def __init__(self, *agrs, **kwargs):
@@ -47,7 +49,9 @@ class Ertza(object):
             logging.error(_DEFAULT_CONF + " does not exist, exiting.")
             sys.exit()
 
-        machine.config = ConfigParser(_DEFAULT_CONF, _MACHINE_CONF, _CUSTOM_CONF)
+        machine.config = ConfigParser(_DEFAULT_CONF,
+                                      _MACHINE_CONF,
+                                      _CUSTOM_CONF)
 
         # Get loglevel from config file
         level = self.machine.config.getint('system', 'loglevel')
@@ -57,57 +61,14 @@ class Ertza(object):
 
         PWM.set_frequency(100)
 
-        # Get available thermistors
-        machine.thermistors = []
-        th_p = 0
-        while machine.config.has_option("thermistors", "port_TH%d" % th_p):
-            adc_channel = machine.config.getint("thermistors", "port_TH%d" % th_p)
-            machine.thermistors.append(Thermistor(adc_channel, "TH%d" % th_p))
-            logging.debug("Found thermistor TH%d at ADC channel %d" % (th_p, adc_channel))
-            th_p += 1
-
-
-        machine.fans = None
-        if self.machine.config.getboolean('fans', 'got_fans'):
-            self.machine.fans = []
-            f_p = 0
-            while machine.config.has_option("fans", "address_F%d" % f_p):
-                fan_channel = machine.config.getint("fans", "address_F%d" % f_p)
-                machine.fans.append(Fan(fan_channel))
-                logging.debug("Found fan F%d at channel %d" % (f_p, fan_channel))
-                f_p += 1
-
-        for f in machine.fans:
-            f.set_value(100)
-
-        # Connect fans to thermistors
-        if machine.fans:
-            machine.temperature_watchers = []
-            for t, therm in enumerate(machine.thermistors):
-                for f, fan in enumerate(machine.fans):
-                    if machine.config.getboolean("temperature_watchers",
-                                                 "connect_TH%d_to_F%d" % (t, f),
-                                                 fallback=False):
-                        tw = TempWatcher(therm, fan, "TempWatcher-%d-%d" % (t, f))
-                        tw.set_target_temperature(machine.config.getfloat("thermistors", "target_temperature_TH%d" % t))
-                        tw.set_max_temperature(machine.config.getfloat("thermistors", "max_temperature_TH%d" % t))
-                        tw.enable()
-                        machine.temperature_watchers.append(tw)
+        self._config_thermistors()
+        self._config_fans()
+        self._config_external_switches()
 
         # Create queue of commands
         self.machine.commands = JoinableQueue(10)
         self.machine.unbuffered_commands = JoinableQueue(10)
         self.machine.sync_commands = JoinableQueue()
-
-        # Create external switches
-        machine.switches = []
-        esw_p = 0
-        while machine.config.has_option("switches", "keycode_ESW%d" % esw_p):
-            esw_keycode = machine.config.getint("switches", "keycode_ESW%d" % esw_p)
-            machine.switches.append(Switch(esw_keycode, "ESW%d" % esw_p))
-            logging.debug("Found switch ESW%s at keycode %d" % (esw_p, esw_keycode))
-            esw_p += 1
-
 
     def start(self):
         """ Start the processes """
@@ -140,6 +101,79 @@ class Ertza(object):
     def exit(self):
         pass
 
+    def _config_thermistors(self):
+
+        # Get available thermistors
+        self.machine.thermistors = []
+        th_p = 0
+        while self.machine.config.has_option("thermistors", "port_TH%d" % th_p):
+            adc_channel = self.machine.config.getint("thermistors",
+                                                     "port_TH%d" % th_p)
+            self.machine.thermistors.append(Thermistor(adc_channel,
+                                                       "TH%d" % th_p))
+            logging.debug(
+                "Found thermistor TH%d at ADC channel %d" % (th_p, adc_channel))
+            th_p += 1
+
+    def _config_fans(self):
+
+        self.machine.fans = None
+
+        if self.machine.config.getboolean('fans', 'got_fans'):
+            self.machine.fans = []
+            f_p = 0
+            while self.machine.config.has_option("fans", "address_F%d" % f_p):
+                fan_channel = self.machine.config.getint("fans",
+                                                         "address_F%d" % f_p)
+                self.machine.fans.append(Fan(fan_channel))
+                logging.debug(
+                    "Found fan F%d at channel %d" % (f_p, fan_channel))
+                f_p += 1
+
+        for f in self.machine.fans:
+            f.set_value(1)
+
+        # Connect fans to thermistors
+        if self.machine.fans:
+            self.machine.temperature_watchers = []
+            for t, therm in enumerate(self.machine.thermistors):
+                for f, fan in enumerate(self.machine.fans):
+                    if self.machine.config.getboolean("temperature_watchers",
+                                                      "connect_TH%d_to_F%d" %
+                                                      (t, f),
+                                                      fallback=False):
+                        tw = TempWatcher(therm, fan,
+                                         "TempWatcher-%d-%d" % (t, f))
+                        tw.set_target_temperature(
+                            self.machine.config.getfloat(
+                                "thermistors", "target_temperature_TH%d" % t))
+                        tw.set_max_temperature(
+                            self.machine.config.getfloat(
+                                "thermistors", "max_temperature_TH%d" % t))
+                        tw.enable()
+                        self.machine.temperature_watchers.append(tw)
+
+    def _config_external_switches(self):
+
+        # Create external switches
+        self.machine.switches = []
+        esw_p = 0
+        while self.machine.config.has_option("switches",
+                                             "keycode_ESW%d" % esw_p):
+            esw_n = "ESW%d" % esw_p
+            esw_kc = self.machine.config.getint("switches",
+                                                "keycode_%s" % esw_n)
+            name = self.machine.config.get("switches",
+                                           "name_%s" % esw_n, fallback=esw_n)
+            esw = Switch(esw_kc, name)
+            esw.invert = self.machine.config.getboolean("switches",
+                                                        "invert_%s " % esw_n)
+            esw.function = self.machine.config.get("switches",
+                                                   "function_%s " % esw_n)
+            self.machine.switches.append(esw)
+            logging.debug("Found switch %s at keycode %d" % (name, esw_kc))
+            esw_p += 1
+
 
 def main():
     e = Ertza()
@@ -152,6 +186,7 @@ def main():
     e.start()
 
     signal.pause()
+
 
 def profile():
     import yappi

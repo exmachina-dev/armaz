@@ -23,9 +23,6 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 """
 
 from threading import Thread
-import mmap
-import struct
-import re
 
 
 class Switch(object):
@@ -37,6 +34,7 @@ class Switch(object):
         self.key_code = key_code
         self.name = name
         self.invert = False
+        self.function = False
         self.hit = False
         self.direction = None
 
@@ -47,17 +45,17 @@ class Switch(object):
     def _wait_for_event(self):
         evt_file = open(Switch.inputdev, "rb")
         while True:
-            evt = evt_file.read(16) # Read the event
-            evt_file.read(16)       # Discard the debounce event (or whatever)
+            evt = evt_file.read(16)     # Read the event
+            evt_file.read(16)           # Discard the debounce event
             code = evt[10]
 
             if code == self.key_code:
                 self.direction = True if evt[12] else False
                 self.hit = False
 
-                if self.invert is True and self.direction == True:
+                if self.invert is True and self.direction is True:
                     self.hit = True
-                elif self.invert is False and self.direction == False:
+                elif self.invert is False and self.direction is False:
                     self.hit = True
 
                 if Switch.callback is not None:

@@ -4,9 +4,10 @@ import numpy as np
 from threading import Lock
 import logging
 
-from temp_chart import *
+from temp_chart import temp_chart
 
 _ADC_PATH = "/sys/bus/iio/devices/iio:device0"
+
 
 class Thermistor(object):
 
@@ -29,6 +30,7 @@ class Thermistor(object):
                 temp = self.resistance_to_degrees(res_val)
         except IOError as e:
             logging.warn("Unable to get temperature from %s" % self.name)
+            logging.exception(e)
         finally:
             Thermistor.mutex.release()
 
