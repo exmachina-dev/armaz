@@ -16,6 +16,7 @@ from Machine import Machine
 from PWM import PWM
 from Thermistor import Thermistor
 from Fan import Fan
+from Switch import Switch
 from TempWatcher import TempWatcher
 
 version = "0.0.2~Firstimer"
