@@ -60,6 +60,13 @@ class Ertza(object):
             logging.info("Setting loglevel to %d" % level)
             logging.getLogger().setLevel(level)
 
+        drv = machine.init_driver()
+        if drv:
+            logging.info("Loaded %s driver for machine" % drv)
+        else:
+            logging.error("Unable to find driver, exiting.")
+            sys.exit()
+
         PWM.set_frequency(100)
 
         self._config_thermistors()
