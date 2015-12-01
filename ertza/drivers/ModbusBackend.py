@@ -5,12 +5,12 @@ import bitstring
 
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.register_read_message import (ReadHoldingRegistersRequest,
-                                            ReadHoldingRegistersResponse)
+                                            ReadHoldingRegistersResponse,
+                                            ReadWriteMultipleRegistersRequest,
+                                            ReadWriteMultipleRegistersResponse)
 from pymodbus.register_write_message import (WriteMultipleRegistersRequest,
                                              WriteMultipleRegistersResponse)
-from pymodbus.other_message import (ReadWriteMultipleRegistersRequest,
-                                    ReadWriteMultipleRegistersResponse,
-                                    ExceptionResponse)
+from pymodbus.other_message import ExceptionResponse
 import pymodbus.exceptions as pmde
 
 
