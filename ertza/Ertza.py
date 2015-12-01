@@ -14,7 +14,12 @@ from multiprocessing import JoinableQueue
 from ConfigParser import ConfigParser
 from Machine import Machine
 from PWM import PWM
-from Thermistor import Thermistor
+try:
+    from Thermistor import Thermistor
+    NO_TH = False
+except ImportError:
+    NO_TH = True
+
 from Fan import Fan
 from Switch import Switch
 from TempWatcher import TempWatcher
@@ -69,7 +74,8 @@ class Ertza(object):
 
         PWM.set_frequency(100)
 
-        self._config_thermistors()
+        if not NO_TH:
+            self._config_thermistors()
         self._config_fans()
         self._config_external_switches()
 
@@ -142,7 +148,7 @@ class Ertza(object):
             f.set_value(1)
 
         # Connect fans to thermistors
-        if self.machine.fans:
+        if self.machine.fans and not NO_TH:
             self.machine.temperature_watchers = []
             for t, therm in enumerate(self.machine.thermistors):
                 for f, fan in enumerate(self.machine.fans):
