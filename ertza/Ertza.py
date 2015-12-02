@@ -54,7 +54,7 @@ class Ertza(object):
 
         if not os.path.isfile(_DEFAULT_CONF):
             logging.error(_DEFAULT_CONF + " does not exist, exiting.")
-            sys.exit()
+            sys.exit(1)
 
         machine.config = ConfigParser(_DEFAULT_CONF,
                                       _MACHINE_CONF,
@@ -76,7 +76,7 @@ class Ertza(object):
             logging.info("Loaded %s driver for machine" % drv)
         else:
             logging.error("Unable to find driver, exiting.")
-            sys.exit()
+            sys.exit(1)
 
         PWM.set_frequency(1000)
 
