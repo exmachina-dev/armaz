@@ -10,7 +10,7 @@ from pymodbus.register_read_message import (ReadHoldingRegistersRequest,
                                             ReadWriteMultipleRegistersResponse)
 from pymodbus.register_write_message import (WriteMultipleRegistersRequest,
                                              WriteMultipleRegistersResponse)
-from pymodbus.other_message import ExceptionResponse
+from pymodbus.pdu import ExceptionResponse
 import pymodbus.exceptions as pmde
 
 
