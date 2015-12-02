@@ -60,6 +60,8 @@ class Ertza(object):
                                       _MACHINE_CONF,
                                       _CUSTOM_CONF)
 
+        machine.config.load_variant()
+
         self._config_leds()
         self.machine.leds[3].set_blink(500)
 
