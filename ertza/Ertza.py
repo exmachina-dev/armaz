@@ -207,7 +207,7 @@ class Ertza(object):
             led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
                                             fallback='none')
             led.set_trigger(led_t)
-            if led_t is "timer":
+            if led_t == "timer":
                 led.set_blink(self.machine.config.get("leds",
                                                       "blink_%s" % led_n,
                                                       fallback='500'))
