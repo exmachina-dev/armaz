@@ -60,6 +60,9 @@ class Ertza(object):
                                       _MACHINE_CONF,
                                       _CUSTOM_CONF)
 
+        self._config_leds()
+        self.machine.leds[3].set_blink(500)
+
         # Get loglevel from config file
         level = self.machine.config.getint('system', 'loglevel')
         if level > 0:
@@ -79,7 +82,6 @@ class Ertza(object):
             self._config_thermistors()
         self._config_fans()
         self._config_external_switches()
-        self._config_leds()
 
         # Create queue of commands
         self.machine.commands = JoinableQueue(10)
@@ -109,6 +111,7 @@ class Ertza(object):
         self.machine.start()
 
         logging.info("Ertza ready")
+        self.machine.leds[3].set_blink(50)
 
     def loop(self, queue, name):
         pass
@@ -121,6 +124,9 @@ class Ertza(object):
 
         for f in self.machine.fans:
             f.set_value(0)
+
+        for l in self.machine.leds:
+            l.set_trigger('default-on')
 
     def _config_thermistors(self):
 
