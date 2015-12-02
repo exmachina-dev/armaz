@@ -29,9 +29,9 @@ class ModbusBackend(object):
     def connect(self):
         return self._end.connect()
 
-    def write_netdata(self, netdata, data, data_format):
+    def write_netdata(self, netdata, data, data_format='uintbe:16, uintbe:16'):
         self._check_netdata(netdata)
-        start = netdata * ModbusBackend.nb_reg_by_netdata
+        start = netdata * self.register_nb_by_netdata
 
         data = bitstring.pack(data_format, *data)
 
@@ -39,15 +39,9 @@ class ModbusBackend(object):
 
     def read_netdata(self, netdata, format):
         self._check_netdata(netdata)
-        start = netdata * ModbusBackend.register_nb_by_netdata
+        start = netdata * self.register_nb_by_netdata
 
         return self.rhr(start)
-
-    def check_connectivity(self, **kwargs):
-        status = self.get_status(force=True, **kwargs)
-        if type(status) == dict:
-            return True
-        return False
 
     @staticmethod
     def to_int(bits, **kwargs):
@@ -90,9 +84,9 @@ class ModbusBackend(object):
         return bits.unpack('uintbe:16, uintbe')
 
     def _read_holding_registers(self, address):
-        count = ModbusBackend.register_nb_by_netdata
+        count = self.register_nb_by_netdata
         rq = ReadHoldingRegistersRequest(address, count,
-                                         unit_id=self.node_id)
+                                         unit_id=self.nodeid)
         return self._rq(rq)
 
     def _write_multiple_registers(self, address, value):
@@ -102,8 +96,12 @@ class ModbusBackend(object):
 
     def _read_write_multiple_registers(self, address, value):
         rq = ReadWriteMultipleRegistersRequest(address, value,
-                                               unit_id=self.node_id)
+                                               unit_id=self.nodeid)
         return self._rq(rq)
+
+    def _check_netdata(self, netdata_address):
+        if not (self.min_netdata <= netdata_address <= self.max_netdata):
+            raise ValueError("Invalid netdata address: %d" % netdata_address)
 
     # Shortcuts
     rhr = _read_holding_registers
@@ -129,7 +127,7 @@ class ModbusBackend(object):
                     rpt == ReadWriteMultipleRegistersResponse:
                 regs = list()
                 fmt = "{:0>16b}"
-                for i in range(self.nb_reg_by_comms):
+                for i in range(self.register_nb_by_netdata):
                     regs.append(fmt.format(response.getRegister(i)))
                 return ''.join(regs)
         except pmde.ConnectionException:
