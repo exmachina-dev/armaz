@@ -26,6 +26,9 @@ class ModbusBackend(object):
 
         self._end = ModbusClient(host=self.address, port=self.port)
 
+    def connect(self):
+        return self._end.connect()
+
     def write_netdata(self, netdata, data, data_format):
         self._check_netdata(netdata)
         start = netdata * ModbusBackend.nb_reg_by_netdata
