@@ -106,6 +106,8 @@ class Ertza(object):
         thread1.start()
         thread2.start()
 
+        self.machine.start()
+
         logging.info("Ertza ready")
 
     def loop(self, queue, name):
@@ -115,7 +117,10 @@ class Ertza(object):
         pass
 
     def exit(self):
-        pass
+        self.machine.exit()
+
+        for f in self.machine.fans:
+            f.set_value(0)
 
     def _config_thermistors(self):
 

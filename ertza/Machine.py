@@ -17,7 +17,7 @@ class Machine(object):
         drv = self.config.get('machine', 'driver', fallback=None)
         if drv is not None:
             try:
-                self.driver = Driver().get_driver(drv)
+                self.driver = Driver().get_driver(drv)()
                 self.driver(self.config['driver_' + drv])
             except KeyError:
                 logging.error("Unable to get %s driver, exiting." % drv)
@@ -27,3 +27,7 @@ class Machine(object):
             return False
 
         return drv
+
+    def start(self):
+
+        self.driver.connect()

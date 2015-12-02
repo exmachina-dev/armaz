@@ -6,7 +6,7 @@ class Driver(object):
 
     def __new__(cls):
         Driver._drivers = Driver._get_drivers()
-        return super(Driver, cls).__new__(cls)
+        return super().__new__(cls)
 
     def get_driver(self, driver):
         return Driver._drivers[driver]

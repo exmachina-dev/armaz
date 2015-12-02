@@ -19,7 +19,7 @@ class ModbusBackend(object):
     max_netdata = 999
     register_nb_by_netdata = 2
 
-    def __init(self, target_addr, target_port, target_nodeid):
+    def __init__(self, target_addr, target_port, target_nodeid):
         self.address = target_addr
         self.port = target_port
         self.nodeid = target_nodeid
