@@ -17,8 +17,8 @@ class Machine(object):
         drv = self.config.get('machine', 'driver', fallback=None)
         if drv is not None:
             try:
-                self.driver = Driver().get_driver(drv)()
-                self.driver(self.config['driver_' + drv])
+                self.driver = Driver().get_driver(drv)(
+                    self.config['driver_' + drv])
             except KeyError:
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
