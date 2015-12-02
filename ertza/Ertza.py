@@ -23,6 +23,7 @@ except ImportError:
 from Fan import Fan
 from Switch import Switch
 from TempWatcher import TempWatcher
+from Led import Led
 
 version = "0.0.2~Firstimer"
 
@@ -78,6 +79,7 @@ class Ertza(object):
             self._config_thermistors()
         self._config_fans()
         self._config_external_switches()
+        self._config_leds()
 
         # Create queue of commands
         self.machine.commands = JoinableQueue(10)
@@ -187,6 +189,26 @@ class Ertza(object):
             self.machine.switches.append(esw)
             logging.debug("Found switch %s at keycode %d" % (name, esw_kc))
             esw_p += 1
+
+    def _config_leds(self):
+
+        # Create leds
+        self.machine.leds = []
+        led_i = 0
+        while self.machine.config.has_option("leds", "file_L%d" % led_i):
+            led_n = "L%d" % led_i
+            led_f = self.machine.config.get("leds", "file_%s" % led_n)
+            led = Led(led_f)
+            led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
+                                            fallback='none')
+            led.set_trigger(led_t)
+            if led_t is "timer":
+                led.set_blink(self.machine.config.get("leds",
+                                                      "blink_%s" % led_n,
+                                                      fallback='500'))
+            self.machine.leds.append(led)
+            logging.debug("Found led %s, trigger: %s" % (led_n, led_t))
+            led_i += 1
 
 
 def main():

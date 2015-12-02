@@ -1,0 +1,43 @@
+# -*- coding: utf-8 -*-
+
+import os.path
+
+
+class Led(object):
+    led_sys_path = '/sys/devices/platform/leds/leds'
+
+    def __init__(self, led_folder):
+        self.full_path = os.path.join(Led.led_sys_path, led_folder)
+        self.trigger = os.path.join(self.full_path, 'trigger')
+        self.delay_on = os.path.join(self.full_path, 'delay_on')
+        self.delay_off = os.path.join(self.full_path, 'delay_off')
+        self.brightness = os.path.join(self.full_path, 'brightness')
+
+    def set_trigger(self, new_trigger):
+        with open(self.trigger, mode='w') as f:
+            f.write(new_trigger)
+
+    def set_brightness(self, new_brightness):
+        with open(self.brightness, mode='w') as f:
+            f.write(new_brightness)
+
+    def set_blink(self, new_delay):
+        for delay_file in (self.delay_off, self.delay_on):
+            with open(delay_file, mode='w') as f:
+                f.write(new_delay)
+
+if __name__ == '__main__':
+    import time
+
+    l2 = Led('beaglebone:green:usr2')
+
+    l2.set_trigger('default-on')
+
+    time.sleep(5)
+
+    l2.set_trigger('delay-on')
+    l2.set_blink(50)
+
+    time.sleep(5)
+
+    l2.set_trigger('heartbeat')
