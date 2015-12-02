@@ -31,3 +31,7 @@ class Machine(object):
     def start(self):
 
         self.driver.connect()
+
+    def exit(self):
+
+        del self.driver
