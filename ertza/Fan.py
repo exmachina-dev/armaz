@@ -37,6 +37,8 @@ class Fan(PWM):
 
 if __name__ == '__main__':
     import logging
+    import signal
+    from threading import Thread
 
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s \
@@ -48,13 +50,28 @@ if __name__ == '__main__':
     fan0 = Fan(0)
     fan1 = Fan(1)
 
-    while 1:
-        for i in xrange(1, 100):
-            fan0.set_value(i/100.0)
-            fan1.set_value(i/100.0)
-            time.sleep(0.01)
-        for i in xrange(100, 1, -1):
-            fan0.set_value(i/100.0)
-            fan1.set_value(i/100.0)
-            time.sleep(0.01)
+    exit_ev = False
+
+    def sign_handler(signal, frame):
+        exit_ev = True
+        fan0.set_value(0)
+        fan1.set_value(0)
+
+    signal.signal(signal.SIGINT, sign_handler)
+
+    def fan_thread():
+        while not exit_ev:
+            for i in range(1, 100):
+                fan0.set_value(i/100.0)
+                fan1.set_value((100-i)/100.0)
+                time.sleep(0.1)
+            for i in range(100, 1, -1):
+                fan0.set_value(i/100.0)
+                fan1.set_value((100-i)/100.0)
+                time.sleep(0.1)
+
+    t = Thread(target=fan_thread)
+    t.daemon = True
+    t.start()
+    signal.pause()
 
