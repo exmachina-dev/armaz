@@ -73,7 +73,7 @@ class Ertza(object):
             logging.error("Unable to find driver, exiting.")
             sys.exit()
 
-        PWM.set_frequency(100)
+        PWM.set_frequency(1000)
 
         if not NO_TH:
             self._config_thermistors()
