@@ -13,6 +13,8 @@ class Machine(object):
         self.config = None
         self.driver = None
 
+        self.comms = {}
+
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
         if drv is not None:
@@ -35,3 +37,10 @@ class Machine(object):
     def exit(self):
 
         del self.driver
+
+    def reply(self, command):
+        if command.answer is not None:
+            self.send_message(command.protocol, command.answer)
+
+    def send_message(self, protocol, msg):
+        self.comms[protocol].send_message(msg)

@@ -13,6 +13,9 @@ from multiprocessing import JoinableQueue
 
 from ConfigParser import ConfigParser
 from Machine import Machine
+from OscProcessor import OscProcessor
+from OscServer import OscServer
+
 from PWM import PWM
 try:
     from Thermistor import Thermistor
@@ -89,6 +92,10 @@ class Ertza(object):
         self.machine.commands = JoinableQueue(10)
         self.machine.unbuffered_commands = JoinableQueue(10)
         self.machine.sync_commands = JoinableQueue()
+
+        self.machine.osc_processor = OscProcessor(self.machine)
+
+        machine.comms["OSC"] = OscServer(self.machine)
 
     def start(self):
         """ Start the processes """
