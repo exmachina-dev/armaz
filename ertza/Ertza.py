@@ -123,6 +123,10 @@ class Ertza(object):
 
         self.machine.start()
 
+        for name, comm in self.machine.comms.items():
+            comm.start()
+            logging.info("%s communication module started" % name)
+
         logging.info("Ertza ready")
         for l in self.machine.leds:
             if l.function == 'status':
