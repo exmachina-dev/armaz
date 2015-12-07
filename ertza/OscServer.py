@@ -27,6 +27,14 @@ class OscServer(lo.Server):
         self._t = Thread(target=self.run)
         self._t.start()
 
+    def send_message(self, message):
+        print(message.receiver, message.path, message.args)
+        osc_msg = lo.Message(message.path, *message.args)
+        print(osc_msg)
+        self.send((message.receiver.get_hostname(), 6970), osc_msg)
+
+        print('sent')
+
     @lo.make_method(None, None)
     def dispatch(self, path, args, types, sender):
         m = OscMessage(path, args, types=types, sender=sender)
