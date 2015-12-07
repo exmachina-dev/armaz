@@ -5,5 +5,9 @@ from commands.AbstractCommands import AbstractCommand
 
 class OscCommand(AbstractCommand):
 
+    @property
+    def alias(self):
+        return '/'
+
     def execute(self, message):
-        target, action, values = message.target, message.action, message.values
+        target, action, args = message.target, message.action, message.args

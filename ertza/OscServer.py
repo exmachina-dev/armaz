@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import liblo as lo
 from threading import Thread
 
@@ -10,9 +11,11 @@ class OscServer(lo.Server):
 
     def __init__(self, machine):
         self.machine = machine
-        self.port = machine.config.getint('osc', 'port')
+        self.processor = self.machine.osc_processor
 
-        super().__init__(self.port, lo.UDP)
+        port = machine.config.getint('osc', 'port', fallback=6069)
+
+        super().__init__(port, lo.UDP)
 
     def run(self):
         while self.running:
@@ -26,8 +29,9 @@ class OscServer(lo.Server):
 
     @lo.make_method(None, None)
     def dispatch(self, path, args, types, sender):
-        m = OscMessage(path, args, types, sender)
-        self.machine.osc_processor.enqueue(m)
+        m = OscMessage(path, args, types=types, sender=sender)
+        logging.debug('Received %s' % m)
+        self.machine.osc_processor.enqueue(m, self.processor)
 
     def close(self):
         self.running = False

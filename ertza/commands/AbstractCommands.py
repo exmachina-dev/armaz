@@ -7,9 +7,11 @@ class AbstractCommand(object):
         self.machine = machine
         self.eventReady = None
 
-        self.alias = None
-
     def execute(self, command):
+        raise NotImplementedError
+
+    @property
+    def alias(self):
         raise NotImplementedError
 
     @property
