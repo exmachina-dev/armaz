@@ -72,7 +72,9 @@ class Processor(object):
                 if self.commands[alias].synced:
                     self.commands[alias].readyEvent.wait()
             except Exception as e:
+                import traceback
                 logging.error("Error while executing %s: %s", alias, e)
+                traceback.print_exc(e)
             return command
 
     def enqueue(self, message, processor):
