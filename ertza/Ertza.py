@@ -307,7 +307,7 @@ def profile():
 
 if __name__ == '__main__':
     _DEFAULT_CONF = '../conf/default.conf'
-    _MACHINE_CONF = '../conf/machine.conf'
+    _MACHINE_CONF = '../conf/fake.conf'
     if len(sys.argv) > 1 and sys.argv[1] == "profile":
         profile()
     else:
