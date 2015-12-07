@@ -1,23 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from importlib import import_module
+
 
 class Driver(object):
-    _drivers = None
-
-    def __new__(cls):
-        Driver._drivers = Driver._get_drivers()
-        return super().__new__(cls)
-
     def get_driver(self, driver):
-        return Driver._drivers[driver]
-
-    @classmethod
-    def _get_drivers(cls):
-        drv = {}
-        from drivers.Modbus import ModbusDriver
-        from drivers.Osc import OscDriver
-
-        drv['Modbus'] = ModbusDriver
-        drv['Osc'] = OscDriver
-
-        return drv
+        pkg = import_module("drivers.%s" % driver)
+        return getattr(pkg, "%sDriver" % driver)
