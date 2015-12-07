@@ -282,6 +282,9 @@ class Ertza(object):
                 logging.debug("Found led %s, trigger: %s" % (led_n, led_t))
                 led_i += 1
 
+    def _execute(self, c, p):
+        p.execute(c)
+
 
 def main():
     e = Ertza()
