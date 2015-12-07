@@ -14,6 +14,9 @@ class Machine(object):
         self.driver = None
 
         self.comms = {}
+        self.commands = None
+        self.synced_commands = None
+        self.unbuffered_commands = None
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
