@@ -10,6 +10,7 @@ import sys
 import signal
 from threading import Thread
 from multiprocessing import JoinableQueue
+import queue
 
 from ConfigParser import ConfigParser
 from Machine import Machine
@@ -122,11 +123,47 @@ class Ertza(object):
         logging.info("Ertza ready")
         self.machine.leds[3].set_blink(50)
 
-    def loop(self, queue, name):
-        pass
+    def loop(self, machine_queue, name):
+        """ When a new command comes in, execute it """
+        p = self.machine.osc_processor  # Right now, only osc is implemented
 
-    def eventloop(self, queue, name):
-        pass
+        try:
+            while self.running:
+                try:
+                    command = machine_queue.get(block=True, timeout=1)
+                except queue.Empty:
+                    continue
+
+                logging.debug("Executing %s from %s" % (command.target, name))
+
+                self._execute(command, p)
+
+                self.machine.reply(command)
+
+                machine_queue.task_done()
+        except Exception as e:
+            logging.exception("Exception in %s loop: %s" % (name, e))
+
+    def eventloop(self, machine_queue, name):
+        """ When a new event comes in, execute the pending gcode """
+        p = self.machine.osc_processor  # Right now, only osc is implemented
+
+        try:
+
+            while self.running:
+                # Returns False on timeout, else True
+                if self.machine.wait_until_sync_event():
+                    try:
+                        command = machine_queue.get(block=True, timeout=1)
+                    except queue.Empty:
+                        continue
+
+                    self._synchronize(command, p)
+                    logging.info("Event handled for %s from %s %s" % (
+                        command.code(), name, command.message))
+                    machine_queue.task_done()
+        except Exception:
+            logging.exception("Exception in {} eventloop: ".format(name))
 
     def exit(self):
         self.machine.exit()
