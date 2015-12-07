@@ -44,3 +44,32 @@ class OscServer(lo.Server):
     def close(self):
         self.running = False
         self._t.join()
+
+
+if __name__ == '__main__':
+
+    import signal
+    from multiprocessing import JoinableQueue
+
+    from Machine import Machine
+    from ConfigParser import ConfigParser
+    from OscProcessor import OscProcessor
+
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(name)-12s \
+                        %(levelname)-8s %(message)s',
+                        datefmt='%Y/%m/%d %H:%M:%S')
+
+    m = Machine()
+    c = ConfigParser('../conf/default.conf')
+
+    m.config = c
+    m.commands = JoinableQueue(10)
+    m.unbuffered_commands = JoinableQueue(10)
+    m.synced_commands = JoinableQueue()
+
+    m.osc_processor = OscProcessor(m)
+    o = OscServer(m)
+    o.start()
+
+    signal.pause()
