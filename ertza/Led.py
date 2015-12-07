@@ -6,12 +6,14 @@ import os.path
 class Led(object):
     led_sys_path = '/sys/devices/platform/leds/leds'
 
-    def __init__(self, led_folder):
+    def __init__(self, led_folder, function=None):
         self.full_path = os.path.join(Led.led_sys_path, led_folder)
         self.trigger = os.path.join(self.full_path, 'trigger')
         self.delay_on = os.path.join(self.full_path, 'delay_on')
         self.delay_off = os.path.join(self.full_path, 'delay_off')
         self.brightness = os.path.join(self.full_path, 'brightness')
+
+        self._function = function
 
     def set_trigger(self, new_trigger):
         with open(self.trigger, mode='w') as f:
@@ -25,6 +27,10 @@ class Led(object):
         for delay_file in (self.delay_off, self.delay_on):
             with open(delay_file, mode='w') as f:
                 f.write(str(new_delay))
+
+    @property
+    def function(self):
+        return self._function
 
 if __name__ == '__main__':
     import time

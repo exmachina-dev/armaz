@@ -67,7 +67,9 @@ class Ertza(object):
         machine.config.load_variant()
 
         self._config_leds()
-        self.machine.leds[3].set_blink(500)
+        for l in self.machine.leds:
+            if l.function == 'status':
+                l.set_blink(500)
 
         # Get loglevel from config file
         level = self.machine.config.getint('system', 'loglevel')
@@ -121,7 +123,9 @@ class Ertza(object):
         self.machine.start()
 
         logging.info("Ertza ready")
-        self.machine.leds[3].set_blink(50)
+        for l in self.machine.leds:
+            if l.function == 'status':
+                l.set_blink(50)
 
     def loop(self, machine_queue, name):
         """ When a new command comes in, execute it """
@@ -178,22 +182,25 @@ class Ertza(object):
 
         # Get available thermistors
         self.machine.thermistors = []
-        th_p = 0
-        while self.machine.config.has_option("thermistors", "port_TH%d" % th_p):
-            adc_channel = self.machine.config.getint("thermistors",
-                                                     "port_TH%d" % th_p)
-            self.machine.thermistors.append(Thermistor(adc_channel,
-                                                       "TH%d" % th_p))
-            logging.debug(
-                "Found thermistor TH%d at ADC channel %d" % (th_p, adc_channel))
-            th_p += 1
+        if self.machine.config.getboolean('thermistors', 'got_thermistors'):
+            th_p = 0
+
+            while self.machine.config.has_option("thermistors",
+                                                 "port_TH%d" % th_p):
+                adc_channel = self.machine.config.getint("thermistors",
+                                                         "port_TH%d" % th_p)
+                self.machine.thermistors.append(Thermistor(adc_channel,
+                                                           "TH%d" % th_p))
+                logging.debug(
+                    "Found thermistor TH%d at ADC channel %d" % (th_p,
+                                                                 adc_channel))
+                th_p += 1
 
     def _config_fans(self):
 
-        self.machine.fans = None
+        self.machine.fans = []
 
         if self.machine.config.getboolean('fans', 'got_fans'):
-            self.machine.fans = []
             f_p = 0
             while self.machine.config.has_option("fans", "address_F%d" % f_p):
                 fan_channel = self.machine.config.getint("fans",
@@ -251,21 +258,24 @@ class Ertza(object):
 
         # Create leds
         self.machine.leds = []
-        led_i = 0
-        while self.machine.config.has_option("leds", "file_L%d" % led_i):
-            led_n = "L%d" % led_i
-            led_f = self.machine.config.get("leds", "file_%s" % led_n)
-            led = Led(led_f)
-            led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
-                                            fallback='none')
-            led.set_trigger(led_t)
-            if led_t == "timer":
-                led.set_blink(self.machine.config.get("leds",
-                                                      "blink_%s" % led_n,
-                                                      fallback='500'))
-            self.machine.leds.append(led)
-            logging.debug("Found led %s, trigger: %s" % (led_n, led_t))
-            led_i += 1
+        if self.machine.config.getboolean('leds', 'got_leds'):
+            led_i = 0
+            while self.machine.config.has_option("leds", "file_L%d" % led_i):
+                led_n = "L%d" % led_i
+                led_f = self.machine.config.get("leds", "file_%s" % led_n)
+                led_fn = self.machine.config.get("leds", "function_%s" % led_n,
+                                                 fallback=None)
+                led = Led(led_f, led_fn)
+                led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
+                                                fallback='none')
+                led.set_trigger(led_t)
+                if led_t == "timer":
+                    led.set_blink(self.machine.config.get("leds",
+                                                          "blink_%s" % led_n,
+                                                          fallback='500'))
+                self.machine.leds.append(led)
+                logging.debug("Found led %s, trigger: %s" % (led_n, led_t))
+                led_i += 1
 
 
 def main():
