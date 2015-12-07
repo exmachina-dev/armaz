@@ -17,10 +17,16 @@ class Machine(object):
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
+        logging.info("Loading %s driver" % drv)
         if drv is not None:
             try:
-                self.driver = Driver().get_driver(drv)(
-                    self.config['driver_' + drv])
+                driver_config = self.config['driver_' + drv]
+            except KeyError:
+                driver_config = {}
+                logging.error("Unable to get config for %s driver" % drv)
+
+            try:
+                self.driver = Driver().get_driver(drv)(driver_config)
             except KeyError:
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
