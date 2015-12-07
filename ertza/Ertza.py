@@ -105,20 +105,21 @@ class Ertza(object):
         self.running = True
 
         # Start the processes
-        thread0 = Thread(target=self.loop,
-                         args=(self.machine.commands, "command"))
-        thread1 = Thread(target=self.loop,
-                         args=(self.machine.unbuffered_commands, "unbuffered"))
-        thread2 = Thread(target=self.eventloop,
-                         args=(self.machine.sync_commands, "sync"))
+        commands_thread = Thread(target=self.loop,
+                                 args=(self.machine.commands, "command"))
+        unbuffered_commands_thread = Thread(target=self.loop,
+                                            args=(self.machine.unbuffered_commands,
+                                                  "unbuffered"))
+        synced_commands_thread = Thread(target=self.eventloop,
+                                        args=(self.machine.sync_commands, "sync"))
 
-        thread0.deamon = True
-        thread1.deamon = True
-        thread2.deamon = True
+        commands_thread.deamon = True
+        unbuffered_commands_thread.deamon = True
+        synced_commands_thread.deamon = True
 
-        thread0.start()
-        thread1.start()
-        thread2.start()
+        commands_thread.start()
+        unbuffered_commands_thread.start()
+        # synced_commands_thread.start()
 
         self.machine.start()
 
