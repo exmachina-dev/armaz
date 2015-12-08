@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from copy import copy
+
 
 class OscPath(str):
     def __init__(self, path):
@@ -13,6 +15,17 @@ class OscPath(str):
         return "%s" % '/'.join(self.levels)
 
 
+class OscAddress(object):
+    def __init__(self, address_object):
+        self.hostname = copy(address_object.hostname)
+        self.port = int(copy(address_object.port))
+
+        del(address_object)
+
+    def __repr__(self):
+        return "%s:%d" % (self.hostname, self.port)
+
+
 class OscMessage(object):
 
     def __init__(self, path, args, **kwargs):
@@ -23,9 +36,9 @@ class OscMessage(object):
             self.types = kwargs['types']
 
         if 'sender' in kwargs:
-            self.sender = kwargs['sender']
+            self.sender = OscAddress(kwargs['sender'])
         if 'receiver' in kwargs:
-            self.receiver = kwargs['receiver']
+            self.receiver = OscAddress(kwargs['receiver'])
 
         self.answer = None
         self.protocol = 'OSC'
