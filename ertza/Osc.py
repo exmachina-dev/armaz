@@ -50,6 +50,9 @@ class OscMessage(object):
         if 'receiver' in kwargs:
             self.receiver = OscAddress(kwargs['receiver'])
 
+        if 'msg_type' in kwargs:
+            self.msg_type = kwargs['msg_type']
+
         self.answer = None
         self.protocol = 'OSC'
 

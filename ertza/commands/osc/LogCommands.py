@@ -18,7 +18,7 @@ class OscLogHandler(logging.Handler):
 
     def emit(self, record):
         msg = OscMessage('/log/entry', self.format(record),
-                         receiver=self._target)
+                         receiver=self._target, msg_type='log')
         self.machine.send_message('OSC', msg)
 
 
@@ -29,6 +29,8 @@ class LogTo(OscCommand, UnbufferedCommand):
         msg = OscMessage('/log/info', 'Binding OSC log handler to %s' % log_trg,
                          receiver=c.sender)
         self.machine.osc_loghandler = OscLogHandler(self.machine, log_trg)
+        root_log = logging.getLogger()
+        root_log.addHandler(self.machine.osc_loghandler)
         self.machine.send_message(c.protocol, msg)
 
     @property
