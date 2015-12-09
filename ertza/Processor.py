@@ -36,8 +36,7 @@ class Processor(object):
 
     @property
     def available_commands(self):
-        for command in self.commands:
-            yield command
+        return sorted(self.commands.keys())
 
     def is_buffered(self, command):
         if isinstance(command, BufferedCommand):
