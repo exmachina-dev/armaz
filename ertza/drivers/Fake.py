@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from drivers.AbstractDriver import AbstractDriver
+from .AbstractDriver import AbstractDriver
 
 
 class FakeDriverError(Exception):
