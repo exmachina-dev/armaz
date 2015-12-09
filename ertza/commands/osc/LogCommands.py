@@ -12,7 +12,7 @@ class OscLogHandler(logging.Handler):
 
     def __init__(self, machine, target):
         self.machine = machine
-        self._target = OscAddress(target)
+        self._target = OscAddress(hostname=target)
 
         super().__init__()
 
@@ -28,7 +28,7 @@ class LogTo(OscCommand, UnbufferedCommand):
         log_trg = c.args[0]
         msg = OscMessage('/log/info', 'Binding OSC log handler to %s' % log_trg,
                          receiver=c.sender)
-        self.machine.osc_loghandler = OscLogHandler(log_trg)
+        self.machine.osc_loghandler = OscLogHandler(self.machine, log_trg)
         self.machine.send_message(c.protocol, msg)
 
     @property
