@@ -16,11 +16,21 @@ class OscPath(str):
 
 
 class OscAddress(object):
-    def __init__(self, address_object):
-        self.hostname = copy(address_object.hostname)
-        self.port = int(copy(address_object.port))
+    def __init__(self, address_object=None, **kwargs):
+        if address_object:
+            self.hostname = copy(address_object.hostname)
+            self.port = int(copy(address_object.port))
 
-        del(address_object)
+            del(address_object)
+        elif 'hostname' in kwargs:
+            self.hostname = kwargs['hostname']
+
+            if 'port' in kwargs:
+                self.port = kwargs['port']
+            else:
+                self.port = 6070
+        else:
+            raise AttributeError('Missing arguments for creation.')
 
     def __repr__(self):
         return "%s:%d" % (self.hostname, self.port)
