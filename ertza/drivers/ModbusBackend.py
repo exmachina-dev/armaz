@@ -29,6 +29,9 @@ class ModbusBackend(object):
     def connect(self):
         return self._end.connect()
 
+    def close(self):
+        self._end.close()
+
     def write_netdata(self, netdata, data, data_format='uintbe:16, uintbe:16'):
         self._check_netdata(netdata)
         start = netdata * self.register_nb_by_netdata

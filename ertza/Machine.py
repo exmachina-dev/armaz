@@ -45,7 +45,7 @@ class Machine(object):
 
     def exit(self):
 
-        del self.driver
+        self.driver.exit()
 
     def reply(self, command):
         if command.answer is not None:

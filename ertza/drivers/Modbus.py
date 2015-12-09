@@ -10,6 +10,7 @@ from drivers.Utils import retry
 class ModbusDriverError(Exception):
     pass
 
+
 class ModbusDriver(AbstractDriver):
 
     def __init__(self, config):
@@ -26,3 +27,6 @@ class ModbusDriver(AbstractDriver):
         if not self.back.connect():
             raise ModbusDriverError("Failed to connect %s:%i" % (self.target_address,
                                                                  self.target_port))
+
+    def exit(self):
+        self.back.close()
