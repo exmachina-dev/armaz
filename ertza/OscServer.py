@@ -13,7 +13,9 @@ class OscServer(lo.Server):
         self.machine = machine
         self.processor = self.machine.osc_processor
 
-        port = machine.config.getint('osc', 'port', fallback=6069)
+        port = machine.config.getint('osc', 'listen_port', fallback=6069)
+        self.reply_port = machine.config.getint('osc', 'reply_port',
+                                                fallback=6070)
 
         super().__init__(port, lo.UDP)
 
@@ -28,15 +30,16 @@ class OscServer(lo.Server):
         self._t.start()
 
     def send_message(self, message):
-        osc_msg = lo.Message(message.path, *message.args)
+        osc_msg = lo.Message(message.path, message.args)
+        message.receiver.port = self.reply_port
         if message.msg_type is not 'log':
             logging.debug("Sending to %s: %s" % (message.receiver, message))
-        self.send((message.receiver.hostname, 6970), osc_msg)
+        self.send((message.receiver.hostname, self.reply_port), osc_msg)
 
     @lo.make_method(None, None)
     def dispatch(self, path, args, types, sender):
         m = OscMessage(path, args, types=types, sender=sender)
-        logging.debug('Received %s' % m)
+        logging.debug('Received %s from %s' % (m, m.sender))
         self.machine.osc_processor.enqueue(m, self.processor)
 
     def close(self):

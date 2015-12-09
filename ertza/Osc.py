@@ -57,7 +57,7 @@ class OscMessage(object):
 
     @property
     def target(self):
-        return self.path.levels[0:-2]
+        return repr(self.path)
 
     @property
     def action(self):

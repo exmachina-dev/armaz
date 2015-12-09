@@ -98,7 +98,7 @@ class Ertza(object):
 
         self.machine.osc_processor = OscProcessor(self.machine)
 
-        machine.comms["OSC"] = OscServer(self.machine)
+        machine.comms['OSC'] = OscServer(self.machine)
 
     def start(self):
         """ Start the processes """
