@@ -11,11 +11,13 @@ running = True
 target = lo.Address(6069)
 
 
-def sender(client):
+def sender(client, target):
     global running
 
+    print('Sending to %s:%d' % (target.hostname, target.port))
+
     while running:
-        osc_c = input("OSC command:")
+        osc_c = input("OSC command: ")
         if not osc_c:
             running = False
             sys.exit()
@@ -30,7 +32,6 @@ def server():
     port = 6070
     print('OSC server listening at %d' % port)
     srv = lo.ServerThread(port)
-    srv.start()
     return srv
 
 
@@ -42,6 +43,11 @@ def callback(path, args, types, sender):
     print('Got %s %s' % (path, args))
 
 if __name__ == '__main__':
+    trg = input('Target [127.0.0.1]: ')
+    if trg:
+        target = lo.Address(trg, 6069)
+
     running = True
     s = server()
-    sender(s)
+    s.start()
+    sender(s, target)
