@@ -4,7 +4,7 @@ import logging
 import liblo as lo
 from threading import Thread
 
-from Osc import OscMessage
+from .Osc import OscMessage
 
 
 class OscServer(lo.Server):

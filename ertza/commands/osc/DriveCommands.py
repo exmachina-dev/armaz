@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from commands.AbstractCommands import UnbufferedCommand
-from commands.OscCommand import OscCommand
+from ertza.commands.AbstractCommands import UnbufferedCommand
+from ertza.commands.OscCommand import OscCommand
 
-from Osc import OscMessage
+from ertza.Osc import OscMessage
 
 
 class DriveStatus(OscCommand):

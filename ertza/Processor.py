@@ -8,8 +8,8 @@ import logging
 from threading import Event
 from queue import PriorityQueue
 
-from commands.AbstractCommands import BufferedCommand
-from commands.AbstractCommands import SyncedCommand
+from .commands.AbstractCommands import BufferedCommand
+from .commands.AbstractCommands import SyncedCommand
 
 
 class PrioritizedSyncQueue(PriorityQueue):
@@ -24,7 +24,7 @@ class Processor(object):
 
         self.commands = {}
 
-        module = importlib.import_module("%s" % base_module)
+        module = importlib.import_module("ertza.%s" % base_module)
 
         self.load_classes_in_module(module)
 

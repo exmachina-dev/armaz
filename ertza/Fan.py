@@ -22,7 +22,8 @@ License: GNU GPL v3: http://www.gnu.org/copyleft/gpl.html
 """
 
 import time
-from PWM import PWM
+
+from .PWM import PWM
 
 
 class Fan(PWM):

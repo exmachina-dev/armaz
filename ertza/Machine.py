@@ -3,7 +3,7 @@
 import sys
 import logging
 
-from drivers.Drivers import Driver
+from .drivers.Drivers import Driver
 
 
 class Machine(object):

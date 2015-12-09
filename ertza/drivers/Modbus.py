@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from drivers.AbstractDriver import AbstractDriver
+from ertza.drivers.AbstractDriver import AbstractDriver
 
-from drivers.ModbusBackend import ModbusBackend
+from ertza.drivers.ModbusBackend import ModbusBackend
 
-from drivers.Utils import retry
+from ertza.drivers.Utils import retry
 
 
 class ModbusDriverError(Exception):

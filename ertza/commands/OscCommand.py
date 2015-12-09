@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from commands.AbstractCommands import AbstractCommand
+from .AbstractCommands import AbstractCommand
 
 
 class OscCommand(AbstractCommand):

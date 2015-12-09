@@ -12,22 +12,22 @@ from threading import Thread
 from multiprocessing import JoinableQueue
 import queue
 
-from ConfigParser import ConfigParser
-from Machine import Machine
-from OscProcessor import OscProcessor
-from OscServer import OscServer
+from .ConfigParser import ConfigParser
+from .Machine import Machine
+from .OscProcessor import OscProcessor
+from .OscServer import OscServer
 
-from PWM import PWM
+from .PWM import PWM
 try:
-    from Thermistor import Thermistor
+    from .Thermistor import Thermistor
     NO_TH = False
 except ImportError:
     NO_TH = True
 
-from Fan import Fan
-from Switch import Switch
-from TempWatcher import TempWatcher
-from Led import Led
+from .Fan import Fan
+from .Switch import Switch
+from .TempWatcher import TempWatcher
+from .Led import Led
 
 version = "0.0.2~Firstimer"
 
