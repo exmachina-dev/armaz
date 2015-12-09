@@ -21,11 +21,12 @@ def sender(client, target):
         if not osc_c:
             running = False
             sys.exit()
-        osc_c = osc_c.split(' ')
+
         try:
-            client.send(target, osc_c[0], osc_c[1:])
+            path, args, = osc_c.split(' ')
+            client.send(target, path, args)
         except ValueError:
-            client.send(target, osc_c[0])
+            client.send(target, osc_c)
 
 
 def server():
