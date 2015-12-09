@@ -28,9 +28,7 @@ class ConfigParser(configparser.ConfigParser):
                 logging.info("Found " + cfg)
                 self.read_file(open(cfg))
             else:
-                logging.warn("Config file " + cfg + " not found")
-
-        self.load_variant(self.get('machine', 'variant', fallback=None))
+                logging.warn("Config file %s not found" % cfg)
 
     def load_variant(self, variant=None):
         """
@@ -40,7 +38,7 @@ class ConfigParser(configparser.ConfigParser):
         """
 
         if self.variant_loaded:
-            logging.warn("Variant already loaded: + " + self.variant)
+            logging.warn("Variant already loaded: %s" % self.variant)
             return False
         if not variant:
             variant = self.get('machine', 'variant', fallback=False)
@@ -50,6 +48,7 @@ class ConfigParser(configparser.ConfigParser):
 
         variant_cfg = os.path.join(_VARIANT_PATH, variant + ".conf")
         if os.path.isfile(variant_cfg):
+            logging.info("Loading variant config file: %s" % variant)
             variant_cfg = os.path.realpath(variant_cfg)
             self.config_files.append(variant_cfg)
             self.read_file(open(variant_cfg))
