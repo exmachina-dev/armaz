@@ -53,8 +53,7 @@ class OscMessage(object):
 
     @property
     def args(self):
-        for a in self._args:
-            yield a
+        return self._args
 
     def __repr__(self):
         return '%s: %s %s' % (self.__class__.__name__, self.path,
