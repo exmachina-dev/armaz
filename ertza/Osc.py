@@ -57,11 +57,11 @@ class OscMessage(object):
 
     @property
     def target(self):
-        return self.path.split('/')[0:-2]
+        return self.path.levels[0:-2]
 
     @property
     def action(self):
-        return self.path.split('/')[-1]
+        return self.path.levels[-1]
 
     @property
     def args(self):
