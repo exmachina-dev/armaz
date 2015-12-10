@@ -29,7 +29,8 @@ class LogTo(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
         log_trg = c.args[0]
-        msg = OscMessage('/log/info', 'Binding OSC log handler to %s' % log_trg,
+        msg = OscMessage('/log/info',
+                         ('Binding OSC log handler to %s' % log_trg,),
                          receiver=c.sender)
         self.machine.osc_loghandler = OscLogHandler(self.machine, log_trg)
         root_log = logging.getLogger()
