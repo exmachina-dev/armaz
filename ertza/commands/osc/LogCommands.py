@@ -17,9 +17,12 @@ class OscLogHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record):
-        msg = OscMessage('/log/entry', self.format(record),
-                         receiver=self._target, msg_type='log')
-        self.machine.send_message('OSC', msg)
+        try:
+            msg = OscMessage('/log/entry', (self.format(record),),
+                             receiver=self._target, msg_type='log')
+            self.machine.send_message('OSC', msg)
+        except Exception:   # This a log handler, we forgive everything
+            pass
 
 
 class LogTo(OscCommand, UnbufferedCommand):
