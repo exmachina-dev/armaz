@@ -28,7 +28,7 @@ class ModbusDriver(AbstractDriver):
     netdata = namedtuple('netdata', ['addr', 'fmt'])
     parameter = namedtuple('parameter', ['netdata', 'start',
                                          'vtype', 'mode'])
-    mfNdMap = {
+    MFNdata = {
         'status':               netdata(0,
                                         'bool,bool,bool,bool,bool,bool'),
         'command':              netdata(1,
@@ -58,45 +58,45 @@ class ModbusDriver(AbstractDriver):
         'dropped_frames':       netdata(31, 'uint:32'),
     }
 
-    microFlexMap = {
-        'drive_ready':      parameter(mfNdMap['status'], 0, bool, 'r'),
-        'drive_enable':     parameter(mfNdMap['status'], 1, bool, 'r'),
-        'drive_input':      parameter(mfNdMap['status'], 2, bool, 'r'),
-        'motor_brake':      parameter(mfNdMap['status'], 3, bool, 'r'),
-        'motor_temp':       parameter(mfNdMap['status'], 4, bool, 'r'),
-        'timeout':          parameter(mfNdMap['status'], 5, bool, 'r'),
+    MFE100Map = {
+        'drive_ready':      parameter(MFNdata['status'], 0, bool, 'r'),
+        'drive_enable':     parameter(MFNdata['status'], 1, bool, 'r'),
+        'drive_input':      parameter(MFNdata['status'], 2, bool, 'r'),
+        'motor_brake':      parameter(MFNdata['status'], 3, bool, 'r'),
+        'motor_temp':       parameter(MFNdata['status'], 4, bool, 'r'),
+        'timeout':          parameter(MFNdata['status'], 5, bool, 'r'),
 
-        'enable_command':   parameter(mfNdMap['command'], 0, bool, 'w'),
-        'cancel_command':   parameter(mfNdMap['command'], 1, bool, 'w'),
-        'clear_errors':     parameter(mfNdMap['command'], 2, bool, 'w'),
-        'reset_command':    parameter(mfNdMap['command'], 3, bool, 'w'),
-        'control_mode':     parameter(mfNdMap['command'], 4, int, 'w'),
-        'move_mode':        parameter(mfNdMap['command'], 5, int, 'w'),
-        'go_command':       parameter(mfNdMap['command'], 6, bool, 'w'),
+        'enable_command':   parameter(MFNdata['command'], 0, bool, 'w'),
+        'cancel_command':   parameter(MFNdata['command'], 1, bool, 'w'),
+        'clear_errors':     parameter(MFNdata['command'], 2, bool, 'w'),
+        'reset_command':    parameter(MFNdata['command'], 3, bool, 'w'),
+        'control_mode':     parameter(MFNdata['command'], 4, int, 'w'),
+        'move_mode':        parameter(MFNdata['command'], 5, int, 'w'),
+        'go_command':       parameter(MFNdata['command'], 6, bool, 'w'),
 
-        'error_code':       parameter(mfNdMap['error_code'], 0, int, 'r'),
-        'jog':              parameter(mfNdMap['jog'], 0, float, 'rw'),
-        'torque_ref':       parameter(mfNdMap['torque_ref'], 0, float, 'rw'),
-        'velocity_ref':     parameter(mfNdMap['velocity_ref'], 0, float, 'rw'),
-        'position_ref':     parameter(mfNdMap['velocity_ref'], 0, float, 'w'),
-        'torque_rise_time': parameter(mfNdMap['torque_rise_time'], 0, float, 'rw'),
-        'torque_fall_time': parameter(mfNdMap['torque_fall_time'], 0, float, 'rw'),
-        'acceleration':     parameter(mfNdMap['acceleration'], 0, float, 'rw'),
-        'deceleration':     parameter(mfNdMap['deceleration'], 0, float, 'rw'),
+        'error_code':       parameter(MFNdata['error_code'], 0, int, 'r'),
+        'jog':              parameter(MFNdata['jog'], 0, float, 'rw'),
+        'torque_ref':       parameter(MFNdata['torque_ref'], 0, float, 'rw'),
+        'velocity_ref':     parameter(MFNdata['velocity_ref'], 0, float, 'rw'),
+        'position_ref':     parameter(MFNdata['velocity_ref'], 0, float, 'w'),
+        'torque_rise_time': parameter(MFNdata['torque_rise_time'], 0, float, 'rw'),
+        'torque_fall_time': parameter(MFNdata['torque_fall_time'], 0, float, 'rw'),
+        'acceleration':     parameter(MFNdata['acceleration'], 0, float, 'rw'),
+        'deceleration':     parameter(MFNdata['deceleration'], 0, float, 'rw'),
 
-        'velocity':         parameter(mfNdMap['velocity'], 0, float, 'r'),
-        'position':         parameter(mfNdMap['position'], 0, float, 'r'),
-        'position_target':  parameter(mfNdMap['position_target'], 0, float, 'r'),
+        'velocity':         parameter(MFNdata['velocity'], 0, float, 'r'),
+        'position':         parameter(MFNdata['position'], 0, float, 'r'),
+        'position_target':  parameter(MFNdata['position_target'], 0, float, 'r'),
         'position_remaining':
-        parameter(mfNdMap['position_remaining'], 0, float, 'r'),
-        'encoder_ticks':    parameter(mfNdMap['encoder_ticks'], 0, float, 'r'),
-        'encoder_velocity': parameter(mfNdMap['encoder_velocity'], 0, float, 'r'),
-        'velocity_error':   parameter(mfNdMap['velocity_error'], 0, float, 'r'),
-        'follow_error':     parameter(mfNdMap['follow_error'], 0, float, 'r'),
-        'effort':           parameter(mfNdMap['effort'], 0, float, 'r'),
+        parameter(MFNdata['position_remaining'], 0, float, 'r'),
+        'encoder_ticks':    parameter(MFNdata['encoder_ticks'], 0, float, 'r'),
+        'encoder_velocity': parameter(MFNdata['encoder_velocity'], 0, float, 'r'),
+        'velocity_error':   parameter(MFNdata['velocity_error'], 0, float, 'r'),
+        'follow_error':     parameter(MFNdata['follow_error'], 0, float, 'r'),
+        'effort':           parameter(MFNdata['effort'], 0, float, 'r'),
 
-        'drive_temp':       parameter(mfNdMap['drive_temp'], 0, int, 'r'),
-        'dropped_frames':   parameter(mfNdMap['dropped_frames'], 0, int, 'r'),
+        'drive_temp':       parameter(MFNdata['drive_temp'], 0, int, 'r'),
+        'dropped_frames':   parameter(MFNdata['dropped_frames'], 0, int, 'r'),
     }
 
     def __init__(self, config):
