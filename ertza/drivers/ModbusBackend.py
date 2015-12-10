@@ -40,11 +40,12 @@ class ModbusBackend(object):
 
         return self.wmr(start, data)
 
-    def read_netdata(self, netdata, format):
+    def read_netdata(self, netdata, fmt):
         self._check_netdata(netdata)
         start = netdata * self.register_nb_by_netdata
 
-        return self.rhr(start)
+        res, = bitstring.Bitstring(self.rhr(start)).unpack(fmt)
+        return res
 
     @staticmethod
     def to_int(bits, **kwargs):
