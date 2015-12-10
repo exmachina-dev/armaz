@@ -15,3 +15,6 @@ class FakeDriver(AbstractDriver):
     def connect(self):
         if not self.connected:
             self.connected = True
+
+    def exit(self):
+        pass
