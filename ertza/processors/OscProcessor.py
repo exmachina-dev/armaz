@@ -4,7 +4,7 @@ import logging
 
 from .Processor import Processor
 
-from .commands.OscCommand import OscCommand
+from ..commands.OscCommand import OscCommand
 
 
 class OscProcessor(Processor):

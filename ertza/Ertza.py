@@ -14,8 +14,8 @@ import queue
 
 from .ConfigParser import ConfigParser
 from .Machine import Machine
-from .OscProcessor import OscProcessor
-from .OscServer import OscServer
+from processors.OscProcessor import OscProcessor
+from procossors.osc.OscServer import OscServer
 
 from .PWM import PWM
 try:

@@ -52,9 +52,9 @@ if __name__ == '__main__':
     import signal
     from multiprocessing import JoinableQueue
 
-    from Machine import Machine
-    from ConfigParser import ConfigParser
-    from OscProcessor import OscProcessor
+    from ...Machine import Machine
+    from ...ConfigParser import ConfigParser
+    from ..OscProcessor import OscProcessor
 
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s \
