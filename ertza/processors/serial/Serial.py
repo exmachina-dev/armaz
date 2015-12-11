@@ -14,21 +14,31 @@ class SerialCommandString(object):
             self._b = BitString(cmd_bytes, self.CmdFormat)
             self._c = self.CmdStruct(self._b.unpack())
         else:
-            self._c = self.CmdStruct()
-            self._c._replace(serial_number='0000')
-            self._c._replace(end=self.CmdEnd)
+            self._c = self.CmdStruct('', '', '', '')
+            self['serial_number'] = '0000'
+            self['end'] = self.CmdEnd
             if 'protocol' in kwargs:
-                self._c.protocol = kwargs['protocol']
+                self['protocol'] = kwargs['protocol']
+            else:
+                self['protocol'] = b'ExmEisla'
 
     @property
     def tobytes(self):
         return BitString(self._c, self.CmdFormat).tobytes()
 
+    @property
+    def command(self):
+        return self['data'].split(':')[0]
+
+    @property
+    def args(self):
+        return tuple(self['data'].split(':')[1:])
+
     def __getitem__(self, key):
-        return self._c[key]
+        return getattr(self._c, key)
 
     def __setitem__(self, key, value):
-        self._c._replace(**{key: value})
+        self._c = self._c._replace(**{key: value})
 
     def __repr__(self):
         return "%s %s %s" % (self['protocol'], self['serial_number'], self['data'])
@@ -50,8 +60,10 @@ class SerialTarget(object):
 
 class SerialMessage(object):
 
-    def __init__(self, cmd_str, args, **kwargs):
-        self.cmd_str, self._args = SerialCommandString(cmd_str), args
+    def __init__(self, **kwargs):
+        self.cmd_bytes = SerialCommandString(kwargs['cmd_bytes']) \
+            if 'cmd_bytes' in kwargs else SerialCommandString()
+
         self.sender, self.receiver = None, None
 
         self.sender = SerialTarget(kwargs['sender']) if 'sender' in kwargs \
@@ -65,20 +77,15 @@ class SerialMessage(object):
         self.protocol = 'Serial'
 
     @property
-    def target(self):
-        return repr(self.cmd_str)
-
-    @property
-    def action(self):
-        pass
+    def command(self):
+        return self.cmd_bytes.command
 
     @property
     def args(self):
-        return self._args
+        return self.cmd_bytes.args
 
     def tobytes(self):
         return self.cmd_str.tobytes
 
     def __repr__(self):
-        return '%s: %s %s' % (self.__class__.__name__, self.path,
-                              ' '.join(iter(self.args)))
+        return '%s: %s' % (self.__class__.__name__, self.cmd_bytes)
