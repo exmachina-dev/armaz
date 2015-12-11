@@ -3,7 +3,7 @@
 from ertza.commands.AbstractCommands import UnbufferedCommand
 from ertza.commands.OscCommand import OscCommand
 
-from ertza.Osc import OscMessage
+from ertza.processor.Osc import OscMessage
 
 
 class ListCommands(OscCommand, UnbufferedCommand):
