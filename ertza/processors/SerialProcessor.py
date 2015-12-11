@@ -10,7 +10,7 @@ from ..commands.SerialCommand import SerialCommand
 class SerialProcessor(Processor):
 
     def __init__(self, machine):
-        super().__init__("ertza.commands.serial", SerialCommand, machine)
+        super().__init__("commands.serial", SerialCommand, machine)
 
         serial_cmds = ' '.join(self.available_commands)
         logging.info("Serial commands loaded: %s" % serial_cmds)
