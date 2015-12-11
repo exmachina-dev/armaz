@@ -15,11 +15,11 @@ import queue
 from .ConfigParser import ConfigParser
 from .Machine import Machine
 
-from processors.OscProcessor import OscProcessor
-from processors.SerialProcessor import SerialProcessor
+from .processors.OscProcessor import OscProcessor
+from .processors.SerialProcessor import SerialProcessor
 
-from processors.osc.OscServer import OscServer
-from processors.serial.SerialServer import SerialServer
+from .processors.osc.OscServer import OscServer
+from .processors.serial.SerialServer import SerialServer
 
 from .PWM import PWM
 try:
