@@ -3,7 +3,7 @@
 from .AbstractCommands import AbstractCommand
 
 
-class OscCommand(AbstractCommand):
+class SerialCommand(AbstractCommand):
 
     def execute(self, message):
         target, action, args = message.target, message.action, message.args
