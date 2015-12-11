@@ -3,7 +3,7 @@
 from ertza.commands.AbstractCommands import BufferedCommand
 from ertza.commands.OscCommand import OscCommand
 
-from ertza.processor.Osc import OscMessage
+from ertza.processors.osc.Osc import OscMessage
 
 
 class DriveStatus(OscCommand, BufferedCommand):

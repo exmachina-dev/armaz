@@ -5,7 +5,7 @@ import logging
 from ertza.commands.AbstractCommands import BufferedCommand
 from ertza.commands.SerialCommand import SerialCommand
 
-from ertza.processors.Serial import SerialMessage
+from ertza.processors.serial.Serial import SerialMessage
 
 
 class Identify(SerialCommand, BufferedCommand):
