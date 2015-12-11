@@ -14,8 +14,12 @@ import queue
 
 from .ConfigParser import ConfigParser
 from .Machine import Machine
+
 from processors.OscProcessor import OscProcessor
-from procossors.osc.OscServer import OscServer
+from processors.SerialProcessor import SerialProcessor
+
+from processors.osc.OscServer import OscServer
+from processors.serial.SerialServer import SerialServer
 
 from .PWM import PWM
 try:
@@ -97,8 +101,10 @@ class Ertza(object):
         self.machine.sync_commands = JoinableQueue()
 
         self.machine.osc_processor = OscProcessor(self.machine)
+        self.machine.serial_processor = SerialProcessor(self.machine)
 
         machine.comms['OSC'] = OscServer(self.machine)
+        machine.comms['Serial'] = SerialServer(self.machine)
 
     def start(self):
         """ Start the processes """
