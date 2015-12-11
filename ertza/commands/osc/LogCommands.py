@@ -5,7 +5,7 @@ import logging
 from ertza.commands.AbstractCommands import UnbufferedCommand
 from ertza.commands.OscCommand import OscCommand
 
-from ertza.processors.Osc import OscMessage, OscAddress
+from ertza.processors.osc.Osc import OscMessage, OscAddress
 
 
 class OscLogHandler(logging.Handler):
