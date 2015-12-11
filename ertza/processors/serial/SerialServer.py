@@ -30,7 +30,7 @@ class SerialServer(sr.Serial):
         try:
             while self.running:
                 # read all that is there or wait for one byte
-                data = self.read(self.in_waiting or 1)
+                data = self.read(self.inWaiting() or 1)
                 if data:
                     self.data_buffer += (data)
                     self.find_serial_packets()
