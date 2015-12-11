@@ -15,7 +15,7 @@ class SerialCommandString(object):
             self._c = self.CmdStruct(self._b.unpack())
         else:
             self._c = self.CmdStruct('', '', '', '')
-            self['serial_number'] = '0000'
+            self['serial_number'] = '000000000000'
             self['end'] = self.CmdEnd
             if 'protocol' in kwargs:
                 self['protocol'] = kwargs['protocol']
