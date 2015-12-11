@@ -43,6 +43,10 @@ class SerialServer(sr.Serial):
         self._t = Thread(target=self.run)
         self._t.start()
 
+        m = SerialMessage()
+        m.cmd_bytes['data'] = 'alive'
+        self.send_message(m)
+
     def send_message(self, message):
         if message.msg_type is not 'log':
             logging.debug("Sending to %s: %s" % (message.receiver, message))
