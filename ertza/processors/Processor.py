@@ -8,8 +8,8 @@ import logging
 from threading import Event
 from queue import PriorityQueue
 
-from .commands.AbstractCommands import BufferedCommand
-from .commands.AbstractCommands import SyncedCommand
+from ..commands.AbstractCommands import BufferedCommand
+from ..commands.AbstractCommands import SyncedCommand
 
 
 class PrioritizedSyncQueue(PriorityQueue):
