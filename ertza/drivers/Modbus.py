@@ -108,7 +108,7 @@ class ModbusDriver(AbstractDriver):
         self.back = ModbusBackend(self.target_address, self.target_port,
                                   self.target_nodeid)
 
-        self.netdata_map = ModbusDriver.microFlexMap
+        self.netdata_map = ModbusDriver.MFE100Map
 
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
