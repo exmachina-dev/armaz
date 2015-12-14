@@ -72,7 +72,8 @@ class Ertza(object):
         machine.config.load_variant()
 
         machine.cape_infos = machine.config.find_cape('ARMAZCAPE')
-        SerialCommandString.SerialNumber = machine.cape_infos['serialnumber']
+        if machine.cape_infos:
+            SerialCommandString.SerialNumber = machine.cape_infos['serialnumber']
 
         self._config_leds()
         for l in self.machine.leds:
