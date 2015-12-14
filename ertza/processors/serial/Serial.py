@@ -10,18 +10,21 @@ class SerialCommandString(object):
     CmdEnd = b'\r\n'
     CmdSep = b':'
 
+    IntLength = 32
+    FloatLength = 32
+
+    SerialNumber = '000000000000'
+
     def __init__(self, cmd_bytes=None, **kwargs):
         if cmd_bytes:
             self._b = bs.pack(self.CmdFormat, cmd_bytes)
             self._c = self.CmdStruct(self._b.unpack())
         else:
             self._c = self.CmdStruct(b'', b'', b'', b'')
-            self['serial_number'] = '000000000000'.encode()
+            self['serial_number'] = self.SerialNumber.encode()
             self['end'] = self.CmdEnd
-            if 'protocol' in kwargs:
-                self['protocol'] = kwargs['protocol']
-            else:
-                self['protocol'] = b'ExmEisla'
+            self['protocol'] = kwargs['protocol'] if 'protocol' in kwargs \
+                else b'ExmEisla'
 
     @property
     def tobytes(self):
