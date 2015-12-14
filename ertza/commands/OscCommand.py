@@ -10,12 +10,12 @@ class OscCommand(AbstractCommand):
     def alias(self):
         return '/'
 
-    def send(self, target, path, args, **kwargs):
-        m = OscMessage(path, args, receiver=target, **kwargs)
+    def send(self, target, path, *args, **kwargs):
+        m = OscMessage(path, *args, receiver=target, **kwargs)
         self.machine.send_message(m)
 
     def ok(self, command, *args, **kwargs):
-        self.send(command.sender, self.alias + '/ok', args, **kwargs)
+        self.send(command.sender, self.alias + '/ok', *args, **kwargs)
 
     def error(self, command, *args, **kwargs):
-        self.send(command.sender, self.alias + '/error', args, **kwargs)
+        self.send(command.sender, self.alias + '/error', *args, **kwargs)
