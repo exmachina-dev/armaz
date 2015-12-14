@@ -51,5 +51,5 @@ class Machine(object):
         if command.answer is not None:
             self.send_message(command.protocol, command.answer)
 
-    def send_message(self, protocol, msg):
-        self.comms[protocol].send_message(msg)
+    def send_message(self, msg):
+        self.comms[msg.protocol].send_message(msg)

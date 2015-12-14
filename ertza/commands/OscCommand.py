@@ -9,5 +9,9 @@ class OscCommand(AbstractCommand):
     def alias(self):
         return '/'
 
-    def execute(self, message):
-        target, action, args = message.target, message.action, message.args
+    def send(self, target, path, args, **kwargs):
+        m = OscMessage(path, args, receiver=target, **kwargs)
+        self.machine.send_message(m)
+
+    def ok(self, command, *args, **kwargs):
+        self.send(command.sender, self.alias + '/ok', args, **kwargs)
