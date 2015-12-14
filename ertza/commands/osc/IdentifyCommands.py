@@ -3,17 +3,16 @@
 import logging
 
 from ertza.commands.AbstractCommands import BufferedCommand
-from ertza.commands.SerialCommand import SerialCommand
+from ertza.commands.OscCommand import OscCommand
 
 
-class Identify(SerialCommand, BufferedCommand):
+class Identify(OscCommand, BufferedCommand):
 
     def execute(self, c):
         infos = self.c.args + (self.c.data['serial_number'],)
         logging.info('Found %s %s with S/N %s' % infos)
-        data = ('identify',) + self.machine.infos
-        self.send(*data)
+        self.ok(self.machine.infos)
 
     @property
     def alias(self):
-        return 'identify'
+        return '/identify'

@@ -54,3 +54,11 @@ class Machine(object):
 
     def send_message(self, msg):
         self.comms[msg.protocol].send_message(msg)
+
+    @property
+    def infos(self):
+        rev = self.cape_infos['revision'] if self.machine.cape_infos \
+            else '0000'
+        var = self.config.vaiant.split('.')
+
+        return ('identify', var[0].upper(), var[1].upper(), rev)
