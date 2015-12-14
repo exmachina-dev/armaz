@@ -64,32 +64,3 @@ class SerialServer(sr.Serial):
             m = SerialMessage(packet)
             self.machine.serial_processor.enqueue(m, self.processor)
             self.find_serial_packets()
-
-
-if __name__ == '__main__':
-
-    import signal
-    from multiprocessing import JoinableQueue
-
-    from ...Machine import Machine
-    from ...ConfigParser import ConfigParser
-    from ..SerialProcessor import SerialProcessor
-
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s \
-                        %(levelname)-8s %(message)s',
-                        datefmt='%Y/%m/%d %H:%M:%S')
-
-    m = Machine()
-    c = ConfigParser('../conf/default.conf')
-
-    m.config = c
-    m.commands = JoinableQueue(10)
-    m.unbuffered_commands = JoinableQueue(10)
-    m.synced_commands = JoinableQueue()
-
-    m.serial_processor = SerialProcessor(m)
-    s = SerialServer(m)
-    s.start()
-
-    signal.pause()
