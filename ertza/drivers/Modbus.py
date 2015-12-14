@@ -59,20 +59,24 @@ class ModbusDriver(AbstractDriver):
     }
 
     MFE100Map = {
-        'drive_ready':      parameter(MFNdata['status'], 0, bool, 'r'),
-        'drive_enable':     parameter(MFNdata['status'], 1, bool, 'r'),
-        'drive_input':      parameter(MFNdata['status'], 2, bool, 'r'),
-        'motor_brake':      parameter(MFNdata['status'], 3, bool, 'r'),
-        'motor_temp':       parameter(MFNdata['status'], 4, bool, 'r'),
-        'timeout':          parameter(MFNdata['status'], 5, bool, 'r'),
+        'status': {
+            'drive_ready':      parameter(MFNdata['status'], 0, bool, 'r'),
+            'drive_enable':     parameter(MFNdata['status'], 1, bool, 'r'),
+            'drive_input':      parameter(MFNdata['status'], 2, bool, 'r'),
+            'motor_brake':      parameter(MFNdata['status'], 3, bool, 'r'),
+            'motor_temp':       parameter(MFNdata['status'], 4, bool, 'r'),
+            'timeout':          parameter(MFNdata['status'], 5, bool, 'r'),
+        },
 
-        'enable_command':   parameter(MFNdata['command'], 0, bool, 'w'),
-        'cancel_command':   parameter(MFNdata['command'], 1, bool, 'w'),
-        'clear_errors':     parameter(MFNdata['command'], 2, bool, 'w'),
-        'reset_command':    parameter(MFNdata['command'], 3, bool, 'w'),
-        'control_mode':     parameter(MFNdata['command'], 4, int, 'w'),
-        'move_mode':        parameter(MFNdata['command'], 5, int, 'w'),
-        'go_command':       parameter(MFNdata['command'], 6, bool, 'w'),
+        'command': {
+            'enable':           parameter(MFNdata['command'], 0, bool, 'w'),
+            'cancel':           parameter(MFNdata['command'], 1, bool, 'w'),
+            'clear_errors':     parameter(MFNdata['command'], 2, bool, 'w'),
+            'reset':            parameter(MFNdata['command'], 3, bool, 'w'),
+            'control_mode':     parameter(MFNdata['command'], 4, int, 'w'),
+            'move_mode':        parameter(MFNdata['command'], 5, int, 'w'),
+            'go':               parameter(MFNdata['command'], 6, bool, 'w'),
+        },
 
         'error_code':       parameter(MFNdata['error_code'], 0, int, 'r'),
         'jog':              parameter(MFNdata['jog'], 0, float, 'rw'),
@@ -123,6 +127,10 @@ class ModbusDriver(AbstractDriver):
     def __getitem__(self, key):
         if key not in self.netdata_map:
             raise KeyError
+
+        if type(self.netdata_map[key]) == dict:
+            for k in self.netdata_map[key].keys():
+                yield (k, self[key][k])
 
         if 'r' not in self.netdata_map[key].mode:
             raise ReadOnlyError(key)
