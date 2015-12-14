@@ -65,7 +65,7 @@ class ConfigParser(configparser.ConfigParser):
 
     def get_cape_infos(self):
         capes = list()
-        for addr in ('4', '5', '6', '7'):
+        for addr in range(4, 7):
             path = '/sys/bus/i2c/devices/2-005%d/eeprom' % addr
             if os.path.isfile(path):
                 capes.append(self.get_eeprom_infos(path))
