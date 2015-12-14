@@ -30,7 +30,7 @@ class OscServer(lo.Server):
         self._t.start()
 
     def send_message(self, message):
-        osc_msg = lo.Message(message.path, message.args)
+        osc_msg = lo.Message(message.path, *message.args)
         message.receiver.port = self.reply_port
         if message.msg_type is not 'log':
             logging.debug("Sending to %s: %s" % (message.receiver, message))
@@ -38,7 +38,7 @@ class OscServer(lo.Server):
 
     @lo.make_method(None, None)
     def dispatch(self, path, args, types, sender):
-        m = OscMessage(path, args, types=types, sender=sender)
+        m = OscMessage(path, *args, types=types, sender=sender)
         logging.debug('Received %s from %s' % (m, m.sender))
         self.machine.osc_processor.enqueue(m, self.processor)
 

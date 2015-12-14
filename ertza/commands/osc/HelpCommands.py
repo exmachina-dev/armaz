@@ -12,8 +12,7 @@ class ListCommands(OscCommand, UnbufferedCommand):
         cmds = self.machine.osc_processor.available_commands
         reply_path = '/help/implemented_osc_commands'
         for cmd in cmds:
-            msg = OscMessage(reply_path, (cmd,), receiver=c.sender)
-            self.machine.send_message(c.protocol, msg)
+            self.send(c.sender, reply_path, cmd)
 
     @property
     def alias(self):

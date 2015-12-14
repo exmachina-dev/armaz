@@ -38,7 +38,7 @@ class OscAddress(object):
 
 class OscMessage(object):
 
-    def __init__(self, path, args, **kwargs):
+    def __init__(self, path, *args, **kwargs):
         self.path, self._args = OscPath(path), args
         self.sender, self.receiver = None, None
 
@@ -65,8 +65,8 @@ class OscMessage(object):
 
     @property
     def args(self):
-        return self._args
+        return tuple(self._args)
 
     def __repr__(self):
         return '%s: %s %s' % (self.__class__.__name__, self.path,
-                              ' '.join(iter(self.args)))
+                              ' '.join(self.args))
