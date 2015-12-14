@@ -14,6 +14,8 @@ class SerialServer(sr.Serial):
         self.processor = self.machine.serial_processor
 
         dev = machine.config.get('serial', 'listen_device')
+        if dev == 'None':
+            dev = None
         baudrate = machine.config.getint('serial', 'baudrate', fallback=57600)
 
         super().__init__(port=dev, baudrate=baudrate)
