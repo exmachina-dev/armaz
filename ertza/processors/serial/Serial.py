@@ -38,22 +38,26 @@ class SerialCommandString(object):
     def args(self):
         return tuple(self['data'].decode().split(':')[1:])
 
+    def _pack(self, value):
+        if type(value) == str:
+            value = bs.Bits(value.encode())
+        elif type(value) == int:
+            value = bs.Bits(int=value, length=self.IntLength)
+        elif type(value) == float:
+            value = bs.Bits(float=value, length=self.FloatLength)
+
+        return value
+
     def __getitem__(self, key):
         return getattr(self._c, key)
 
     def __setitem__(self, key, value):
-        if type(value) == str:
-            value = value.encode()
+        value = self._pack(value)
 
         self._c = self._c._replace(**{key: value})
 
     def __add__(self, value):
-        if type(value) == str:
-            value = bs.Bits(value.encode())
-        elif type(value) == int:
-            value = bs.Bits(int=value, length=16)
-        elif type(value) == float:
-            value = bs.Bits(float=value, length=32)
+        value = self._pack(value)
 
         self['data'] += self.CmdSep + value
         return self
