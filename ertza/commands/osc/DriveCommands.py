@@ -34,4 +34,4 @@ class DriveCommand(OscCommand, BufferedCommand):
 
     @property
     def alias(self):
-        return '/drive/status'
+        return '/drive/command'
