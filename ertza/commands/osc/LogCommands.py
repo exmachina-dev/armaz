@@ -18,9 +18,8 @@ class OscLogHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            msg = OscMessage('/log/entry', (self.format(record),),
-                             receiver=self._target, msg_type='log')
-            self.machine.send_message('OSC', msg)
+            self.send(self._target, '/log/entry', (self.format(record),),
+                      msg_type='log')
         except Exception:   # This a log handler, we forgive everything
             pass
 
@@ -29,13 +28,11 @@ class LogTo(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
         log_trg = c.args[0]
-        msg = OscMessage('/log/info',
-                         ('Binding OSC log handler to %s' % log_trg,),
-                         receiver=c.sender)
         self.machine.osc_loghandler = OscLogHandler(self.machine, log_trg)
         root_log = logging.getLogger()
         root_log.addHandler(self.machine.osc_loghandler)
-        self.machine.send_message(c.protocol, msg)
+        self.send(c.sender, '/log/info',
+                  ('Binding OSC log handler to %s' % log_trg,),)
 
     @property
     def alias(self):
@@ -48,10 +45,8 @@ class LogLevel(OscCommand, UnbufferedCommand):
         try:
             self.machine.osc_loghandler.setLevel(c.args[0])
         except AttributeError:
-            msg = OscMessage('/log/error', 'OSC log handler is not specified. '
-                             'Run /log/to target prior to this command',
-                             receiver=c.sender)
-            self.machine.send_message(c.protocol, msg)
+            self.send(c.sender, '/log/error', 'OSC log handler is not specified. '
+                      'Run /log/to target prior to this command',)
 
     @property
     def alias(self):

@@ -12,24 +12,19 @@ class ConfigSet(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
         if len(c.args) < 3:
-            msg = OscMessage('/config/error',
-                             ('Missing arguments for %s' % self.alias,),
-                             receiver=c.sender)
-            self.machine.send_message(c.protocol, msg)
+            self.send(c.sender, '/config/error',
+                      ('Missing arguments for %s' % self.alias,),)
             return
         sec, opt, val, = c.args
-        msg = OscMessage('/config/info',
-                         ('Setting [%s] %s to %s' % (sec, opt, val),),
-                         receiver=c.sender)
-        self.machine.send_message(c.protocol, msg)
+        self.send(c.sender, '/config/info',
+                  ('Setting [%s] %s to %s' % (sec, opt, val),),)
 
         try:
             self.machine.config.set(sec, opt, val)
+            logging.info('[%s] %s set to %s by %s' % (sec, opt, val, c.sender))
         except:
-            msg = OscMessage('/config/error',
-                             ('Unable to set [%s] %s to %s' % (sec, opt, val),),
-                             receiver=c.sender)
-            self.machine.send_message(c.protocol, msg)
+            self.send(c.sender, '/config/error',
+                      ('Unable to set [%s] %s to %s' % (sec, opt, val),),)
 
     @property
     def alias(self):
@@ -40,10 +35,8 @@ class ConfigGet(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
         if len(c.args) != 2:
-            msg = OscMessage('/config/error',
-                             ('Invalid number of arguments for %s' % self.alias,),
-                             receiver=c.sender)
-            self.machine.send_message(c.protocol, msg)
+            self.send(c.sender, '/config/error',
+                      ('Invalid number of arguments for %s' % self.alias,),)
             return
         sec, opt = c.args
 
