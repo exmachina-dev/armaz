@@ -57,6 +57,39 @@ class ConfigParser(configparser.ConfigParser):
         else:
             logging.warn("Couldn't find variant config file " + variant_cfg)
 
+    def save(self):
+        """
+        Save only modified values in custom config.
+        This is like (current_config - default_config) - variant_config
+        """
+
+        stop_index = -2 if self.variant_loaded else -1
+        def_configfiles = self.config_files[0:stop_index]
+        custom_configfile = self.config_files[stop_index]
+
+        def_config = ConfigParser(*def_configfiles)
+        save_config = ConfigParser()
+        for sec in self.sections():
+            if def_config.has_section(sec):
+                save_config.add_section(sec)
+                for opt in self[sec]:
+                    if opt in def_config[sec]:
+                        if self[sec][opt] != def_config[sec][opt]:
+                            save_config[sec][opt] = self[sec][opt]
+
+                if not len(save_config[sec]):
+                    save_config.remove_section(sec)
+
+        if self.variant_loaded:
+            var_config = ConfigParser(self.config_files[-1])
+            for sec in var_config.sections():
+                if save_config.has_section(sec):
+                    for opt in var_config[sec]:
+                        save_config.remove_option(sec, opt)
+
+        with open(custom_configfile, 'w') as cf:
+            save_config.write(cf)
+
     def find_cape(self, partnumber):
         capes = self.get_cape_infos()
         for c in capes:

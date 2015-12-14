@@ -48,3 +48,17 @@ class ConfigGet(OscCommand, UnbufferedCommand):
     @property
     def alias(self):
         return '/config/get'
+
+
+class ConfigSave(OscCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        try:
+            self.machine.config.save()
+            self.ok(c)
+        except Exception as e:
+            self.error(c, repr(e))
+
+    @property
+    def alias(self):
+        return '/config/save'
