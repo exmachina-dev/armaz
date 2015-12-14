@@ -62,3 +62,10 @@ class Machine(object):
         var = self.config.variant.split('.')
 
         return ('identify', var[0].upper(), var[1].upper(), rev)
+
+    @property
+    def serialnumber(self):
+        sn = self.cape_infos['serialnumber'] if self.cape_infos \
+            else '000000000000'
+
+        return sn
