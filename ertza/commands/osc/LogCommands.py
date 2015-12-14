@@ -10,15 +10,15 @@ from ertza.processors.osc.Osc import OscMessage, OscAddress
 
 class OscLogHandler(logging.Handler):
 
-    def __init__(self, machine, target):
+    def __init__(self, machine, target, port=None):
         self.machine = machine
-        self._target = OscAddress(hostname=target)
+        self._target = OscAddress(hostname=target, port=port)
 
         super().__init__()
 
     def emit(self, record):
         try:
-            self.send(self._target, '/log/entry', (self.format(record),),
+            self.send(self._target, '/log/entry', self.format(record),
                       msg_type='log')
         except Exception:   # This a log handler, we forgive everything
             pass
@@ -27,12 +27,15 @@ class OscLogHandler(logging.Handler):
 class LogTo(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
-        log_trg = c.args[0]
-        self.machine.osc_loghandler = OscLogHandler(self.machine, log_trg)
+        if len(c.args) == 2:
+            log_ip, log_port = c.args
+        else:
+            log_ip, log_port = c.args[0], None
+        self.machine.osc_loghandler = OscLogHandler(self.machine, log_ip, log_port)
         root_log = logging.getLogger()
         root_log.addHandler(self.machine.osc_loghandler)
         self.send(c.sender, '/log/info',
-                  ('Binding OSC log handler to %s' % log_trg,),)
+                  'Binding OSC log handler to %s:%s' % (log_ip, str(log_port)))
 
     @property
     def alias(self):

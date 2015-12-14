@@ -68,5 +68,6 @@ class OscMessage(object):
         return tuple(self._args)
 
     def __repr__(self):
+        args = [str(i) for i in self.args]
         return '%s: %s %s' % (self.__class__.__name__, self.path,
-                              ' '.join(self.args))
+                              ' '.join(args))
