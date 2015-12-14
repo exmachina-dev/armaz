@@ -12,6 +12,7 @@ class Machine(object):
 
         self.config = None
         self.driver = None
+        self.cape_infos = None
 
         self.comms = {}
         self.commands = None

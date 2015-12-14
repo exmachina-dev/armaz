@@ -20,6 +20,7 @@ from .processors.SerialProcessor import SerialProcessor
 
 from .processors.osc.OscServer import OscServer
 from .processors.serial.SerialServer import SerialServer
+from .processors.serial.Serial import SerialCommandString
 
 from .PWM import PWM
 try:
@@ -69,6 +70,9 @@ class Ertza(object):
                                       _CUSTOM_CONF)
 
         machine.config.load_variant()
+
+        machine.cape_infos = machine.config.find_cape('ARMAZCAPE')
+        SerialCommandString.SerialNumber = machine.cape_infos['serialnumber']
 
         self._config_leds()
         for l in self.machine.leds:

@@ -56,3 +56,38 @@ class ConfigParser(configparser.ConfigParser):
             self.variant = variant
         else:
             logging.warn("Couldn't find variant config file " + variant_cfg)
+
+    def find_cape(self, partnumber):
+        capes = self.get_cape_infos()
+        for c in capes:
+            if c['board_partnumber'] == partnumber:
+                return c
+
+    def get_cape_infos(self):
+        capes = list()
+        for addr in ('4', '5', '6', '7'):
+            path = '/sys/bus/i2c/devices/2-005%d/eeprom' % addr
+            if os.path.isfile(path):
+                capes.append(self.get_eeprom_infos(path))
+            else:
+                continue
+
+        return capes
+
+    def get_eeprom_infos(self, eeprom):
+        try:
+            with open(eeprom, "rb") as f:
+                data = f.read(88)
+                infos = {
+                    'eeprom_header': data[0:4],
+                    'eeprom_rev': data[4:5],
+                    'name': data[6:37].strip(),
+                    'revision': data[38:41],
+                    'manufacturer': data[42:57].strip(),
+                    'partnumber': data[58:73].strip(),
+                    'nb_pins_used': data[74:75],
+                    'serialnumber': data[76:87],
+                }
+                return infos
+        except IOError:
+            pass
