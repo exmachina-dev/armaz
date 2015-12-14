@@ -138,10 +138,10 @@ class Ertza(object):
             comm.start()
             logging.info("%s communication module started" % name)
 
-        logging.info("Ertza ready")
         for l in self.machine.leds:
             if l.function == 'status':
                 l.set_blink(50)
+        logging.info("Ertza ready")
 
     def loop(self, machine_queue, name):
         """ When a new command comes in, execute it """
