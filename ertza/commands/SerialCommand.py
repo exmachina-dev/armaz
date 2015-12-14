@@ -11,9 +11,13 @@ class SerialCommand(AbstractCommand):
         # Processor seems to include this class while loading modules…
         return ':'
 
-    def send(self, data_bytes, **kwargs):
-        m = SerialMessage()
-        m.cmd_bytes['data'] = data_bytes
+    def send(self, *args, **kwargs):
+        m = kwargs['msg'] if 'msg' in kwargs else \
+            SerialMessage()
+
+        for d in args:
+            m.cmd_bytes['data'] += d
+
         self.machine.send_message(m)
 
     def ok(self, command, *args, **kwargs):
