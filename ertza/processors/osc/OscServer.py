@@ -18,10 +18,11 @@ class OscServer(lo.Server):
                                                 fallback=6070)
 
         super().__init__(port, lo.UDP)
+        logging.info('Started OSC server on port %d' % port)
 
     def run(self):
         while self.running:
-            self.recv(1)
+            self.recv(50)
 
     def start(self):
         self.running = True
