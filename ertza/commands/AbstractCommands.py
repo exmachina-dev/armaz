@@ -8,18 +8,39 @@ class AbstractCommand(object):
         self.eventReady = None
 
     def execute(self, command):
+        """
+        Python code to execute when receiving this command.
+        """
+        raise NotImplementedError
+
+    def send(self, command):
+        """
+        This method should implement a quick an simple way to send a message
+        via the subclass.
+        """
         raise NotImplementedError
 
     @property
     def alias(self):
+        """
+        This should return an identifier for the processor.
+        i.e:
+            /path for OSC
+        """
         raise NotImplementedError
 
     @property
     def buffered(self):
+        """
+        This method should be overrided if the command has to be buffered.
+        """
         return False
 
     @property
     def synced(self):
+        """
+        This method should be overrided if the command has to be synced.
+        """
         return False
 
 
