@@ -57,8 +57,8 @@ class Machine(object):
 
     @property
     def infos(self):
-        rev = self.cape_infos['revision'] if self.machine.cape_infos \
+        rev = self.cape_infos['revision'] if self.cape_infos \
             else '0000'
-        var = self.config.vaiant.split('.')
+        var = self.config.variant.split('.')
 
         return ('identify', var[0].upper(), var[1].upper(), rev)
