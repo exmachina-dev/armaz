@@ -20,7 +20,7 @@ class ConfigParser(configparser.ConfigParser):
             interpolation=configparser.ExtendedInterpolation())
 
         self.config_files = []
-        for cfg in args[0:-1]:
+        for cfg in args:
             self.config_files.append(os.path.realpath(cfg))
 
         for cfg in self.config_files:
