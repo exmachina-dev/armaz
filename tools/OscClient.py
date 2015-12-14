@@ -8,8 +8,6 @@ import liblo as lo
 global running
 running = True
 
-target = lo.Address(6069)
-
 
 def sender(client, target):
     global running
@@ -29,8 +27,7 @@ def sender(client, target):
             client.send(target, osc_c)
 
 
-def server():
-    port = 6070
+def server(port=6070):
     print('OSC server listening at %d' % port)
     srv = lo.ServerThread(port)
     return srv
@@ -44,11 +41,22 @@ def callback(path, args, types, sender):
     print('Got %s %s' % (path, args))
 
 if __name__ == '__main__':
-    trg = input('Target [127.0.0.1]: ')
-    if trg:
-        target = lo.Address(trg, 6069)
+    trg = input('Target [127.0.0.1:6069]: ')
+    trg = trg.split(':')
 
+    if len(trg) == 2:
+        target = lo.Address(trg[0], int(trg[1]))
+    elif len(trg) == 1:
+        target = lo.Address(trg[0], 6069)
+    else:
+        target = lo.Address(6069)
+
+    listen_on = input('Listen on [6070]: ')
     running = True
-    s = server()
+    if listen_on:
+        s = server(int(listen_on))
+    else:
+        s = server()
+
     s.start()
     sender(s, target)
