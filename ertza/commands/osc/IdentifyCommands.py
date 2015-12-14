@@ -9,9 +9,8 @@ from ertza.commands.OscCommand import OscCommand
 class Identify(OscCommand, BufferedCommand):
 
     def execute(self, c):
-        infos = self.c.args + (self.c.data['serial_number'],)
-        logging.info('Found %s %s with S/N %s' % infos)
-        self.ok(self.machine.infos)
+        infos = self.machine.infos + (self.machine.serialnumber,)
+        self.ok(c, *infos)
 
     @property
     def alias(self):
