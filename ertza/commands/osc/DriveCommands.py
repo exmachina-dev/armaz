@@ -11,7 +11,7 @@ class DriveStatus(OscCommand, BufferedCommand):
         flat_status = list()
         for s in status:
             flat_status += s
-        self.send(c.sender, '/drive/status', flat_status)
+        self.send(c.sender, '/drive/status', *flat_status)
 
     @property
     def alias(self):
@@ -23,14 +23,14 @@ class DriveCommand(OscCommand, BufferedCommand):
     def execute(self, c):
         if len(c.args) != 2:
             self.send(c.sender, '/drive/command/error',
-                      ('Invalid number of arguments for %s' % self.alias,),)
+                      'Invalid number of arguments for %s' % self.alias)
 
         try:
             k, v = c.args
             self.machine.driver['command'][k] = v
             self.ok(c)
         except Exception as e:
-            self.error(c, (e,))
+            self.error(c, e)
 
     @property
     def alias(self):
