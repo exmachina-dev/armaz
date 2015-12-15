@@ -151,10 +151,25 @@ class ModbusDriver(AbstractDriver):
         return self._get_value(ndk, seckey)
 
     def __setitem__(self, key, value):
-        if key not in self.netdata_map:
-            raise KeyError
+        if len(key.split(':')) == 2:
+            seckey, subkey = key.split(':')
+        else:
+            seckey, subkey = key, None
 
-        if 'w' not in self.netdata_map[key].mode:
+        if seckey not in self.netdata_map:
+            raise KeyError(seckey)
+
+        if type(self.netdata_map[seckey]) == dict and subkey:
+            if subkey not in self.netdata_map:
+                raise KeyError(subkey)
+            ndk = self.netdata_map[seckey][subkey]
+            data = list((0,) * len(self.netdata_map[seckey]))
+            data[ndk.start] = ndk.vtype(value)
+        else:
+            ndk = self.netdata_map[seckey]
+            data = (ndk.vtype(value),)
+
+        if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
 
         return self.back.write_netdata(ndk.nd.addr, data, ndk.nd.fmt)
