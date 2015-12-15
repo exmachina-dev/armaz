@@ -125,20 +125,27 @@ class ModbusDriver(AbstractDriver):
         self.back.close()
 
     def __getitem__(self, key):
-        if key not in self.netdata_map:
-            raise KeyError
+        if len(key.split(':')) == 2:
+            seckey, subkey = key.split(':')
+        else:
+            seckey, subkey = key, None
 
-        if type(self.netdata_map[key]) == dict:
-            for k in self.netdata_map[key].keys():
-                yield (k, self[key][k])
+        if seckey not in self.netdata_map:
+            raise KeyError(seckey)
 
-        if 'r' not in self.netdata_map[key].mode:
+        if type(self.netdata_map[seckey]) == dict and subkey:
+            if subkey not in self.netdata_map:
+                raise KeyError(subkey)
+            ndk = self.netdata_map[seckey][subkey]
+        else:
+            ndk = self.netdata_map[seckey]
+
+        if 'r' not in ndk.mode:
             raise ReadOnlyError(key)
 
-        nd = self.netdata_map[key].netdata
-        start = self.netdata_map[key].start
-        vtype = self.netdata_map[key].vtype
+        nd, start, vtype = ndk.netdata, ndk.start, ndk.vtype
         res = self.back.read_netdata(nd.addr, nd.fmt)
+
         return vtype(res[start])
 
     def __setitem__(self, key, value):
