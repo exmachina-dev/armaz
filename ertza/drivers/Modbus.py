@@ -142,13 +142,13 @@ class ModbusDriver(AbstractDriver):
                 ret = list()
                 for sk in self.netdata_map[seckey].keys():
                     ret.append((
-                        sk, self._get_value(self.netdata_map[seckey][sk]),))
+                        sk, self._get_value(self.netdata_map[seckey][sk], key),))
 
                 return ret
         else:
             ndk = self.netdata_map[seckey]
 
-        return self._get_value(ndk)
+        return self._get_value(ndk, seckey)
 
     def __setitem__(self, key, value):
         if key not in self.netdata_map:
@@ -157,11 +157,13 @@ class ModbusDriver(AbstractDriver):
         if 'w' not in self.netdata_map[key].mode:
             raise WriteOnlyError(key)
 
-    def _get_value(self, ndk):
+        return self.back.write_netdata(ndk.nd.addr, data, ndk.nd.fmt)
+
+    def _get_value(self, ndk, key):
         nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
 
         if 'r' not in md:
-            raise ReadOnlyError
+            raise ReadOnlyError(key)
 
         res = self.back.read_netdata(nd.addr, nd.fmt)
 
