@@ -57,6 +57,7 @@ class SerialServer(sr.Serial):
         if message.msg_type is not 'log':
             logging.debug("Sending: %s %s" % (message, message.tobytes))
         self.write(message.tobytes)
+        self.flush()
 
     def close(self):
         self.running = False
