@@ -19,7 +19,9 @@ class SerialServer(sr.Serial):
         baudrate = machine.config.getint('serial', 'baudrate', fallback=57600)
 
         logging.debug("Starting serial server on %s at %d" % (dev, baudrate))
-        super().__init__(port=dev, baudrate=baudrate, do_not_open=True)
+        super().__init__(port=None, baudrate=baudrate)
+
+        self.port = dev
 
         self.bytesize = sr.EIGHTBITS
         self.parity = sr.PARITY_NONE
