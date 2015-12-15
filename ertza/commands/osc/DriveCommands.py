@@ -22,12 +22,12 @@ class DriveCommand(OscCommand, BufferedCommand):
 
     def execute(self, c):
         if len(c.args) != 2:
-            self.send(c.sender, '/drive/command/error',
-                      'Invalid number of arguments for %s' % self.alias)
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            return
 
         try:
             k, v = c.args
-            self.machine.driver['command'][k] = v
+            self.machine.driver['command:%s' % k] = v
             self.ok(c)
         except Exception as e:
             self.error(c, e)
@@ -35,3 +35,22 @@ class DriveCommand(OscCommand, BufferedCommand):
     @property
     def alias(self):
         return '/drive/command'
+
+
+class DriveSet(OscCommand, BufferedCommand):
+
+    def execute(self, c):
+        if len(c.args) < 2:
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            return
+
+        try:
+            k, v, = c.args
+            self.machine.driver[k] = v
+            self.ok(c)
+        except Exception as e:
+            self.error(c, e)
+
+    @property
+    def alias(self):
+        return '/drive/set'
