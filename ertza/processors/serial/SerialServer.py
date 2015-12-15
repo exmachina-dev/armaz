@@ -24,8 +24,9 @@ class SerialServer(sr.Serial):
         self.bytesize = sr.EIGHTBITS
         self.parity = sr.PARITY_NONE
         self.stopbits = sr.STOPBITS_ONE
-        self.timeout = 0.05
+        self.timeout = 1
         self.xonxoff = False
+        self.rtscts = False
 
         self.data_buffer = b''
 
