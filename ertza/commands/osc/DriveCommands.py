@@ -72,4 +72,4 @@ class DriveGet(OscCommand, BufferedCommand):
 
     @property
     def alias(self):
-        return '/drive/set'
+        return '/drive/get'
