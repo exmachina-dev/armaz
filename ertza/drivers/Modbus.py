@@ -30,9 +30,9 @@ class ModbusDriver(AbstractDriver):
                                          'vtype', 'mode'])
     MFNdata = {
         'status':               netdata(0,
-                                        'bool,bool,bool,bool,bool,bool'),
+                                        'pad:24,bool,bool,bool,bool,bool,bool,bool,bool'),
         'command':              netdata(1,
-                                        'bool,bool,bool,bool,uint:2,uint:1,bool'),
+                                        'pad:24,bool,uint:1,uint:2,bool,bool,bool,bool'),
         'error_code':           netdata(2, 'uint:32'),
         'jog':                  netdata(3, 'float:32'),
         'torque_ref':           netdata(4, 'float:32'),
@@ -60,22 +60,22 @@ class ModbusDriver(AbstractDriver):
 
     MFE100Map = {
         'status': {
-            'drive_ready':      parameter(MFNdata['status'], 0, bool, 'r'),
-            'drive_enable':     parameter(MFNdata['status'], 1, bool, 'r'),
-            'drive_input':      parameter(MFNdata['status'], 2, bool, 'r'),
-            'motor_brake':      parameter(MFNdata['status'], 3, bool, 'r'),
-            'motor_temp':       parameter(MFNdata['status'], 4, bool, 'r'),
-            'timeout':          parameter(MFNdata['status'], 5, bool, 'r'),
+            'drive_ready':      parameter(MFNdata['status'], 7, bool, 'r'),
+            'drive_enable':     parameter(MFNdata['status'], 6, bool, 'r'),
+            'drive_input':      parameter(MFNdata['status'], 5, bool, 'r'),
+            'motor_brake':      parameter(MFNdata['status'], 4, bool, 'r'),
+            'motor_temp':       parameter(MFNdata['status'], 3, bool, 'r'),
+            'timeout':          parameter(MFNdata['status'], 2, bool, 'r'),
         },
 
         'command': {
-            'enable':           parameter(MFNdata['command'], 0, bool, 'w'),
-            'cancel':           parameter(MFNdata['command'], 1, bool, 'w'),
-            'clear_errors':     parameter(MFNdata['command'], 2, bool, 'w'),
+            'enable':           parameter(MFNdata['command'], 6, bool, 'w'),
+            'cancel':           parameter(MFNdata['command'], 5, bool, 'w'),
+            'clear_errors':     parameter(MFNdata['command'], 4, bool, 'w'),
             'reset':            parameter(MFNdata['command'], 3, bool, 'w'),
-            'control_mode':     parameter(MFNdata['command'], 4, int, 'w'),
-            'move_mode':        parameter(MFNdata['command'], 5, int, 'w'),
-            'go':               parameter(MFNdata['command'], 6, bool, 'w'),
+            'control_mode':     parameter(MFNdata['command'], 2, int, 'w'),
+            'move_mode':        parameter(MFNdata['command'], 1, int, 'w'),
+            'go':               parameter(MFNdata['command'], 0, bool, 'w'),
         },
 
         'error_code':       parameter(MFNdata['error_code'], 0, int, 'r'),
