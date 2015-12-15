@@ -24,10 +24,13 @@ class ModbusBackend(object):
         self.port = target_port
         self.nodeid = target_nodeid
 
+        self.connected = False
+
         self._end = ModbusClient(host=self.address, port=self.port)
 
     def connect(self):
-        return self._end.connect()
+        self.connected = self._end.connect()
+        return self.connected
 
     def close(self):
         self._end.close()
