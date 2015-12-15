@@ -93,7 +93,7 @@ class ConfigParser(configparser.ConfigParser):
     def find_cape(self, partnumber):
         capes = self.get_cape_infos()
         for c in capes:
-            if c['board_partnumber'] == partnumber:
+            if c['partnumber'] == partnumber:
                 return c
 
     def get_cape_infos(self):
