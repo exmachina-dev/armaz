@@ -160,7 +160,7 @@ class ModbusDriver(AbstractDriver):
             raise KeyError(seckey)
 
         if type(self.netdata_map[seckey]) == dict and subkey:
-            if subkey not in self.netdata_map:
+            if subkey not in self.netdata_map[seckey]:
                 raise KeyError(subkey)
             ndk = self.netdata_map[seckey][subkey]
             data = list((0,) * len(self.netdata_map[seckey]))
