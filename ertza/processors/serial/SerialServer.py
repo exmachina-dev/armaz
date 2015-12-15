@@ -19,7 +19,7 @@ class SerialServer(sr.Serial):
         baudrate = machine.config.getint('serial', 'baudrate', fallback=57600)
 
         logging.debug("Starting serial server on %s at %d" % (dev, baudrate))
-        super().__init__(port=dev, baudrate=baudrate)
+        super().__init__(port=dev, baudrate=baudrate, do_not_open=True)
 
         self.bytesize = sr.EIGHTBITS
         self.parity = sr.PARITY_NONE
@@ -32,6 +32,7 @@ class SerialServer(sr.Serial):
 
     def run(self):
         try:
+            self.open()
             while self.running:
                 # read all that is there or wait for one byte
                 data = self.read(self.inWaiting() or 1)
