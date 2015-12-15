@@ -172,7 +172,7 @@ class ModbusDriver(AbstractDriver):
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
 
-        return self.back.write_netdata(ndk.nd.addr, data, ndk.nd.fmt)
+        return self.back.write_netdata(ndk.netdata.addr, data, ndk.netdata.fmt)
 
     def _get_value(self, ndk, key):
         nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode

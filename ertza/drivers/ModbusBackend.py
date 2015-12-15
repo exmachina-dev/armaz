@@ -35,11 +35,14 @@ class ModbusBackend(object):
     def close(self):
         self._end.close()
 
-    def write_netdata(self, netdata, data, data_format='uintbe:16, uintbe:16'):
+    def write_netdata(self, netdata, data, data_format=None):
         self._check_netdata(netdata)
         start = netdata * self.register_nb_by_netdata
 
-        data = bitstring.pack(data_format, *data)
+        if data_format:
+            data = bitstring.pack(data_format, *data).unpack('uintbe:16,uintbe:16')
+        else:
+            data = bitstring.pack('uintbe:16,uintbe:16', *data)
 
         return self.wmr(start, data)
 
