@@ -18,6 +18,7 @@ class SerialServer(sr.Serial):
             dev = None
         baudrate = machine.config.getint('serial', 'baudrate', fallback=57600)
 
+        logging.debug("Starting serial server on %s at %d" % (dev, baudrate))
         super().__init__(port=dev, baudrate=baudrate)
 
         self.bytesize = sr.EIGHTBITS
