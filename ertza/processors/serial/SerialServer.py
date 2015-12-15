@@ -41,8 +41,12 @@ class SerialServer(sr.Serial):
                     self.find_serial_packets()
         except sr.SerialException as e:
             logging.error(e)
+        except KeyboardInterrupt:
+            self.running = False
         except:
             pass
+        finally:
+            self.close()
 
     def start(self):
         self.running = True
