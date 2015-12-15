@@ -66,7 +66,7 @@ class DriveGet(OscCommand, BufferedCommand):
         try:
             k, = c.args
             v = self.machine.driver[k]
-            self.ok(c, v)
+            self.ok(c, k, v)
         except Exception as e:
             self.error(c, e)
 
