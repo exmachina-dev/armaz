@@ -54,3 +54,22 @@ class DriveSet(OscCommand, BufferedCommand):
     @property
     def alias(self):
         return '/drive/set'
+
+
+class DriveGet(OscCommand, BufferedCommand):
+
+    def execute(self, c):
+        if len(c.args) != 1:
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            return
+
+        try:
+            k, = c.args
+            v = self.machine.driver[k]
+            self.ok(c, v)
+        except Exception as e:
+            self.error(c, e)
+
+    @property
+    def alias(self):
+        return '/drive/set'
