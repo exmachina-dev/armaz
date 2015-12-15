@@ -47,7 +47,7 @@ class ModbusBackend(object):
         self._check_netdata(netdata)
         start = netdata * self.register_nb_by_netdata
 
-        res = bitstring.Bitstring('0b%s' % ''.join(self.rhr(start))).unpack(fmt)
+        res = bitstring.BitArray('0b%s' % ''.join(self.rhr(start))).unpack(fmt)
         return res
 
     @staticmethod
