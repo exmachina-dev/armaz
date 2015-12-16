@@ -47,6 +47,8 @@ class OscServer(lo.Server):
         self.running = False
         self._t.join()
 
+    exit = close
+
 
 if __name__ == '__main__':
 
