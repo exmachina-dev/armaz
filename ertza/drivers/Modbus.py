@@ -82,7 +82,7 @@ class ModbusDriver(AbstractDriver):
         'jog':              parameter(MFNdata['jog'], 0, float, 'rw'),
         'torque_ref':       parameter(MFNdata['torque_ref'], 0, float, 'rw'),
         'velocity_ref':     parameter(MFNdata['velocity_ref'], 0, float, 'rw'),
-        'position_ref':     parameter(MFNdata['velocity_ref'], 0, float, 'w'),
+        'position_ref':     parameter(MFNdata['position_ref'], 0, float, 'w'),
         'torque_rise_time': parameter(MFNdata['torque_rise_time'], 0, float, 'rw'),
         'torque_fall_time': parameter(MFNdata['torque_fall_time'], 0, float, 'rw'),
         'acceleration':     parameter(MFNdata['acceleration'], 0, float, 'rw'),
@@ -99,7 +99,7 @@ class ModbusDriver(AbstractDriver):
         'follow_error':     parameter(MFNdata['follow_error'], 0, float, 'r'),
         'effort':           parameter(MFNdata['effort'], 0, float, 'r'),
 
-        'drive_temp':       parameter(MFNdata['drive_temp'], 0, int, 'r'),
+        'drive_temp':       parameter(MFNdata['drive_temp'], 0, float, 'r'),
         'dropped_frames':   parameter(MFNdata['dropped_frames'], 0, int, 'r'),
     }
 
