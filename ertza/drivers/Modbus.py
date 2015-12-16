@@ -113,6 +113,7 @@ class ModbusDriver(AbstractDriver):
                                   self.target_nodeid)
 
         self.netdata_map = ModbusDriver.MFE100Map
+        self._prev_data = {}
 
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
@@ -163,8 +164,10 @@ class ModbusDriver(AbstractDriver):
             if subkey not in self.netdata_map[seckey]:
                 raise KeyError(subkey)
             ndk = self.netdata_map[seckey][subkey]
-            data = list((0,) * len(self.netdata_map[seckey]))
+            data = list((-1,) * len(self.netdata_map[seckey]))
             data[ndk.start] = ndk.vtype(value)
+            data = map(lambda x, y: x if y == -1 else 0, self._prev_data[seckey], data)
+            self._prev_data[seckey] = data
         else:
             ndk = self.netdata_map[seckey]
             data = (ndk.vtype(value),)
