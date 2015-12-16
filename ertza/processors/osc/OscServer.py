@@ -11,7 +11,7 @@ class OscServer(lo.Server):
 
     def __init__(self, machine):
         self.machine = machine
-        self.processor = self.machine.osc_processor
+        self.processor = self.machine.processors['OSC']
 
         port = machine.config.getint('osc', 'listen_port', fallback=6069)
         self.reply_port = machine.config.getint('osc', 'reply_port',
@@ -41,7 +41,7 @@ class OscServer(lo.Server):
     def dispatch(self, path, args, types, sender):
         m = OscMessage(path, *args, types=types, sender=sender)
         logging.debug('Received %s from %s' % (m, m.sender))
-        self.machine.osc_processor.enqueue(m, self.processor)
+        self.processor.enqueue(m)
 
     def close(self):
         self.running = False

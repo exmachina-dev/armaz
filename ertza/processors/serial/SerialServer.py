@@ -11,7 +11,7 @@ class SerialServer(sr.Serial):
 
     def __init__(self, machine):
         self.machine = machine
-        self.processor = self.machine.serial_processor
+        self.processor = self.machine.processors['Serial']
 
         dev = machine.config.get('serial', 'listen_device')
         if dev == 'None':
@@ -76,5 +76,5 @@ class SerialServer(sr.Serial):
             packet, self.data_buffer = self.data_buffer[:pos+2], \
                 self.data_buffer[pos+2:]
             m = SerialMessage(packet)
-            self.machine.serial_processor.enqueue(m, self.processor)
+            self.processor.enqueue(m)
             self.find_serial_packets()

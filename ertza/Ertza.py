@@ -105,8 +105,8 @@ class Ertza(object):
         self.machine.unbuffered_commands = JoinableQueue(10)
         self.machine.sync_commands = JoinableQueue()
 
-        self.machine.osc_processor = OscProcessor(self.machine)
-        self.machine.serial_processor = SerialProcessor(self.machine)
+        machine.processors['OSC'] = OscProcessor(self.machine)
+        machine.processors['Serial'] = SerialProcessor(self.machine)
 
         machine.comms['OSC'] = OscServer(self.machine)
         machine.comms['Serial'] = SerialServer(self.machine)
@@ -145,7 +145,6 @@ class Ertza(object):
 
     def loop(self, machine_queue, name):
         """ When a new command comes in, execute it """
-        p = self.machine.osc_processor  # Right now, only osc is implemented
 
         try:
             while self.running:
@@ -155,6 +154,11 @@ class Ertza(object):
                     continue
 
                 logging.debug("Executing %s from %s" % (message.target, name))
+
+                try:
+                    p = self.machine.processors[message.protocol]
+                except KeyError:
+                    raise KeyError('Unable to get %s processor' % message.protocol)
 
                 self._execute(message, p)
 
@@ -166,7 +170,6 @@ class Ertza(object):
 
     def eventloop(self, machine_queue, name):
         """ When a new event comes in, execute the pending gcode """
-        p = self.machine.osc_processor  # Right now, only osc is implemented
 
         try:
 
@@ -177,6 +180,11 @@ class Ertza(object):
                         message = machine_queue.get(block=True, timeout=1)
                     except queue.Empty:
                         continue
+
+                    try:
+                        p = self.machine.processors[message.protocol]
+                    except KeyError:
+                        raise KeyError('Unable to get %s processor' % message.protocol)
 
                     self._synchronize(message, p)
 

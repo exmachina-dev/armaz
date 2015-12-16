@@ -15,6 +15,7 @@ class Machine(object):
         self.cape_infos = None
 
         self.comms = {}
+        self.processors = {}
         self.commands = None
         self.synced_commands = None
         self.unbuffered_commands = None

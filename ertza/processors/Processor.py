@@ -76,10 +76,10 @@ class Processor(object):
                 traceback.print_exc(e)
             return command
 
-    def enqueue(self, message, processor):
-        if processor.is_buffered(message):
+    def enqueue(self, message):
+        if self.is_buffered(message):
             self.machine.commands.put(message)
-            if processor.is_sync(message):
+            if self.is_sync(message):
                 self.machine.sync_commands.put(message)    # Yes, it goes into both queues!
         else:
             self.machine.unbuffered_commands.put(message)
