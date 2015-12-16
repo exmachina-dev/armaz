@@ -150,15 +150,15 @@ class Ertza(object):
         try:
             while self.running:
                 try:
-                    command = machine_queue.get(block=True, timeout=1)
+                    message = machine_queue.get(block=True, timeout=1)
                 except queue.Empty:
                     continue
 
-                logging.debug("Executing %s from %s" % (command.target, name))
+                logging.debug("Executing %s from %s" % (message.target, name))
 
-                self._execute(command, p)
+                self._execute(message, p)
 
-                self.machine.reply(command)
+                self.machine.reply(message)
 
                 machine_queue.task_done()
         except Exception as e:
@@ -174,13 +174,14 @@ class Ertza(object):
                 # Returns False on timeout, else True
                 if self.machine.wait_until_sync_event():
                     try:
-                        command = machine_queue.get(block=True, timeout=1)
+                        message = machine_queue.get(block=True, timeout=1)
                     except queue.Empty:
                         continue
 
-                    self._synchronize(command, p)
+                    self._synchronize(message, p)
+
                     logging.info("Event handled for %s from %s %s" % (
-                        command.code(), name, command.message))
+                        message.target, name, message))
                     machine_queue.task_done()
         except Exception:
             logging.exception("Exception in {} eventloop: ".format(name))
