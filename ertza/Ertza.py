@@ -199,6 +199,7 @@ class Ertza(object):
 
         for f in self.machine.fans:
             f.set_value(0)
+            f.exit()
 
         for l in self.machine.leds:
             l.set_trigger('default-on')
