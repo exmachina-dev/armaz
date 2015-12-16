@@ -140,12 +140,8 @@ class ModbusDriver(AbstractDriver):
                     raise KeyError(subkey)
                 ndk = self.netdata_map[seckey][subkey]
             else:
-                ret = list()
-                for sk in self.netdata_map[seckey].keys():
-                    ret.append((
-                        sk, self._get_value(self.netdata_map[seckey][sk], key),))
-
-                return ret
+                return [(sk, self._get_value(self.netdata_map[seckey][sk], key),)
+                        for sk in self.netdata_map[seckey].keys()]
         else:
             ndk = self.netdata_map[seckey]
 
