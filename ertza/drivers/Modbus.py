@@ -123,6 +123,8 @@ class ModbusDriver(AbstractDriver):
                                              self.target_port))
 
     def exit(self):
+        self['command:enable'] = False
+
         self.back.close()
 
     def __getitem__(self, key):
