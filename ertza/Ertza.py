@@ -195,6 +195,7 @@ class Ertza(object):
             logging.exception("Exception in {} eventloop: ".format(name))
 
     def exit(self):
+        self.running = False
         self.machine.exit()
 
         for f in self.machine.fans:
