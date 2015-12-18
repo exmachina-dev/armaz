@@ -93,6 +93,8 @@ class ConfigParser(configparser.ConfigParser):
     def find_cape(self, partnumber):
         capes = self.get_cape_infos()
         for c in capes:
+            if not c:
+                continue
             if c['partnumber'] == partnumber:
                 return c
 
