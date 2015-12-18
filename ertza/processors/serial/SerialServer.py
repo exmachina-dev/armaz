@@ -55,8 +55,6 @@ class SerialServer(sr.Serial):
 
             except sr.SerialException as e:
                 logging.error(e)
-            except KeyboardInterrupt:
-                self.close()
             except:
                 pass
 
