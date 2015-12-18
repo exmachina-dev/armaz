@@ -42,12 +42,13 @@ class Machine(object):
         return drv
 
     def start(self):
-
         self.driver.connect()
 
     def exit(self):
-
         self.driver.exit()
+
+        for c in self.comms:
+            c.exit()
 
     def reply(self, command):
         if command.answer is not None:
