@@ -41,6 +41,7 @@ class OscMessage(object):
     def __init__(self, path, *args, **kwargs):
         self.path, self._args = OscPath(path), args
         self.sender, self.receiver = None, None
+        self._args = [repr(a) if issubclass(a, Exception) else a for a in self._args]
 
         if 'types' in kwargs:
             self.types = kwargs['types']
