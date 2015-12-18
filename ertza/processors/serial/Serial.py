@@ -28,7 +28,7 @@ class SerialCommandString(object):
 
     @property
     def tobytes(self):
-        return bs.pack(self.CmdFormat, *self._c)
+        return bs.pack(self.CmdFormat, *self._c).tobytes()
 
     @property
     def command(self):
