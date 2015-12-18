@@ -44,6 +44,7 @@ class OscServer(lo.Server):
         self.processor.enqueue(m)
 
     def close(self):
+        logging.debug('Closing OSC server')
         self.running = False
         self._t.join()
 

@@ -78,6 +78,7 @@ class SerialServer(sr.Serial):
         self.flush()
 
     def close(self):
+        logging.debug("Closing serial server")
         self.running = False
         self._t.join()
 
