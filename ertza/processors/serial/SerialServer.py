@@ -42,20 +42,23 @@ class SerialServer(sr.Serial):
     def run(self):
         try:
             self.open()
-            while self.running:
+        except sr.SerialException as e:
+            logging.error(e)
+
+        while self.running:
+            try:
                 # read all that is there or wait for one byte
                 data = self.read(self.inWaiting() or 1)
                 if data:
                     self.data_buffer += (data)
                     self.find_serial_packets()
-        except sr.SerialException as e:
-            logging.error(e)
-        except KeyboardInterrupt:
-            self.close()
-        except:
-            pass
-        finally:
-            self.close()
+
+            except sr.SerialException as e:
+                logging.error(e)
+            except KeyboardInterrupt:
+                self.close()
+            except:
+                pass
 
     def start(self):
         self.running = True
