@@ -37,6 +37,8 @@ class SerialServer(sr.Serial):
 
         self.data_buffer = b''
 
+        self.running = False
+
     def run(self):
         try:
             self.open()
@@ -59,6 +61,7 @@ class SerialServer(sr.Serial):
         self.running = True
 
         self._t = Thread(target=self.run)
+        self._t.daemon = True
         self._t.start()
 
         m = SerialMessage()
