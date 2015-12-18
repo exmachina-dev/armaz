@@ -28,6 +28,7 @@ class OscServer(lo.Server):
         self.running = True
 
         self._t = Thread(target=self.run)
+        self._t.daemon = True
         self._t.start()
 
     def send_message(self, message):
