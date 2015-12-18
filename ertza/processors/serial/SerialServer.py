@@ -51,7 +51,7 @@ class SerialServer(sr.Serial):
         except sr.SerialException as e:
             logging.error(e)
         except KeyboardInterrupt:
-            self.running = False
+            self.close()
         except:
             pass
         finally:
@@ -77,6 +77,9 @@ class SerialServer(sr.Serial):
     def close(self):
         self.running = False
         self._t.join()
+
+    def exit(self):
+        self.close()
 
     def find_serial_packets(self):
         pos = self.data_buffer.lfind(SerialCommandString.CmdEnd)
