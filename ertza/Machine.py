@@ -47,7 +47,7 @@ class Machine(object):
     def exit(self):
         self.driver.exit()
 
-        for c in self.comms.items():
+        for n, c in self.comms.items():
             c.exit()
 
     def reply(self, command):
