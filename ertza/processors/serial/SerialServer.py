@@ -30,6 +30,11 @@ class SerialServer(sr.Serial):
         self.xonxoff = False
         self.rtscts = False
 
+        self.rts = True
+        self.dtr = True
+
+        self.break_condition = False
+
         self.data_buffer = b''
 
     def run(self):
