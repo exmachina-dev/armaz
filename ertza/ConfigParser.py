@@ -2,6 +2,7 @@
 
 import logging
 import os
+import struct
 import configparser
 
 _VARIANT_PATH = "/etc/ertza/variants"
@@ -115,13 +116,13 @@ class ConfigParser(configparser.ConfigParser):
                 data = f.read(88)
                 infos = {
                     'eeprom_header': data[0:4],
-                    'eeprom_rev': data[4:5],
-                    'name': data[6:37].strip(),
-                    'revision': data[38:41],
-                    'manufacturer': data[42:57].strip(),
-                    'partnumber': data[58:73].strip(),
-                    'nb_pins_used': data[74:75],
-                    'serialnumber': data[76:87],
+                    'eeprom_rev': data[4:6].decode(),
+                    'name': data[6:38].strip().decode(),
+                    'revision': data[38:42].decode(),
+                    'manufacturer': data[42:58].strip().decode(),
+                    'partnumber': data[58:74].strip().decode(),
+                    'nb_pins_used': struct.unpack('>h', data[74:76]),
+                    'serialnumber': data[76:88].decode(),
                 }
                 return infos
         except IOError:
