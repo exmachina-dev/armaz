@@ -19,3 +19,6 @@ class OscCommand(AbstractCommand):
 
     def error(self, command, *args, **kwargs):
         self.send(command.sender, self.alias + '/error', *args, **kwargs)
+
+    def reply(self, command, *args, **kwargs):
+        self.send(command.sender, self.alias, *args, **kwargs)
