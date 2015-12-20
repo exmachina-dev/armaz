@@ -23,7 +23,7 @@ class ListSlaves(OscCommand, UnbufferedCommand):
 class AddSlave(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
-        if len(c.args) != 2:
+        if self.check_args(c, 'ne', 2):
             self.error(c, 'Invalid number of arguments for %s' % self.alias)
             return
 
@@ -36,4 +36,4 @@ class AddSlave(OscCommand, UnbufferedCommand):
 
     @property
     def alias(self):
-        return '/machine/add_slave'
+        return '/machine/slave/add'
