@@ -60,6 +60,7 @@ class Ertza(object):
 
         machine = Machine()
         self.machine = machine
+        machine.version = version
 
         if not os.path.isfile(_DEFAULT_CONF):
             logging.error(_DEFAULT_CONF + " does not exist, exiting.")

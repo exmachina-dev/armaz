@@ -15,3 +15,14 @@ class Identify(OscCommand, BufferedCommand):
     @property
     def alias(self):
         return '/identify'
+
+
+class Version(OscCommand, BufferedCommand):
+
+    def execute(self, c):
+        version = self.machine.version
+        self.ok(c, version)
+
+    @property
+    def alias(self):
+        return '/version'
