@@ -113,6 +113,10 @@ class Ertza(object):
         machine.comms['OSC'] = OscServer(self.machine)
         machine.comms['Serial'] = SerialServer(self.machine)
 
+        if machine.config.getboolean('slaves', 'got_slaves'):
+            logging.info('Searching for slaves')
+            machine.search_slaves()
+
     def start(self):
         """ Start the processes """
         self.running = True
