@@ -43,6 +43,7 @@ class SerialServer(sr.Serial):
         try:
             self.open()
         except sr.SerialException as e:
+            self.running = False
             logging.error(e)
 
         while self.running:
@@ -70,6 +71,10 @@ class SerialServer(sr.Serial):
         self.send_message(m)
 
     def send_message(self, message):
+        if not self.running:
+            logging.error('Serial port is not opened. Aborting.')
+            return
+
         if message.msg_type is not 'log':
             logging.debug("Sending: %s %s" % (message, message.tobytes))
         self.write(message.tobytes)
