@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 from ertza.commands.AbstractCommands import BufferedCommand
 from ertza.commands.OscCommand import OscCommand
 

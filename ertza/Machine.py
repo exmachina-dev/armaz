@@ -3,7 +3,7 @@
 import sys
 import logging
 
-from .drivers.Drivers import Driver
+from ertza.drivers.Drivers import Driver
 
 
 class MachineError(Exception):
