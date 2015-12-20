@@ -126,6 +126,11 @@ class Machine(object):
             m.start()
             m.get_serialnumber()
 
+            existing_s = self.get_slave(m.serialnumber)
+            if existing_s:
+                raise MachineError('Already existing {2} at {1} '
+                                   'with S/N {0}'.format(*existing_s.slave))
+
             self.slaves.append(m)
             s = m.slave
             logging.info('New {2} slave at {1} '
@@ -133,3 +138,8 @@ class Machine(object):
             return s
         except Exception as e:
             raise MachineError('Unable to add slave: %s' % repr(e))
+
+    def get_slave(self, sn):
+        for i, s in enumerate(self.slaves):
+            if sn == s.slave.serialnumber:
+                return i, s
