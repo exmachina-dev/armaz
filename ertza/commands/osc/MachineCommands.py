@@ -37,3 +37,21 @@ class AddSlave(OscCommand, UnbufferedCommand):
     @property
     def alias(self):
         return '/machine/slave/add'
+
+
+class RemoveSlave(OscCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        if self.check_args(c, 'ne', 1):
+            return
+
+        try:
+            sn = c.args
+            self.machine.remove_slave(sn)
+            self.ok(c)
+        except Exception as e:
+            self.error(c, e)
+
+    @property
+    def alias(self):
+        return '/machine/slave/remove'

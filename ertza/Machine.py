@@ -139,6 +139,20 @@ class Machine(object):
         except Exception as e:
             raise MachineError('Unable to add slave: %s' % repr(e))
 
+    def remove_slave(self, sn):
+        try:
+            rm_slave = self.get_slave(sn)
+            if not rm_slave:
+                raise MachineError('Slave with S/N %s not found' % sn)
+
+            slave_id, slave = rm_slave
+
+            slave.exit()
+            slave_instance = self.slaves.pop(slave_id)
+            del slave_instance
+        except Exception as e:
+            raise MachineError('Unable to remove slave: %s' % str(e))
+
     def get_slave(self, sn):
         for i, s in enumerate(self.slaves):
             if sn == s.slave.serialnumber:
