@@ -55,3 +55,21 @@ class RemoveSlave(OscCommand, UnbufferedCommand):
     @property
     def alias(self):
         return '/machine/slave/remove'
+
+
+class SlaveMode(OscCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        if not self.check_args(c, 'eq', 1):
+            return
+
+        try:
+            k, = c.args
+            v = self.machine.driver[k]
+            self.ok(c, k, v)
+        except Exception as e:
+            self.error(c, e)
+
+    @property
+    def alias(self):
+        return '/machine/slave/mode'

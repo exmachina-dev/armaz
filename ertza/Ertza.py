@@ -116,7 +116,7 @@ class Ertza(object):
 
         if machine.config.getboolean('slaves', 'got_slaves'):
             logging.info('Searching for slaves')
-            machine.search_slaves()
+            machine.load_slaves()
 
     def start(self):
         """ Start the processes """

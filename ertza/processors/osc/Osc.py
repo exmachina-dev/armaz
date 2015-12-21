@@ -28,7 +28,7 @@ class OscAddress(object):
             if 'port' in kwargs:
                 self.port = kwargs['port']
             else:
-                self.port = 6070
+                self.port = 6970
         else:
             raise AttributeError('Missing arguments for creation.')
 
@@ -41,7 +41,7 @@ class OscMessage(object):
     def __init__(self, path, *args, **kwargs):
         self.path, self._args = OscPath(path), args
         self.sender, self.receiver = None, None
-        self._args = [repr(a) if isinstance(a, Exception) else a for a in self._args]
+        self._args = [str(a) if isinstance(a, Exception) else a for a in self._args]
 
         if 'types' in kwargs:
             self.types = kwargs['types']

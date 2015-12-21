@@ -2,14 +2,14 @@
 
 from collections import namedtuple
 
-from ertza.drivers.AbstractDriver import AbstractDriver
+from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 
 from ertza.drivers.ModbusBackend import ModbusBackend
 
 from ertza.drivers.Utils import retry
 
 
-class ModbusDriverError(Exception):
+class ModbusDriverError(AbstractDriverError):
     pass
 
 

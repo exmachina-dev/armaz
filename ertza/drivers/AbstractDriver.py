@@ -17,3 +17,7 @@ class AbstractDriver(object):
 
     def execute(self):
         raise NotImplementedError
+
+
+class AbstractDriverError(Exception):
+    pass

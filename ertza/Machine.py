@@ -14,9 +14,12 @@ class Machine(object):
 
     def __init__(self):
         # Ugly fix for circular dependency
-        from ertza.drivers.Slave import Slave, SlaveMachine
+        from ertza.drivers.Slave import Slave, SlaveMachine, SlaveMachineError
 
         self._Slave, self._SlaveMachine = Slave, SlaveMachine
+        self._SlaveMachineError = SlaveMachineError
+
+        self._SlaveMachine.machine = self
 
         self.version = None
 
@@ -32,6 +35,7 @@ class Machine(object):
 
         self.slaves = []
         self.master = None
+        self.slave_mode = None
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
@@ -88,6 +92,10 @@ class Machine(object):
 
         return sn
 
+    @property
+    def address(self):
+        pass
+
     def search_slaves(self):
         slaves_cf = self.config['slaves']
         slaves = []
@@ -98,7 +106,7 @@ class Machine(object):
                 slave_sn = item
                 slave_ip = slaves_cf['slave_address_%d' % slave_id]
                 slave_dv = slaves_cf.get('slave_driver_%d' % slave_id,
-                                         fallback='OSC')
+                                         fallback='Osc').title()
 
                 slave_cf = {}
                 if self.config.has_section('slave_%s' % slave_sn):
@@ -118,13 +126,28 @@ class Machine(object):
             self.slaves.append(m)
 
         self.slaves = tuple(self.slaves)
+        return self.slaves
+
+    def load_slaves(self):
+        if not self.slaves:
+            if not self.search_slaves():
+                logging.info('No slaves found')
+                return
+
+        for s in self.slaves:
+            self.init_slave(s)
+            if s.serialnumber != s.get_serialnumber():
+                infos = s.slave + (s.get_serialnumber(),)
+                raise MachineError('S/N don\'t match for {2} slave at {1} '
+                                   '({0} vs {4})'.format(*infos))
 
     def add_slave(self, driver, address):
         try:
-            s = self._Slave(None, address, driver, {})
+            s = self._Slave(None, address, driver.title(), {})
             m = self._SlaveMachine(s)
-            m.start()
+            self.init_slave(m)
             m.get_serialnumber()
+            m.set_master(self.serialnumber, self.address(driver))
 
             existing_s = self.get_slave(m.serialnumber)
             if existing_s:
@@ -147,6 +170,7 @@ class Machine(object):
 
             slave_id, slave = rm_slave
 
+            slave.unslave()
             slave.exit()
             slave_instance = self.slaves.pop(slave_id)
             del slave_instance
@@ -157,3 +181,33 @@ class Machine(object):
         for i, s in enumerate(self.slaves):
             if sn == s.slave.serialnumber:
                 return i, s
+
+    def init_slave(self, slave_machine):
+        try:
+            slave_machine.init_driver()
+            slave_machine.start()
+        except self._SlaveMachineError as e:
+            raise MachineError('Couldn\'t initialize {2} slave at {1} '
+                               'with S/N {0}: {exc}'.format(*slave_machine.slave,
+                                                            exc=e))
+
+    def set_slave_mode(self, mode=None):
+        if mode:
+            if mode not in ('master', 'slave'):
+                raise MachineError('Unrecognized mode %s' % mode)
+
+            if mode == 'master':
+                if self.slave_mode == 'master':
+                    raise MachineError('Master mode already activated')
+
+                if not self.slaves:
+                    raise MachineError('No slaves found')
+
+                for s in self.slaves:
+                    s.enslave()
+
+        else:
+            logging.info('Deactivating %s mode' % self.slave_mode)
+
+            if mode == 'master':
+                pass
