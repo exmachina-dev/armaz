@@ -61,8 +61,7 @@ class OscDriver(AbstractDriver):
         try:
             m = OscMessage('/slave/%s' % path, *args, **kwargs)
             m.receiver = self.target
-            om = lo.Message(m.path, *m.args)
-            lo.send((m.receiver.hostname, m.receiver.port), om)
+            lo.send((m.receiver.hostname, m.receiver.port), m.message)
         except OSError as e:
             raise OscDriverError(str(e))
 
@@ -73,7 +72,6 @@ class OscDriver(AbstractDriver):
         for r in res:
             return res, (datetime.now() - t).total_seconds()
         raise OscDriverError('No reply')
-
 
     def __getitem__(self, key):
         m = self.message('/slave/get', key)

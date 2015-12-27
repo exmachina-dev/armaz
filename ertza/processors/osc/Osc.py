@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from copy import copy
+from liblo import Message
 
 
 class OscPath(str):
@@ -67,6 +68,10 @@ class OscMessage(object):
     @property
     def args(self):
         return tuple(self._args)
+
+    @property
+    def message(self):
+        return Message(self.path, *self.args)
 
     def __repr__(self):
         args = [str(i) for i in self.args]
