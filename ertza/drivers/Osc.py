@@ -45,7 +45,7 @@ class OscDriver(AbstractDriver):
             m = self.message('/slave/register', self.machine.serialnumber)
             self.osc_pipe.send(m)
         except AbstractDriverError as e:
-            pass
+            logging.exception('Error while registering: %s' % str(e))
 
     def exit(self):
         self['command:stop'] = True
@@ -71,7 +71,7 @@ class OscDriver(AbstractDriver):
         res = self.to_machine(m)
         for r in res:
             return res, (datetime.now() - t).total_seconds()
-        raise OscDriverError('No reply')
+        raise OscDriverError('No reply, try increasing timeout')
 
     def __getitem__(self, key):
         m = self.message('/slave/get', key)
