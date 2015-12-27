@@ -137,16 +137,24 @@ class Machine(object):
 
         for s in self.slaves:
             self.init_slave(s)
+            try:
+                s.ping()
+            except AbstractDriverError as e:
+                logging.error('Unable to contact {3} slave at {2} ({1}) '
+                              '{0}'.format(str(e), *s.slave))
+                return
             if s.serialnumber != s.get_serialnumber():
                 infos = s.slave + (s.get_serialnumber(),)
-                raise MachineError('S/N don\'t match for {2} slave at {1} '
-                                   '({0} vs {4})'.format(*infos))
+                logging.exception(MachineError('S/N don\'t match for {2} slave '
+                                               'at {1} ({0} vs {4})'
+                                               ''.format(*infos)))
 
     def add_slave(self, driver, address):
         try:
             s = self._Slave(None, address, driver.title(), {})
             m = self._SlaveMachine(s)
             self.init_slave(m)
+            m.ping()
             m.get_serialnumber()
             m.set_master(self.serialnumber, self.address(driver))
 
