@@ -2,16 +2,16 @@
 
 import logging
 from collections import namedtuple
-from multiprocessing import JoinableQueue
 
 from ertza.Machine import Machine
 from ertza.drivers.Drivers import Driver
+from ertza.drivers.AbstractDriver import AbstractDriverError
 
 
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'config'))
 
 
-class SlaveMachineError(Exception):
+class SlaveMachineError(AbstractDriverError):
     pass
 
 
@@ -31,8 +31,6 @@ class SlaveMachine(Machine):
             'target_port': int(self.config.get('reply_port', 6969)),
         }
 
-        self.in_queue = JoinableQueue(10)
-
     def init_driver(self):
         drv = self.slave.driver
         logging.info("Loading %s driver" % drv)
@@ -40,10 +38,12 @@ class SlaveMachine(Machine):
             try:
                 driver = Driver().get_driver(drv)
                 self.driver = driver(self.driver_config, self.machine)
-                self.driver.in_queue = self.in_queue
+                self.inlet = self.driver.init_pipe()
             except KeyError:
                 logging.error("Unable to get %s driver, aborting." % drv)
                 return
+            except AbstractDriverError as e:
+                raise SlaveMachineError('Unable to intialize driver: %s' % e)
         else:
             logging.error("Machine driver is not defined, aborting.")
             return False

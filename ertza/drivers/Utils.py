@@ -21,3 +21,11 @@ def retry(ExceptionToCatch, tries=3, wait=5, backoff=2):
             return f(*args, **kwargs)
         return f_retry
     return decorator_retry
+
+
+def coroutine(func):
+    def wrapper(*arg, **kwargs):
+        generator = func(*arg, **kwargs)
+        generator.send(None)
+        return generator
+    return wrapper
