@@ -53,6 +53,12 @@ class SlaveMachine(Machine):
     def exit(self):
         self.driver.exit()
 
+    def ping(self):
+        try:
+            self.driver.ping()
+        except AbstractDriverError as e:
+            raise SlaveMachineError('Unable to ping remote machine: %s' % e)
+
     @property
     def infos(self):
         rev = self.driver['machine:revision']

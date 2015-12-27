@@ -4,6 +4,7 @@ import sys
 import logging
 
 from ertza.drivers.Drivers import Driver
+from ertza.drivers.AbstractDriver import AbstractDriverError
 
 
 class MachineError(Exception):
