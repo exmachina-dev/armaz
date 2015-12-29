@@ -186,10 +186,15 @@ class Machine(AbstractMachine):
         except Exception as e:
             raise MachineError('Unable to remove slave: %s' % str(e))
 
-    def get_slave(self, sn):
-        for i, s in enumerate(self.slaves):
-            if sn == s.slave.serialnumber:
-                return i, s
+    def get_slave(self, serialnumber=None, address=None):
+        if serialnumber:
+            for i, s in enumerate(self.slaves):
+                if serialnumber == s.slave.serialnumber:
+                    return i, s
+        elif address:
+            for i, s in enumerate(self.slaves):
+                if address == s.slave.address:
+                    return i, s
 
     def init_slave(self, slave_machine):
         try:
