@@ -205,7 +205,7 @@ class Machine(AbstractMachine):
                                'with S/N {0}: {exc}'.format(*slave_machine.slave,
                                                             exc=e))
 
-    def set_slave_mode(self, mode=None):
+    def set_slave_mode(self, mode=None, master=None):
         if mode:
             if mode not in ('master', 'slave'):
                 raise MachineError('Unrecognized mode %s' % mode)
@@ -216,6 +216,15 @@ class Machine(AbstractMachine):
 
                 if not self.slaves:
                     raise MachineError('No slaves found')
+
+                for s in self.slaves:
+                    s.enslave()
+            elif mode == 'slave':
+                if self.slave_mode == 'slave':
+                    raise MachineError('Slave mode already activated')
+
+                if not master:
+                    raise MachineError('No master supplied')
 
                 for s in self.slaves:
                     s.enslave()
