@@ -66,9 +66,16 @@ class Ertza(object):
             logging.error(_DEFAULT_CONF + " does not exist, exiting.")
             sys.exit(1)
 
+        c = None
+        if 'config' in kwargs:
+            c = kwargs['config']
+        custom_conf = c[0] if c else _CUSTOM_CONF
+
+        logging.debug('Custom file: %s' % custom_conf)
+
         machine.config = ConfigParser(_DEFAULT_CONF,
                                       _MACHINE_CONF,
-                                      _CUSTOM_CONF)
+                                      custom_conf)
 
         machine.config.load_variant()
 
@@ -315,7 +322,14 @@ class Ertza(object):
 
 
 def main():
-    e = Ertza()
+    import argparse
+
+    parser = argparse.ArgumentParser(prog='ertza')
+    parser.add_argument('--config', nargs=1, help='Use CONFIG as custom config file')
+
+    args = parser.parse_args()
+
+    e = Ertza(**vars(args))
 
     def signal_handler(signal, frame):
         e.exit()
