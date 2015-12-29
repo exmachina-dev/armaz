@@ -3,7 +3,8 @@
 import logging
 from collections import namedtuple
 
-from ertza.Machine import Machine
+from ertza.machine.AbstractMachine import AbstractMachine, AbstractMachineError
+
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
@@ -11,11 +12,11 @@ from ertza.drivers.AbstractDriver import AbstractDriverError
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'config'))
 
 
-class SlaveMachineError(AbstractDriverError):
+class SlaveMachineError(AbstractMachineError):
     pass
 
 
-class SlaveMachine(Machine):
+class SlaveMachine(AbstractMachine):
 
     machine = None
 
@@ -49,6 +50,9 @@ class SlaveMachine(Machine):
             return False
 
         return drv
+
+    def start(self):
+        self.driver.connect()
 
     def exit(self):
         self.driver.exit()

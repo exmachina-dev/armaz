@@ -13,7 +13,7 @@ from multiprocessing import JoinableQueue
 import queue
 
 from ertza.ConfigParser import ConfigParser
-from ertza.Machine import Machine
+from ertza.machine.Machine import Machine
 
 from ertza.processors.OscProcessor import OscProcessor
 from ertza.processors.SerialProcessor import SerialProcessor

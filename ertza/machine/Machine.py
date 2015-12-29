@@ -3,19 +3,23 @@
 import sys
 import logging
 
+from ertza.machine.AbstractMachine import AbstractMachine
+from ertza.machine.AbstractMachine import AbstractMachineError
+
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
+from ertza.machine.Slave import Slave, SlaveMachine, SlaveMachineError
 
-class MachineError(Exception):
+
+class MachineError(AbstractMachineError):
     pass
 
 
-class Machine(object):
+class Machine(AbstractMachine):
 
     def __init__(self):
         # Ugly fix for circular dependency
-        from ertza.drivers.Slave import Slave, SlaveMachine, SlaveMachineError
 
         self._Slave, self._SlaveMachine = Slave, SlaveMachine
         self._SlaveMachineError = SlaveMachineError
