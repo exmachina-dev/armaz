@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import logging
+from threading import Thread
 from collections import namedtuple
+import logging
 
 from ertza.machine.AbstractMachine import AbstractMachine, AbstractMachineError
 
@@ -52,7 +53,11 @@ class SlaveMachine(AbstractMachine):
         return drv
 
     def start(self):
-        self.driver.connect()
+        drv = self.driver.connect()
+        t = Thread(target=drv._pipe_listener)
+        t.daemon = True
+        t.start()
+        self.driver = drv
 
     def exit(self):
         self.driver.exit()

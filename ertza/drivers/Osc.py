@@ -42,11 +42,14 @@ class OscDriver(AbstractDriver):
         try:
             self.running = True
             self.osc_pipe = self._pipe_coroutine()
-            m = self.message('/slave/register', self.machine.serialnumber,
-                             types='s')
-            self.to_machine(m)
+            sn = self.machine.serialnumber if self.machine.serialnumber \
+                else 'No S/N'
+            # m = self.message('/slave/register', sn, types='s')
+            # self.to_machine(m)
         except AbstractDriverError as e:
             logging.exception('Error while registering: %s' % str(e))
+
+        return self
 
     def exit(self):
         self['command:stop'] = True
