@@ -97,8 +97,8 @@ class OscDriver(AbstractDriver):
                     request = (yield response)
                     try:
                         self._send(request)
-                    except:
-                        pass
+                    except Exception as e:
+                        logging.error('Error while sending: %s' % str(e))
                     if self.outlet.poll(self.timeout):
                         response = self.outlet.recv()
                     else:
