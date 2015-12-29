@@ -58,14 +58,6 @@ class OscDriver(AbstractDriver):
     def message(self, *args, **kwargs):
         return OscMessage(*args, receiver=self.target, **kwargs)
 
-    def _send(self, message, *args, **kwargs):
-        try:
-            m = message
-            m.receiver = self.target
-            lo.send((m.receiver.hostname, m.receiver.port), m.message)
-        except OSError as e:
-            raise OscDriverError(str(e))
-
     def ping(self):
         m = self.message('/slave/ping')
         t = datetime.now()
@@ -73,6 +65,14 @@ class OscDriver(AbstractDriver):
         for r in res:
             return res, (datetime.now() - t).total_seconds()
         raise OscDriverError('No reply, try increasing timeout')
+
+    def to_machine(self, request):
+        try:
+            return self.osc_pipe.send(request)
+        except StopIteration:
+            return ()
+        except:
+            raise
 
     def __getitem__(self, key):
         m = self.message('/slave/get', key)
@@ -88,6 +88,11 @@ class OscDriver(AbstractDriver):
             return ret['value']
         raise OscDriverError('Unexpected reply')
 
+    def _pipe_listener(self):
+        while self.running:
+            yield self.outlet.recv()
+
+
     @coroutine
     def _pipe_coroutine(self):
         if self.outlet:
@@ -99,19 +104,17 @@ class OscDriver(AbstractDriver):
                         self._send(request)
                     except Exception as e:
                         logging.error('Error while sending: %s' % str(e))
-                    if self.outlet.poll(self.timeout):
-                        response = self.outlet.recv()
-                    else:
-                        raise OscDriverTimeout('Timeout')
+
+                    yield from self._pipe_listener()
                 except Exception as e:
                     raise OscDriverError('Exception while receiving: %s' % str(e))
         else:
             raise OscDriverError('No queue initialized')
 
-    def to_machine(self, request):
+    def _send(self, message, *args, **kwargs):
         try:
-            return self.osc_pipe.send(request)
-        except StopIteration:
-            return ()
-        except:
-            raise
+            m = message
+            m.receiver = self.target
+            lo.send((m.receiver.hostname, m.receiver.port), m.message)
+        except OSError as e:
+            raise OscDriverError(str(e))
