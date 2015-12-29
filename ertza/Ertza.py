@@ -12,27 +12,27 @@ from threading import Thread
 from multiprocessing import JoinableQueue
 import queue
 
-from .ConfigParser import ConfigParser
-from .Machine import Machine
+from ertza.ConfigParser import ConfigParser
+from ertza.Machine import Machine
 
-from .processors.OscProcessor import OscProcessor
-from .processors.SerialProcessor import SerialProcessor
+from ertza.processors.OscProcessor import OscProcessor
+from ertza.processors.SerialProcessor import SerialProcessor
 
-from .processors.osc.OscServer import OscServer
-from .processors.serial.SerialServer import SerialServer
-from .processors.serial.Serial import SerialCommandString
+from ertza.processors.osc.OscServer import OscServer
+from ertza.processors.serial.SerialServer import SerialServer
+from ertza.processors.serial.Serial import SerialCommandString
 
-from .PWM import PWM
+from ertza.PWM import PWM
 try:
-    from .Thermistor import Thermistor
+    from ertza.Thermistor import Thermistor
     NO_TH = False
 except ImportError:
     NO_TH = True
 
-from .Fan import Fan
-from .Switch import Switch
-from .TempWatcher import TempWatcher
-from .Led import Led
+from ertza.Fan import Fan
+from ertza.Switch import Switch
+from ertza.TempWatcher import TempWatcher
+from ertza.Led import Led
 
 version = "0.0.2~Firstimer"
 
