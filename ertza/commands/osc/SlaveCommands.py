@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import pickle
+import logging
 
 from ertza.commands.AbstractCommands import UnbufferedCommand
 from ertza.commands.OscCommand import OscCommand
@@ -59,6 +59,20 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
         return '/slave/set'
 
 
+class SlaveRegister(SlaveCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        try:
+            self.machine.set_slave_mode('slave')
+            self.ok(c)
+        except Exception as e:
+            self.error(c, e)
+
+    @property
+    def alias(self):
+        return '/slave/register'
+
+
 class SlaveFree(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
@@ -93,32 +107,57 @@ class SlaveMode(OscCommand, UnbufferedCommand):
         return '/machine/slave/mode'
 
 
-class SlaveGetResponse(OscCommand, UnbufferedCommand):
+class SlavePing(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
-        key, value, = c.args
-        sl = self.machine.get_slave(address=c.sender.hostname)
-        sl.inlet.send(pickle.pickle(c))
+        logging.info('Ping request from %s' % c.sender)
+        self.ok(c)
 
+    @property
+    def alias(self):
+        return '/slave/ping'
+
+
+# -- Responses from slave --
+
+
+class SlaveResponse(OscCommand, UnbufferedCommand):
+    def execute(self, c):
+        i, sl = self.machine.get_slave(address=c.sender.hostname)
+        sl.inlet.send(c)
+
+
+class SlaveRegisterResponse(SlaveResponse):
+    @property
+    def alias(self):
+        return '/slave/register/ok'
+
+
+class SlaveGetResponse(SlaveResponse):
     @property
     def alias(self):
         return '/slave/get/ok'
 
 
-class SlaveGetError(SlaveGetResponse):
+class SlaveGetError(SlaveResponse):
     @property
     def alias(self):
         return '/slave/get/error'
 
 
-class SlaveSetResponse(SlaveGetResponse, UnbufferedCommand):
-
+class SlaveSetResponse(SlaveResponse):
     @property
     def alias(self):
         return '/slave/set/ok'
 
 
-class SlaveSetError(SlaveSetResponse):
+class SlaveSetError(SlaveResponse):
     @property
     def alias(self):
         return '/slave/set/error'
+
+
+class SlavePingResponse(SlaveResponse):
+    @property
+    def alias(self):
+        return '/slave/ping/ok'
