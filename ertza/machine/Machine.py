@@ -86,7 +86,7 @@ class Machine(AbstractMachine):
     @property
     def serialnumber(self):
         if not self.cape_infos:
-            return False
+            return
 
         sn = self.cape_infos['serialnumber'] if self.cape_infos \
             else '000000000000'
