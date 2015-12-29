@@ -42,8 +42,9 @@ class OscDriver(AbstractDriver):
         try:
             self.running = True
             self.osc_pipe = self._pipe_coroutine()
-            m = self.message('/slave/register', self.machine.serialnumber)
-            self.osc_pipe.send(m)
+            m = self.message('/slave/register', self.machine.serialnumber,
+                             types='s')
+            self.to_machine(m)
         except AbstractDriverError as e:
             logging.exception('Error while registering: %s' % str(e))
 
@@ -57,9 +58,9 @@ class OscDriver(AbstractDriver):
     def message(self, *args, **kwargs):
         return OscMessage(*args, receiver=self.target, **kwargs)
 
-    def _send(self, path, *args, **kwargs):
+    def _send(self, message, *args, **kwargs):
         try:
-            m = OscMessage('/slave/%s' % path, *args, **kwargs)
+            m = message
             m.receiver = self.target
             lo.send((m.receiver.hostname, m.receiver.port), m.message)
         except OSError as e:

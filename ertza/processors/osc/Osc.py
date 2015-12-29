@@ -44,8 +44,9 @@ class OscMessage(object):
         self.sender, self.receiver = None, None
         self._args = [str(a) if isinstance(a, Exception) else a for a in self._args]
 
-        if 'types' in kwargs:
-            self.types = kwargs['types']
+        self.types = kwargs['types'] if 'types' in kwargs else None
+        if self.types and len(self.types) != len(self._args):
+            raise TypeError('Lenght of args and types must match')
 
         self.sender = OscAddress(kwargs['sender']) if 'sender' in kwargs \
             else None
@@ -71,6 +72,11 @@ class OscMessage(object):
 
     @property
     def message(self):
+        if self.types:
+            a = []
+            for i in zip(self.types, self.args):
+                a.append(i)
+            return Message(self.path, *a)
         return Message(self.path, *self.args)
 
     def __repr__(self):
