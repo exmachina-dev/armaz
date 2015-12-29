@@ -19,12 +19,8 @@ class MachineError(AbstractMachineError):
 class Machine(AbstractMachine):
 
     def __init__(self):
-        # Ugly fix for circular dependency
 
-        self._Slave, self._SlaveMachine = Slave, SlaveMachine
-        self._SlaveMachineError = SlaveMachineError
-
-        self._SlaveMachine.machine = self
+        SlaveMachine.machine = self
 
         self.version = None
 
@@ -117,7 +113,7 @@ class Machine(AbstractMachine):
                 if self.config.has_section('slave_%s' % slave_sn):
                     slave_cf = self.config['slave_%s' % slave_sn]
 
-                s = self._Slave(slave_sn, slave_ip, slave_dv, slave_cf)
+                s = Slave(slave_sn, slave_ip, slave_dv, slave_cf)
                 logging.info('Found {2} slave at {1} '
                              'with S/N {0}'.format(*s))
                 slaves.append(s)
@@ -127,7 +123,7 @@ class Machine(AbstractMachine):
 
         self.slaves = []
         for s in slaves:
-            m = self._SlaveMachine(s)
+            m = SlaveMachine(s)
             self.slaves.append(m)
 
         self.slaves = tuple(self.slaves)
@@ -143,20 +139,20 @@ class Machine(AbstractMachine):
             self.init_slave(s)
             try:
                 s.ping()
-            except AbstractDriverError as e:
+            except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *s.slave))
                 return
             if s.serialnumber != s.get_serialnumber():
                 infos = s.slave + (s.get_serialnumber(),)
-                logging.exception(MachineError('S/N don\'t match for {2} slave '
-                                               'at {1} ({0} vs {4})'
-                                               ''.format(*infos)))
+                logging.error(MachineError('S/N don\'t match for {2} slave '
+                                           'at {1} ({0} vs {4})'
+                                           ''.format(*infos)))
 
     def add_slave(self, driver, address):
         try:
-            s = self._Slave(None, address, driver.title(), {})
-            m = self._SlaveMachine(s)
+            s = Slave(None, address, driver.title(), {})
+            m = SlaveMachine(s)
             self.init_slave(m)
             m.ping()
             m.get_serialnumber()
@@ -199,7 +195,7 @@ class Machine(AbstractMachine):
         try:
             slave_machine.init_driver()
             slave_machine.start()
-        except self._SlaveMachineError as e:
+        except SlaveMachineError as e:
             raise MachineError('Couldn\'t initialize {2} slave at {1} '
                                'with S/N {0}: {exc}'.format(*slave_machine.slave,
                                                             exc=e))
