@@ -32,7 +32,7 @@ class OscServer(lo.Server):
         self._t.start()
 
     def send_message(self, message):
-        osc_msg = lo.Message(message.path, *message.args)
+        osc_msg = message.to_message()
         message.receiver.port = self.reply_port
         if message.msg_type is not 'log':
             logging.debug("Sending to %s: %s" % (message.receiver, message))

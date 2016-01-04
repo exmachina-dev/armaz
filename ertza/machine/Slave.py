@@ -54,9 +54,6 @@ class SlaveMachine(AbstractMachine):
 
     def start(self):
         drv = self.driver.connect()
-        t = Thread(target=drv._pipe_listener)
-        t.daemon = True
-        t.start()
         self.driver = drv
 
     def exit(self):
@@ -64,7 +61,7 @@ class SlaveMachine(AbstractMachine):
 
     def ping(self):
         try:
-            self.driver.ping()
+            return self.driver.ping()
         except AbstractDriverError as e:
             raise SlaveMachineError('Unable to ping remote machine: %s' % e)
 
@@ -83,4 +80,4 @@ class SlaveMachine(AbstractMachine):
         return self.slave.serialnumber
 
     def get_serialnumber(self):
-        return self.driver['serialnumber']
+        return self.driver['machine:serialnumber']

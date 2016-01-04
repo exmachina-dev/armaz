@@ -2,8 +2,10 @@
 
 import liblo as lo
 import logging
+import asyncio
+import functools
 from datetime import datetime
-from multiprocessing import Pipe
+from multiprocessing import Pipe, Event
 
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 from ertza.processors.osc.Osc import OscAddress, OscMessage
@@ -19,6 +21,9 @@ class OscDriverTimeout(OscDriverError):
 
 
 class OscDriver(AbstractDriver):
+
+    _loop = asyncio.get_event_loop()
+    _loop.set_debug(True)
 
     def __init__(self, config, machine):
         self.target_address = config.get("target_address")
@@ -64,18 +69,36 @@ class OscDriver(AbstractDriver):
     def ping(self):
         m = self.message('/slave/ping')
         t = datetime.now()
-        res = self.to_machine(m)
-        for r in res:
-            return res, (datetime.now() - t).total_seconds()
-        raise OscDriverError('No reply, try increasing timeout')
+        ev, res = self.to_machine(m)
+        if ev.wait(self.timeout):
+            return res.result()
+        raise OscDriverTimeout()
 
+    @asyncio.coroutine
     def to_machine(self, request):
         try:
-            return self.osc_pipe.send(request)
+            fut = asyncio.Future()
+            event = Event()
+            done_cb = functools.partial(self.done_cb, event)
+            fut.add_done_callback(done_cb)
+            self._send(request)
+            yield from asyncio.wait_for(
+                self.from_machine(fut), self.timeout)
+            return event, fut
+
         except StopIteration:
             return ()
         except:
             raise
+
+    @asyncio.coroutine
+    def from_machine(self, future):
+        res = yield from self.outlet.recv()
+        future.set_result(res)
+
+    def done_cb(self, event, fut):
+        event.set()
+        logging.debug(fut.result())
 
     def __getitem__(self, key):
         m = self.message('/slave/get', key)
@@ -91,12 +114,12 @@ class OscDriver(AbstractDriver):
             return ret['value']
         raise OscDriverError('Unexpected reply')
 
+    @asyncio.coroutine
     def _pipe_listener(self):
         while self.running:
             yield self.outlet.recv()
 
-
-    @coroutine
+    @asyncio.coroutine
     def _pipe_coroutine(self):
         if self.outlet:
             response = None

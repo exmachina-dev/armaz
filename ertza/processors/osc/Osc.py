@@ -70,14 +70,17 @@ class OscMessage(object):
     def args(self):
         return tuple(self._args)
 
-    @property
-    def message(self):
+    def to_message(self):
         if self.types:
             a = []
             for i in zip(self.types, self.args):
                 a.append(i)
             return Message(self.path, *a)
         return Message(self.path, *self.args)
+
+    @property
+    def message(self):
+        return self.to_message()
 
     def __repr__(self):
         args = [str(i) for i in self.args]
