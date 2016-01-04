@@ -3,6 +3,11 @@
 from .AbstractDriver import AbstractDriver
 
 
+_FakeDict = {
+    'serialnumber': '5315FKDV0001',
+}
+
+
 class FakeDriverError(Exception):
     pass
 
@@ -18,3 +23,8 @@ class FakeDriver(AbstractDriver):
 
     def exit(self):
         pass
+
+    def __getitem__(self, key):
+        if key in _FakeDict.keys():
+            return _FakeDict[key]
+        raise KeyError
