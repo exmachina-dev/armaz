@@ -29,10 +29,12 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
             return
 
         try:
-            key = c.args
-            self.ok(c, key, self.machine[key])
+            dst, = c.args
+            to, key = dst.split(':')
+            target = getattr(self, to)
+            self.ok(c, dst, target[key])
         except Exception as e:
-            self.error(c, key, e)
+            self.error(c, dst, e)
 
     @property
     def alias(self):
