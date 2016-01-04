@@ -236,3 +236,9 @@ class Machine(AbstractMachine):
 
             if mode == 'master':
                 pass
+
+    def __getitem__(self, key):
+        return self.driver[key]
+
+    def __setitem__(self, key, value):
+        self.driver[key] = value
