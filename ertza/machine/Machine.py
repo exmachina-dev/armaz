@@ -57,6 +57,7 @@ class Machine(AbstractMachine):
             logging.error("Machine driver is not defined, aborting.")
             return False
 
+        logging.debug("%s driver loaded" % drv)
         return drv
 
     def start(self):
@@ -136,6 +137,7 @@ class Machine(AbstractMachine):
                 return
 
         for s in self.slaves:
+            logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
             self.init_slave(s)
             try:
                 s.ping()

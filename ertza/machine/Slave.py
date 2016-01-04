@@ -50,6 +50,7 @@ class SlaveMachine(AbstractMachine):
             logging.error("Machine driver is not defined, aborting.")
             return False
 
+        logging.debug("%s driver loaded" % drv)
         return drv
 
     def start(self):
