@@ -251,7 +251,37 @@ class Machine(AbstractMachine):
                 pass
 
     def __getitem__(self, key):
-        return self.driver[key]
+        if key.startswith('drive:'):
+            return self.driver[key]
+
+        if not key.startswith('machine:'):
+            raise ValueError('Unable to find target %s' % key)
+
+        key = key.replace('machine:', '', 1)
+
+        if key not in self.MachineMap:
+            raise KeyError(key)
+
+        if 'serialnumber' == key:
+            return self.driver['serialnumber']
 
     def __setitem__(self, key, value):
-        self.driver[key] = value
+        if type(value) == tuple and len(value) == 1:
+            value, = value
+
+        if key.startswith('drive:'):
+            self.driver[key] = value
+            return
+
+        if not key.startswith('machine:'):
+            raise ValueError('Unable to find target %s' % key)
+
+        key = key.replace('machine:', '', 1)
+
+        if key not in self.MachineMap:
+            raise IndexError('Unable to find %s in keys' % key)
+        if type(value) == tuple and len(value) == 1:
+            value, = value
+
+        if 'slave_mode' == key:
+            self.set_slave_mode(value, '127.0.0.1')

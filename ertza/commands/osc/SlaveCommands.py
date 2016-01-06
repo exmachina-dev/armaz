@@ -23,16 +23,15 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
     """
 
     def execute(self, c):
-        super().execute(c)
+        if 'machine:slave_mode' not in c.args[0]:
+            super().execute(c)
 
         if not self.check_args(c, 'eq', 1):
             return
 
         try:
             dst, = c.args
-            to, key = dst.split(':')
-            target = getattr(self, to)
-            self.ok(c, dst, target[key])
+            self.ok(c, dst, self.machine[dst])
         except Exception as e:
             self.error(c, dst, e)
 
@@ -50,11 +49,12 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
             return
 
         try:
-            key, value = c.args
-            self.machine[key] = value
-            self.ok(c, key, value)
+            print(c.args)
+            dst, value, = c.args
+            self.machine[dst] = value
+            self.ok(c, dst, value)
         except Exception as e:
-            self.error(c, key, value, e)
+            self.error(c, dst, value, e)
 
     @property
     def alias(self):
@@ -89,24 +89,6 @@ class SlaveFree(SlaveCommand, UnbufferedCommand):
     @property
     def alias(self):
         return '/slave/free'
-
-
-class SlaveMode(OscCommand, UnbufferedCommand):
-
-    def execute(self, c):
-        if not self.check_args(c, 'eq', 1):
-            return
-
-        try:
-            k, = c.args
-            v = self.machine.driver[k]
-            self.ok(c, k, v)
-        except Exception as e:
-            self.error(c, e)
-
-    @property
-    def alias(self):
-        return '/machine/slave/mode'
 
 
 class SlavePing(OscCommand, UnbufferedCommand):
