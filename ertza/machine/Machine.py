@@ -3,6 +3,8 @@
 import sys
 import logging
 
+from collections import namedtuple
+
 from ertza.machine.AbstractMachine import AbstractMachine
 from ertza.machine.AbstractMachine import AbstractMachineError
 
@@ -17,6 +19,14 @@ class MachineError(AbstractMachineError):
 
 
 class Machine(AbstractMachine):
+
+    parameter = namedtuple('parameter', ['vtype', 'mode'])
+
+    MachineMap = {
+        'slave_mode':   parameter(str, 'rw'),
+        'master':       parameter(str, 'rw'),
+        'serialnumber': parameter(str, 'ro'),
+    }
 
     def __init__(self):
 
@@ -145,7 +155,11 @@ class Machine(AbstractMachine):
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *s.slave))
                 return
-            if s.serialnumber != s.get_serialnumber():
+
+            s.set_to_remote('machine:slave_mode', 'slave', self.address)
+
+            sn = s.get_from_remote('machine:serialnumber', block=True)
+            if type(sn) == str and s.serialnumber != sn:
                 infos = s.slave + (s.get_serialnumber(),)
                 logging.error(MachineError('S/N don\'t match for {2} slave '
                                            'at {1} ({0} vs {4})'
@@ -157,10 +171,9 @@ class Machine(AbstractMachine):
             m = SlaveMachine(s)
             self.init_slave(m)
             m.ping()
-            m.get_serialnumber()
             m.set_master(self.serialnumber, self.address(driver))
 
-            existing_s = self.get_slave(m.serialnumber)
+            existing_s = self.get_slave(serialnumber=m.serialnumber)
             if existing_s:
                 raise MachineError('Already existing {2} at {1} '
                                    'with S/N {0}'.format(*existing_s.slave))

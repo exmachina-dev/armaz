@@ -125,9 +125,10 @@ class SlavePing(OscCommand, UnbufferedCommand):
 
 class SlaveResponse(OscCommand, UnbufferedCommand):
     def execute(self, c):
-        logging.debug('Got {0} in {1}'.format(str(c), self.__class__.__name__))
         i, sl = self.machine.get_slave(address=c.sender.hostname)
-        sl.inlet.send(c)
+        sl.inlet.put(c)
+        logging.debug('Putting {0} in {1}'.format(
+            str(c), sl.inlet.__class__.__name__))
 
 
 class SlaveRegisterResponse(SlaveResponse):

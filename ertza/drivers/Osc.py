@@ -2,14 +2,13 @@
 
 import liblo as lo
 import logging
-import asyncio
-import functools
 from datetime import datetime
-from multiprocessing import Pipe, Event
+from threading import Thread
+from threading import Event
+from queue import Queue, Empty
 
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 from ertza.processors.osc.Osc import OscAddress, OscMessage
-from ertza.drivers.Utils import coroutine
 
 
 class OscDriverError(AbstractDriverError):
@@ -22,9 +21,6 @@ class OscDriverTimeout(OscDriverError):
 
 class OscDriver(AbstractDriver):
 
-    _loop = asyncio.get_event_loop()
-    _loop.set_debug(True)
-
     def __init__(self, config, machine):
         self.target_address = config.get("target_address")
         self.target_port = int(config.get("target_port"))
@@ -35,33 +31,40 @@ class OscDriver(AbstractDriver):
 
         self.outlet, self.inlet = None, None
         self.osc_pipe = None
-        self.running = False
-        self.timeout = 2.0
+        self.running = Event()
+        self.timeout = 5.0
 
-    def init_pipe(self):
-        self.outlet, self.inlet = Pipe(False)
+        self._waiting_futures = []
 
-        return self.inlet
+    def init_queue(self):
+        self.queue = Queue(maxsize=10)
+
+        return self.queue
 
     def connect(self):
+        self._thread = Thread(target=self.from_machine)
+        self._thread.daemon = True
+        self._thread.start()
+
+    def register(self):
         try:
-            self.running = True
-            self.osc_pipe = self._pipe_coroutine()
             sn = self.machine.serialnumber if self.machine.serialnumber \
-                else 'No S/N'
-            # m = self.message('/slave/register', sn, types='s')
-            # self.to_machine(m)
+                else False
+            if sn:
+                m = self.message('/slave/register', sn, types='s')
+            else:
+                m = self.message('/slave/register', sn, types='F')
+
+            self.to_machine(m)
         except AbstractDriverError as e:
             logging.exception('Error while registering: %s' % str(e))
-
-        return self
 
     def exit(self):
         self['command:stop'] = True
         self['command:enable'] = False
 
         self.send_to_slave('free', self.machine.serialnumber)
-        self.running = False
+        self.running.set()
 
     def message(self, *args, **kwargs):
         return OscMessage(*args, receiver=self.target, **kwargs)
@@ -69,73 +72,69 @@ class OscDriver(AbstractDriver):
     def ping(self):
         m = self.message('/slave/ping')
         t = datetime.now()
-        ev, res = self.to_machine(m)
-        if ev.wait(self.timeout):
-            return res.result()
-        raise OscDriverTimeout()
+        fut = self.to_machine(m, m.path)
+        reply = self.wait_for_future(fut)
+        return reply, t
 
-    @asyncio.coroutine
-    def to_machine(self, request):
+    def to_machine(self, request, uid=None):
         try:
-            fut = asyncio.Future()
+            if not uid:
+                uid = ' '.join((request.path, request.args[0]))
             event = Event()
-            done_cb = functools.partial(self.done_cb, event)
-            fut.add_done_callback(done_cb)
+            future = OscFutureResult(uid)
+            future.set_callback(self.done_cb)
+            future.set_event(event)
+            self._waiting_futures.append(future)
+            logging.debug(self._waiting_futures)
             self._send(request)
-            yield from asyncio.wait_for(
-                self.from_machine(fut), self.timeout)
-            return event, fut
-
-        except StopIteration:
-            return ()
+            return future
         except:
             raise
 
-    @asyncio.coroutine
-    def from_machine(self, future):
-        res = yield from self.outlet.recv()
-        future.set_result(res)
+    def from_machine(self):
+        while not self.running.is_set():
+            try:
+                recv_item = self.queue.get(block=True)
+                logging.debug('Received %s in slave loop' % repr(recv_item))
 
-    def done_cb(self, event, fut):
-        event.set()
-        logging.debug(fut.result())
+                f_id = None
+                for i, f in enumerate(self._waiting_futures):
+                    if recv_item == f:
+                        f_id = i
+                        logging.debug(f_id)
+                        break
+                if f_id is None:
+                    logging.error('Unable to find waiting future '
+                                  'for %s' % str(f))
+                    continue
+                future = self._waiting_futures.pop(f_id)
+                future.set_result(recv_item)
+                self.queue.task_done()
+            except Exception as e:
+                logging.exception('Exception in %s: %s' % (self.__class__.__name__,
+                                                           repr(e)))
+
+    def done_cb(self, *args):
+        logging.debug(' '.join([str(i) for i in args]))
+
+    def wait_for_future(self, fut):
+        if fut.event.wait(self.timeout):
+            return fut.result
+        raise OscDriverTimeout('Timeout')
 
     def __getitem__(self, key):
         m = self.message('/slave/get', key)
-        for ret in self.to_machine(m):
-            return ret
-        raise OscDriverError('No reply')
+        fut = self.to_machine(m)
+        ret = self.wait_for_future(fut)
+
+        return ret
 
     def __setitem__(self, key, value):
         m = self.message('/slave/set', key, value)
-        ret = self.to_machine(m)
+        fut = self.to_machine(m)
+        ret = self.wait_for_future(fut)
 
-        if ret['key'] == key:
-            return ret['value']
-        raise OscDriverError('Unexpected reply')
-
-    @asyncio.coroutine
-    def _pipe_listener(self):
-        while self.running:
-            yield self.outlet.recv()
-
-    @asyncio.coroutine
-    def _pipe_coroutine(self):
-        if self.outlet:
-            response = None
-            while self.running:
-                try:
-                    request = (yield response)
-                    try:
-                        self._send(request)
-                    except Exception as e:
-                        logging.error('Error while sending: %s' % str(e))
-
-                    yield from self._pipe_listener()
-                except Exception as e:
-                    raise OscDriverError('Exception while receiving: %s' % str(e))
-        else:
-            raise OscDriverError('No queue initialized')
+        return ret
 
     def _send(self, message, *args, **kwargs):
         try:
@@ -144,3 +143,61 @@ class OscDriver(AbstractDriver):
             lo.send((m.receiver.hostname, m.receiver.port), m.message)
         except OSError as e:
             raise OscDriverError(str(e))
+
+
+class OscFutureResult(object):
+    def __init__(self, uid):
+        self._callback = None
+        self._result = None
+        self._event = None
+        self._uid = uid
+
+    def set_callback(self, cb):
+        if self._callback:
+            raise ValueError('Callback is already defined')
+        self._callback = cb
+
+    def set_event(self, event):
+        if self._event:
+            raise ValueError('Event is already defined')
+        self._event = event
+
+    @property
+    def event(self):
+        if not self._event:
+            raise ValueError('Event is not defined')
+        return self._event
+
+    def set_result(self, result):
+        if self._result is not None:
+            raise ValueError('Result is already defined')
+        self._result = result
+        self.event.set()
+        if self._callback:
+            self._callback(self)
+
+    @property
+    def result(self):
+        if not self._result:
+            raise ValueError('Result is not yet defined')
+        return self._result
+
+    def __eq__(self, other):
+        try:
+            if self.uid == other.uid:
+                return True
+            return False
+        except AttributeError as e:
+            raise TypeError('%s is not comparable with %s: %s' % (
+                self.__class__.__name__, other.__class__.__name__, str(e)))
+
+    @property
+    def uid(self):
+        if not self._result:
+            return self._uid
+        clean_path = self.result.path.replace('/ok', '', 1).replace('/error', '', 1)
+        if '/ping' in clean_path:
+            return clean_path
+        key_arg = self.result.args[0]
+        uid = ' '.join((clean_path, key_arg,))
+        return uid
