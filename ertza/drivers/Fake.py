@@ -15,6 +15,9 @@ class FakeDriverError(Exception):
 class FakeDriver(AbstractDriver):
 
     def __init__(self, config):
+        if 'serialnumber' in config:
+            _FakeDict['serialnumber'] = config['serialnumber']
+
         self.connected = False
 
     def connect(self):
