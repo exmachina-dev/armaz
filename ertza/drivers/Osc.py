@@ -123,8 +123,11 @@ class OscDriver(AbstractDriver):
                     future.set_result(recv_item)
 
                 self.queue.task_done()
+            except OscDriverTimeout as e:
+                logging.error('Timeout in %s: %s' % (self.__class__.__name__,
+                                                     repr(e)))
             except OscDriverError as e:
-                logging.exception('Exception in %s: %s' % (self.__class__.__name__,
+                logging.error('Exception in %s: %s' % (self.__class__.__name__,
                                                            repr(e)))
 
     def done_cb(self, *args):
@@ -133,21 +136,30 @@ class OscDriver(AbstractDriver):
     def wait_for_future(self, fut):
         if fut.event.wait(self.timeout):
             return fut.result
-        raise OscDriverTimeout('Timeout')
+        raise OscDriverTimeout('Timeout while waiting for %s' % repr(fut))
 
     def __getitem__(self, key):
         m = self.message('/slave/get', key)
         fut = self.to_machine(m)
-        ret = self.wait_for_future(fut)
-
-        return ret
+        try:
+            ret = self.wait_for_future(fut)
+            return ret
+        except OscDriverTimeout as e:
+            logging.error(e)
+            raise e
+        except OscDriverError as e:
+            logging.error(e)
 
     def __setitem__(self, key, *args):
         m = self.message('/slave/set', key, *args)
         fut = self.to_machine(m)
-        ret = self.wait_for_future(fut)
-
-        return ret
+        try:
+            ret = self.wait_for_future(fut)
+            return ret
+        except OscDriverTimeout as e:
+            logging.error(e)
+        except OscDriverError as e:
+            logging.error(e)
 
     def _send(self, message, *args, **kwargs):
         try:
@@ -165,6 +177,7 @@ class OscDriver(AbstractDriver):
 class OscFutureResult(object):
     def __init__(self, uid):
         self._callback = None
+        self._exception = None
         self._result = None
         self._event = None
         self._uid = uid
@@ -192,12 +205,16 @@ class OscFutureResult(object):
         self.event.set()
         if isinstance(self.result, Exception):
             raise self.result
+        if isinstance(self.result, (list, tuple)):
+            self._exception = self.result[1]
 
         if self._callback:
             self._callback(self)
 
     @property
     def result(self):
+        if self._exception:
+            raise self._exception
         if not self._result:
             raise ValueError('Result is not yet defined')
         return self._result
