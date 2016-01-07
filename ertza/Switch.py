@@ -36,6 +36,18 @@ class Switch(object):
         self.t.daemon = True
         self.t.start()
 
+    @property
+    def state(self):
+        s = {
+            'direction': self.direction,
+            'function': self.function,
+            'hit': self.hit,
+            'key_code': self.key_code,
+            'invert': self.invert,
+            'name': self.name,
+        }
+        return s
+
     def _wait_for_event(self):
         evt_file = open(Switch.inputdev, "rb")
         while True:
@@ -53,7 +65,7 @@ class Switch(object):
                     self.hit = True
 
                 if Switch.callback is not None:
-                    Switch.callback(self)
+                    Switch.callback(self.state)
             else:
                 self.direction = None
 

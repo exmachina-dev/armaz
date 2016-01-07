@@ -48,6 +48,8 @@ class Machine(AbstractMachine):
         self.master = None
         self.operation_mode = None
 
+        self.switch_callback = self._switch_cb
+
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
         logging.info("Loading %s driver" % drv)
@@ -288,6 +290,10 @@ class Machine(AbstractMachine):
                 mode, self.operation_mode))
         return False
 
+    def _switch_cb(self, sw_state):
+        if sw_state['function']:
+            if 'drive_enable' in sw_state['function']:
+                print(sw_state, 'Got-it!')
 
     def __getitem__(self, key):
         if key.startswith('drive:'):

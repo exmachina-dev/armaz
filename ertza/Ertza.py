@@ -274,6 +274,7 @@ class Ertza(object):
                         self.machine.temperature_watchers.append(tw)
 
     def _config_external_switches(self):
+        Switch.callback = self.machine.switch_callback
 
         # Create external switches
         self.machine.switches = []
