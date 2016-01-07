@@ -30,7 +30,7 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
             return
 
         try:
-            dst, = c.args
+            dst = c.args
             self.ok(c, dst, self.machine[dst])
         except Exception as e:
             self.error(c, dst, e)
@@ -45,16 +45,17 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
     def execute(self, c):
         super().execute(c)
 
-        if not self.check_args(c, 'eq', 2):
+        if not self.check_args(c, 'ge', 2):
             return
 
         try:
             print(c.args)
-            dst, value, = c.args
-            self.machine[dst] = value
-            self.ok(c, dst, value)
+            dst, *args = c.args
+            self.machine[dst] = args
+
+            self.ok(c, dst, *args)
         except Exception as e:
-            self.error(c, dst, value, e)
+            self.error(c, dst, *(args + (e,)))
 
     @property
     def alias(self):
