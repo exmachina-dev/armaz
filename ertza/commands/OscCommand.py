@@ -16,7 +16,8 @@ class OscCommand(AbstractCommand):
         op = getattr(operator, comp_op)
         comp = op(len(c.args), v)
         if not comp:
-            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            self.error(c, 'Invalid number of arguments for %s (%d %s %d: %s)' % (
+                self.alias, len(c.args), comp_op, v, ' '.join(c.args)))
 
         return comp
 
