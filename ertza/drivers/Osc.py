@@ -118,7 +118,8 @@ class OscDriver(AbstractDriver):
                 del self._waiting_futures[f_id]
 
                 if self._check_error(recv_item):
-                    future.set_result(OscDriverError(str(recv_item)))
+                    logging.debug(recv_item)
+                    future.set_result((recv_item, OscDriverError(str(recv_item))))
                 else:
                     future.set_result(recv_item)
 

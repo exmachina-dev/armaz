@@ -94,6 +94,7 @@ class SlaveMachine(AbstractMachine):
 
         self._get_dict = {}
         self._set_dict = {}
+        self._latency = None
 
     def init_driver(self):
         drv = self.slave.driver
@@ -165,14 +166,21 @@ class SlaveMachine(AbstractMachine):
 
     def ping(self):
         try:
-            def _cb(data):
-                dt = datetime.now() - data[1]
-                print(dt.microseconds / 1000)
-                print(data)
+            ev = Event()
 
-            return self.request_from_remote(_cb, 'ping', block=False)
+            def _cb(data, event=None):
+                rtn = self._default_cb(data, event)
 
-        except AbstractDriverError as e:
+                if rtn:
+                    dt = datetime.now() - rtn.args[0]
+                    self._latency = dt
+                    print(dt.microseconds / 1000)
+                    print(data)
+
+            self.request_from_remote(_cb, 'ping', event=ev)
+            return self._latency
+
+        except (SlaveMachineError, AbstractDriverError) as e:
             raise SlaveMachineError('Unable to ping remote machine: %s' % e)
 
     @property
