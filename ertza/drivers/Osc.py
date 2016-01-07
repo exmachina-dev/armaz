@@ -148,6 +148,10 @@ class OscDriver(AbstractDriver):
         except OSError as e:
             raise OscDriverError(str(e))
 
+    def _check_error(self, command):
+        if command.path.endswith('/error'):
+            return True
+
 
 class OscFutureResult(object):
     def __init__(self, uid):
@@ -177,6 +181,9 @@ class OscFutureResult(object):
             raise ValueError('Result is already defined')
         self._result = result
         self.event.set()
+        if isinstance(self.result, Exception):
+            raise self.result
+
         if self._callback:
             self._callback(self)
 
