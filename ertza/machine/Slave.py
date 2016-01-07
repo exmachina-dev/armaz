@@ -149,6 +149,9 @@ class SlaveMachine(AbstractMachine):
                     recv_item.callback(res)
                 except AttributeError:
                     logging.exception('''Can't find %s in driver''' % recv_item.attribute)
+                except SlaveMachineError as e:
+                    logging.error('Exception in {n} loop: {e}'.format(
+                        n=self.__class__.__name__, e=e))
                 self.bridge.task_done()
         except Empty:
             pass
