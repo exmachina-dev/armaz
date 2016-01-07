@@ -114,7 +114,7 @@ class OscDriver(AbstractDriver):
                     future.set_result(recv_item)
 
                 self.queue.task_done()
-            except Exception as e:
+            except OscDriverError as e:
                 logging.exception('Exception in %s: %s' % (self.__class__.__name__,
                                                            repr(e)))
 
