@@ -22,6 +22,9 @@ class OscCommand(AbstractCommand):
         return comp
 
     def send(self, target, path, *args, **kwargs):
+        if args and isinstance(args[0], (list, tuple)):
+            args = args[0]
+
         m = OscMessage(path, *args, receiver=target, **kwargs)
         self.machine.send_message(m)
 
