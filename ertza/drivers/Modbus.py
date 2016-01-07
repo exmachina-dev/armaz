@@ -162,14 +162,16 @@ class ModbusDriver(AbstractDriver):
             if subkey not in self.netdata_map[seckey]:
                 raise KeyError(subkey)
             ndk = self.netdata_map[seckey][subkey]
+            seclen = len(self.netdata_map[seckey])
             if seckey not in self._prev_data.keys():
-                data = list((0,) * len(self.netdata_map[seckey]))
+                data = list((0,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
             else:
-                data = list((-1,) * len(self.netdata_map[seckey]))
+                pdata = self._prev_data[seckey]
+                data = list((-1,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
-                data = tuple(map(lambda x, y: y if x == -1 else y,
-                                 data, self._prev_data[seckey]))
+                data = tuple(map(lambda x, y: y if x == -1 else x,
+                                 data, pdata))
             self._prev_data[seckey] = data
         else:
             ndk = self.netdata_map[seckey]
