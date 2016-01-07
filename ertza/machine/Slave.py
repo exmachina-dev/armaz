@@ -32,7 +32,7 @@ class SlaveMachine(AbstractMachine):
                 self._attr = None
             elif 'setitem' in kwargs and kwargs['setitem']:
                 self._item = attr
-                self._args = args[0]
+                self._args = args
             else:
                 self._attr = attr
                 self._args = args
@@ -141,7 +141,7 @@ class SlaveMachine(AbstractMachine):
                     if recv_item.getitem:
                         res = self.driver[recv_item.item]
                     elif recv_item.setitem:
-                        res = self.driver.__setitem__(recv_item.item, recv_item.args)
+                        res = self.driver.__setitem__(recv_item.item, *recv_item.args)
                     else:
                         res = getattr(self.driver, recv_item.attribute)(
                             *recv_item.args)

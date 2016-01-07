@@ -133,8 +133,8 @@ class OscDriver(AbstractDriver):
 
         return ret
 
-    def __setitem__(self, key, value):
-        m = self.message('/slave/set', key, value)
+    def __setitem__(self, key, *args):
+        m = self.message('/slave/set', key, *args)
         fut = self.to_machine(m)
         ret = self.wait_for_future(fut)
 
