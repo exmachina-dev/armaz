@@ -108,7 +108,7 @@ class Machine(AbstractMachine):
 
     @property
     def address(self):
-        pass
+        return '127.0.0.1:%d' % self.config.getint('osc', 'listen_port')
 
     def search_slaves(self):
         slaves_cf = self.config['slaves']
