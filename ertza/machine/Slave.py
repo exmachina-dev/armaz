@@ -194,12 +194,11 @@ class SlaveMachine(AbstractMachine):
                                         'machine:serialnumber', getitem=True)
 
     def get_from_remote(self, key, **kwargs):
-        print(kwargs)
         ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
         print(ev)
         rq = self.request_from_remote(self._get_cb, key, getitem=True, event=ev)
 
-        if ev and ev.wait(self.timeout):
+        if ev is not None and ev.wait(self.timeout):
             return self._get_dict[key]
         return rq
 
@@ -208,39 +207,54 @@ class SlaveMachine(AbstractMachine):
 
         rq = self.request_from_remote(self._set_cb, key, *args, setitem=True, event=ev)
 
-        if ev and ev.wait(self.timeout):
+        if ev is not None and ev.wait(self.timeout):
             return self._set_dict[key]
         return rq
 
     def _get_cb(self, data, event=None):
-        if '/ok' in data.path:
-            self._get_dict[data.args[0]] = data.args[1]
-        elif '/error' in data.path:
-            e = {
-                'path': data.path,
-                'args': ' '.join(data.args),
-            }
-            raise SlaveMachineError('Got error in {path}: {args}'.format(**e))
+        rtn = self._default_cb(data, event)
+        logging.debug('Rtn data: %s' % rtn)
+
+        if rtn:
+            self._get_dict[rtn.args[0]] = rtn.args[1]
+        raise SlaveMachineError('No data in {}'.format(rtn))
 
         if event:
             event.set()
-            print('Event set')
-        print(data)
 
     def _set_cb(self, data, event=None):
+        rtn = self._default_cb(data, event)
+        logging.debug('Rtn data: %s' % rtn)
+
+        if rtn:
+            self._set_dict[rtn.args[0]] = rtn.args[1]
+        raise SlaveMachineError('No data in {}'.format(rtn))
+
+        if event:
+            event.set()
+
+    def _default_cb(self, data, event=None):
+        exc = None
+        if isinstance(data, (list, tuple)) and len(data) == 2:
+            data, exc = data
+
+        if event and exc and isinstance(exc, Exception):
+            event.set()
+            raise exc
+
+        if not data:
+            if event:
+                event.set()
+            raise SlaveMachineError('No data')
+
         if '/ok' in data.path:
-            self._set_dict[data.args[0]] = data.args[1]
+            return data
         elif '/error' in data.path:
             e = {
                 'path': data.path,
                 'args': ' '.join(data.args),
             }
             raise SlaveMachineError('Got error in {path}: {args}'.format(**e))
-
-        if event:
-            event.set()
-            print('Event set')
-        print(data)
 
     def __repr__(self):
         i = {

@@ -45,6 +45,7 @@ class OscMessage(object):
         self._args = [str(a) if isinstance(a, Exception) else a for a in self._args]
 
         self.types = kwargs['types'] if 'types' in kwargs else None
+
         if self.types and len(self.types) != len(self._args):
             raise TypeError('Lenght of args and types must match')
 
