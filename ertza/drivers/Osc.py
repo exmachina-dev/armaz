@@ -103,17 +103,20 @@ class OscDriver(AbstractDriver):
                 recv_item = self.queue.get(block=True)
                 logging.debug('Received %s in slave loop' % repr(recv_item))
 
-                f_id = None
+                future = None
                 for i, f in enumerate(self._waiting_futures):
                     if recv_item == f:
+                        future = f
                         f_id = i
-                        logging.debug(f_id)
                         break
-                if f_id is None:
+
+                if not future:
                     logging.error('Unable to find waiting future '
                                   'for %s' % str(f))
                     continue
-                future = self._waiting_futures.pop(f_id)
+
+                del self._waiting_futures[f_id]
+
                 if self._check_error(recv_item):
                     future.set_result(OscDriverError(str(recv_item)))
                 else:
