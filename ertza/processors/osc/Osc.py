@@ -96,3 +96,6 @@ class OscMessage(object):
         args = [str(i) for i in self.args]
         return '%s: %s %s' % (self.__class__.__name__, self.path,
                               ' '.join(args))
+
+    def __add__(self, value):
+        self._args.append(value)
