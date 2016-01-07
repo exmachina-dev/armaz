@@ -166,6 +166,8 @@ class Machine(AbstractMachine):
                                            ''.format(*infos)))
 
     def add_slave(self, driver, address):
+        self._check_slave_mode()
+
         try:
             s = Slave(None, address, driver.title(), {})
             m = SlaveMachine(s)
@@ -187,6 +189,8 @@ class Machine(AbstractMachine):
             raise MachineError('Unable to add slave: %s' % repr(e))
 
     def remove_slave(self, sn):
+        self._check_slave_mode()
+
         try:
             rm_slave = self.get_slave(sn)
             if not rm_slave:
@@ -220,8 +224,10 @@ class Machine(AbstractMachine):
                                'with S/N {0}: {exc}'.format(*slave_machine.slave,
                                                             exc=e))
 
-    def set_slave_mode(self, mode=None, master=None):
-        if mode:
+    def set_slave_mode(self, *args):
+        if len(args) >= 1:
+            mode = args[0]
+
             if mode not in ('master', 'slave'):
                 raise MachineError('Unrecognized mode %s' % mode)
 
@@ -232,23 +238,43 @@ class Machine(AbstractMachine):
                 if not self.slaves:
                     raise MachineError('No slaves found')
 
+                self.slave_mode = mode
+
                 for s in self.slaves:
                     s.enslave()
             elif mode == 'slave':
+                if len(args) >= 2:
+                    master = args[1]
+                else:
+                    raise MachineError('No master supplied')
+
                 if self.slave_mode == 'slave':
                     raise MachineError('Slave mode already activated')
 
-                if not master:
-                    raise MachineError('No master supplied')
-
-                for s in self.slaves:
-                    s.enslave()
+                self.slave_mode = mode
+                self.master = master
 
         else:
             logging.info('Deactivating %s mode' % self.slave_mode)
 
-            if mode == 'master':
+            if self.slave_mode == 'slave':
+                self.free()
+                self.master = None
+
+            elif self.slave_mode == 'master':
                 pass
+
+        return self.slave_mode, self.master
+
+    def _check_slave_mode(self, mode='slave', raise_exception=True):
+        if self.slave_mode == mode:
+            return True
+        else:
+            if raise_exception:
+                raise MachineError('Slave mode %s isn\'t activated: %s' % (
+                    mode, self.slave_mode))
+            return False
+
 
     def __getitem__(self, key):
         if key.startswith('drive:'):
@@ -284,4 +310,4 @@ class Machine(AbstractMachine):
             value, = value
 
         if 'slave_mode' == key:
-            self.set_slave_mode(value, '127.0.0.1')
+            print(self.set_slave_mode(*value))
