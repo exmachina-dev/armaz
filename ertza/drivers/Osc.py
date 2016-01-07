@@ -71,10 +71,16 @@ class OscDriver(AbstractDriver):
 
     def ping(self):
         m = self.message('/slave/ping')
-        t = datetime.now()
+        t = datetime.now().timestamp()
         fut = self.to_machine(m, m.path)
-        reply = self.wait_for_future(fut)
-        return reply, t
+        reply = None
+        try:
+            reply = self.wait_for_future(fut)
+            reply += t
+            return reply
+        except OscDriverTimeout as e:
+            logging.error(e)
+            return reply, e
 
     def to_machine(self, request, uid=None):
         try:
