@@ -12,7 +12,7 @@ class SlaveCommand(OscCommand):
     """
 
     def execute(self, c):
-        if self.machine.slave_mode != 'slave':
+        if not self.machine.slave_mode:
             self.error(c, 'Slave mode not activated')
             return
 
@@ -23,7 +23,7 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
     """
 
     def execute(self, c):
-        if 'machine:slave_mode' not in c.args[0]:
+        if 'machine:operation_mode' not in c.args[0]:
             super().execute(c)
 
         if not self.check_args(c, 'eq', 1):
@@ -66,7 +66,7 @@ class SlaveRegister(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
         try:
-            self.machine.set_slave_mode('slave')
+            self.machine.set_operation_mode('slave')
             self.ok(c)
         except Exception as e:
             self.error(c, e)
@@ -82,7 +82,7 @@ class SlaveFree(SlaveCommand, UnbufferedCommand):
         super().execute(c)
 
         try:
-            self.machine.set_slave_mode()
+            self.machine.set_operation_mode()
             self.ok(c)
         except Exception as e:
             self.error(c, e)

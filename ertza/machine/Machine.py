@@ -23,7 +23,7 @@ class Machine(AbstractMachine):
     parameter = namedtuple('parameter', ['vtype', 'mode'])
 
     MachineMap = {
-        'slave_mode':   parameter(str, 'rw'),
+        'operation_mode':   parameter(str, 'rw'),
         'master':       parameter(str, 'rw'),
         'serialnumber': parameter(str, 'ro'),
     }
@@ -46,7 +46,7 @@ class Machine(AbstractMachine):
 
         self.slaves = []
         self.master = None
-        self.slave_mode = None
+        self.operation_mode = None
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
@@ -141,6 +141,8 @@ class Machine(AbstractMachine):
         return self.slaves
 
     def load_slaves(self):
+        self._check_operation_mode(raise_exception=False)
+
         if not self.slaves:
             if not self.search_slaves():
                 logging.info('No slaves found')
@@ -156,7 +158,7 @@ class Machine(AbstractMachine):
                               '{0}'.format(str(e), *s.slave))
                 return
 
-            s.set_to_remote('machine:slave_mode', 'slave', self.address)
+            s.set_to_remote('machine:operation_mode', 'slave', self.address)
 
             sn = s.get_from_remote('machine:serialnumber', block=True)
             if type(sn) == str and s.serialnumber != sn:
@@ -166,7 +168,7 @@ class Machine(AbstractMachine):
                                            ''.format(*infos)))
 
     def add_slave(self, driver, address):
-        self._check_slave_mode()
+        self._check_operation_mode()
 
         try:
             s = Slave(None, address, driver.title(), {})
@@ -189,7 +191,7 @@ class Machine(AbstractMachine):
             raise MachineError('Unable to add slave: %s' % repr(e))
 
     def remove_slave(self, sn):
-        self._check_slave_mode()
+        self._check_operation_mode()
 
         try:
             rm_slave = self.get_slave(sn)
@@ -224,7 +226,7 @@ class Machine(AbstractMachine):
                                'with S/N {0}: {exc}'.format(*slave_machine.slave,
                                                             exc=e))
 
-    def set_slave_mode(self, *args):
+    def set_operation_mode(self, *args):
         if len(args) >= 1:
             mode = args[0]
 
@@ -232,48 +234,59 @@ class Machine(AbstractMachine):
                 raise MachineError('Unrecognized mode %s' % mode)
 
             if mode == 'master':
-                if self.slave_mode == 'master':
-                    raise MachineError('Master mode already activated')
+                self._check_operation_mode(mode)
 
                 if not self.slaves:
                     raise MachineError('No slaves found')
 
-                self.slave_mode = mode
+                self.operation_mode = mode
 
                 for s in self.slaves:
                     s.enslave()
             elif mode == 'slave':
+                if self._check_operation_mode(mode, raise_exception=False):
+                    raise MachineError('Operating mode {0} already active. '
+                                       'You must disable {0} before '
+                                       'reactiving it'.format(mode))
+
                 if len(args) >= 2:
                     master = args[1]
                 else:
                     raise MachineError('No master supplied')
 
-                if self.slave_mode == 'slave':
-                    raise MachineError('Slave mode already activated')
-
-                self.slave_mode = mode
+                if ':' in master:
+                    master, port = master.split(':')
+                self.operation_mode = mode
                 self.master = master
 
         else:
-            logging.info('Deactivating %s mode' % self.slave_mode)
+            logging.info('Deactivating %s mode' % self.operation_mode)
 
-            if self.slave_mode == 'slave':
+            if self.operation_mode == 'slave':
                 self.free()
                 self.master = None
 
-            elif self.slave_mode == 'master':
+            elif self.operation_mode == 'master':
                 pass
 
-        return self.slave_mode, self.master
+        return self.operation_mode, self.master
 
-    def _check_slave_mode(self, mode='slave', raise_exception=True):
-        if self.slave_mode == mode:
+    @property
+    def slave_mode(self):
+        return self._check_operation_mode('slave', raise_exception=False)
+
+    @property
+    def master_mode(self):
+        return self._check_operation_mode('master', raise_exception=False)
+
+    def _check_operation_mode(self, mode='slave', raise_exception=True):
+        if self.operation_mode == mode:
             return True
-        else:
-            if raise_exception:
-                raise MachineError('Slave mode %s isn\'t activated: %s' % (
-                    mode, self.slave_mode))
-            return False
+
+        if raise_exception:
+            raise MachineError('Slave mode %s isn\'t activated: %s' % (
+                mode, self.operation_mode))
+        return False
 
 
     def __getitem__(self, key):
@@ -309,5 +322,5 @@ class Machine(AbstractMachine):
         if type(value) == tuple and len(value) == 1:
             value, = value
 
-        if 'slave_mode' == key:
-            print(self.set_slave_mode(*value))
+        if 'operation_mode' == key:
+            print(self.set_operation_mode(*value))
