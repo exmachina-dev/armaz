@@ -55,7 +55,7 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
 
             self.ok(c, dst, *args)
         except Exception as e:
-            self.error(c, dst, *(args + (e,)))
+            self.error(c, dst, *(list(args) + [e,]))
 
     @property
     def alias(self):
