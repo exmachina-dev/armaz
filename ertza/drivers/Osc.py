@@ -238,3 +238,6 @@ class OscFutureResult(object):
         key_arg = self.result.args[0]
         uid = ' '.join((clean_path, key_arg,))
         return uid
+
+    def __repr__(self):
+        return self.uid
