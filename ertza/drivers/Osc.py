@@ -102,7 +102,6 @@ class OscDriver(AbstractDriver):
         while not self.running.is_set():
             try:
                 recv_item = self.queue.get(block=True)
-                logging.debug('Received %s in slave loop' % repr(recv_item))
 
                 future = None
                 for i, f in enumerate(self._waiting_futures):

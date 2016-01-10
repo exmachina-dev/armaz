@@ -121,8 +121,6 @@ class SlaveResponse(OscCommand, UnbufferedCommand):
         if not sl:
             raise ValueError('No slave returned')
         sl.inlet.put(c)
-        logging.debug('Putting {0} in {1}'.format(
-            str(c), sl.inlet.__class__.__name__))
 
 
 class SlaveRegisterResponse(SlaveResponse):

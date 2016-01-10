@@ -141,8 +141,6 @@ class SlaveMachine(AbstractMachine):
                     continue
 
                 try:
-                    logging.debug('Executing from queue: %s' % repr(recv_item))
-                    print(recv_item.getitem)
                     if recv_item.getitem:
                         res = self.driver[recv_item.item]
                     elif recv_item.setitem:
