@@ -4,79 +4,201 @@ Bitfield StatusNetData
     drive_enable As 1 To 1
     drive_input As 2 To 2
     motor_brake As 3 To 3
-    timeout As 4 To 4
+    motor_temp As 4 To 4
+    timeout As 5 To 5
 End Bitfield
 
 Bitfield CommandNetData
-    all As 0 To 7
+    all As 0 To 8
     drive_enable As 0 To 0
     drive_cancel As 1 To 1
-    clear As 3 To 3
+    clear_errors As 2 To 2
+    reset_command As 3 To 3
+    control_mode  As 4 To 6
+    move_mode As 7 To 7
+    go_command As 8 To 8
 End Bitfield
 
 Const _bus = _busETHERNET
-Const _refreshRate = 5
-Const _cmdTimeout = 750     'Command timeout
-Const _axis = 0
-Const _ctrlMode = 2
-Const _max_speed = 75
 
-Dim statusSlowState As Integer
+Const _netdataRefreshRate = 200 
+Const _statusSlowRefreshRate = 10 
+
+Const _enTqEnableRefreshRate = 0
+Const _enTqDisableRefreshRate = 100
+
+Const _cmdTimeout = 500     'Command timeout
+Const _axis = 0
+
+Dim _max_speed As Float
+If DRIVEID(_axis) = "ARMAZ.FLAT" Then
+    _max_speed = 4000
+ElseIf DRIVEID(_axis) = "ARMAZ.HEAVY" Or DRIVEID(_axis) = "ARMAZ.FAST" Then
+    _max_speed = 4300
+Else
+    _max_speed = 0
+End If
+
+Dim _torque_constant As Float
+If MOTORCATALOGNO(_axis) = "BSM80N-175AF" Then
+    _torque_constant = 0.85      ' BSM80N-175
+ElseIf MOTORCATALOGNO(_axis) = "BSM80N-275AF" Then
+    _torque_constant = 0.904     ' BSM80N-275
+ElseIf MOTORCATALOGNO(_axis) = "BSM90N-175BF" Then
+    _torque_constant = 0.853     ' BSM90N-175
+End If
+
 Dim cmdTime As Time
 Dim cmdTimeoutStatus As Integer = 0
-Dim nbCommand As Integer
+Dim moveMode As Integer
+Dim enTqMode As Integer = 0
+Dim enTq As Float = 0
+Dim enTqRef As Float = 0
+Dim enTqDirection As Integer = 0
+Dim enTqVelRef As Float = 0
+Dim enTqKP As Float = 0.05
+Dim enTqLimitKP As Float = 1.15
 
+Dim enTqVelLimitKP As Float = 1.025
+Dim enTqVelErrorSum As Float
+Dim enTqVelErrorSumLimit As Float = 200
+Dim enTqVelErrorKP As Float = 1.25
+Dim enTqVelErrorKI As Float = 0.1
+
+TaskPriority(UpdateStatusSlowTask, 1)
+TaskPriority(UpdateNetdataValuesTask, 10)
+
+Run(UpdateNetdataValuesTask)
+Run(UpdateStatusSlowTask)
 Loop
-    If 0 = DRIVEENABLE(_axis) Then
-        CONTROLMODE(_axis) = _ctrlMode
+    If enTqMode And DRIVEENABLE(_axis) Then
+        If enTqVelRef = 0.0 Then
+            TORQUEREF(_axis) = 0
+            Wait(_enTqEnableRefreshRate)
+            Continue Loop
+        End If
+            
+        Dim entqMaxVel As Float
+        enTqMaxVel = enTqVelRef * enTqVelLimitKP
+        
+        Dim enTqLimit As Float
+        enTqLimit = enTqRef * enTqLimitKP
+        
+        Dim enTqVelError As Float
+        enTqVelError = (enTqVelRef - VEL(_axis)) / 100
+        enTqVelErrorSum = enTqVelErrorSum + enTqVelError
+        If enTqVelErrorSum > enTqVelErrorSumLimit Then
+            enTqVelErrorSum = enTqVelErrorSumLimit
+        ElseIf enTqVelErrorSum < -enTqVelErrorSumLimit Then
+            enTqVelErrorSum = -enTqVelErrorSumLimit
+        End If
+
+        Dim pTerm As Float
+        Dim iTerm As Float
+        pTerm = enTqVelError * enTqVelErrorKP
+        iTerm = enTqVelErrorSum * enTqVelErrorKI
+        
+        If iTerm > enTqLimit Then
+            iTerm = enTqLimit
+        ElseIf iTerm < -enTqLimit Then
+            iTerm = -enTqLimit
+        End If
+            
+        enTq =  pTerm + iTerm
+
+        'If VEL(_axis) > entqMaxVel And enTqDirection = 1 Then
+        '    enTq = enTq + enTqCorrection
+        '    If enTq < 0 Then
+        '        enTq = 0
+        '    End If
+        'ElseIf VEL(_axis) < tqMaxVel And enTqDirection = 1 Then
+        '     enTq = enTq - enTqCorrection
+        'End If
+            
+            'Print(enTq)
+ 
+        If enTq > enTqLimit Then
+            enTq = enTqLimit
+        ElseIf enTq < -enTqLimit Then
+            enTq = -enTqLimit
+        End If
+        Print(enTq)
+            
+        TORQUEREF(_axis) = enTq
+            
+        'Wait(_enTqEnableRefreshRate)
+    Else
+        Wait(_enTqDisableRefreshRate)
     End If
-    EncoderValues
-    Status
-    StatusSlow
-    CommandTimeout
-    Wait(_refreshRate)
 End Loop
+
+
+Task UpdateNetdataValuesTask
+    Loop
+        NetdataValues
+        Status
+        StatusSlow
+        'CommandTimeout
+        Wait(_netdataRefreshRate)
+    End Loop
+End Task
+
+Task UpdateStatusSlowTask
+    Loop
+        StatusSlow
+        Wait(_statusSlowRefreshRate)
+    End Loop
+End Task
 
 Sub Status()
     Dim stData As StatusNetData
-    Dim command As CommandNetData
     stData.all = 0
-    command.all = 0
     
     stData.drive_ready = DRIVEENABLEREADY(_axis)
     stData.drive_enable = DRIVEENABLE(_axis)
-    command.drive_enable = stData.drive_enable
     stData.drive_input = DRIVEENABLESWITCH(_axis)
     stData.motor_brake = ~MOTORBRAKESTATUS(_axis)
+    stData.motor_temp = MOTORTEMPERATURESWITCH(_axis)
     stData.timeout = cmdTimeoutStatus
 
-    NETINTEGER(1) = command.all
-    NETINTEGER(2) = stData.all
-    NETINTEGER(3) = ERRCODE
+    NETINTEGER(0) = stData.all
+    'NETINTEGER(1) is W-O
+    NETINTEGER(2) = ERRCODE
     
-    NETFLOAT(4) = VELREF(_axis)
-    NETFLOAT(5) = ACCEL(_axis)
-    NETFLOAT(6) = DECEL(_axis)
-    NETFLOAT(7) = VEL(_axis)
-    
-End Sub
-Sub StatusSlow()
-    If statusSlowState = 5 Then   
-        NETINTEGER(50) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
-        NETFLOAT(21) = TEMPERATURE(0)
-        statusSlowState = 0
+    NETFLOAT(3) = JOG(_axis)
+    If enTqMode Then
+        NETFLOAT(4) = enTqRef
+        NETFLOAT(5) = enTqVelRef
     Else
-        statusSlowState = statusSlowState + 1
+        NETFLOAT(4) = TORQUEREF(_axis)
+        NETFLOAT(5) = VELREF(_axis)
     End If
+    'NETFLOAT(6) is W-O
+    NETFLOAT(10) = TORQUEREFRISETIME(_axis)
+    NETFLOAT(11) = TORQUEREFFALLTIME(_axis)
+    NETFLOAT(12) = ACCEL(_axis)
+    NETFLOAT(13) = DECEL(_axis)
+    
 End Sub
 
-Sub EncoderValues()
-    NETFLOAT(10) = ENCODERVEL(0)
-    NETINTEGER(11) = Int(ENCODER(0))
-    NETFLOAT(12) = FOLERROR(_axis)
-    NETFLOAT(13) = EFFORT(_axis)
-    NETFLOAT(14) = CURRENTDEMAND(_axis, 5)
-    NETFLOAT(15) = CURRENTMEAS(_axis, 5)
+Sub StatusSlow()
+    NETFLOAT(50) = TEMPERATURE(0)
+    NETINTEGER(51) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
+End Sub
+
+Sub NetdataValues()
+    NETFLOAT(20) = CURRENTMEAS(_axis, 5)
+    NETFLOAT(21) = VEL(_axis)
+    NETFLOAT(22) = POS(_axis)
+    NETFLOAT(23) = POSTARGET(_axis)
+    NETFLOAT(24) = POSREMAINING(_axis)
+    NETFLOAT(25) = ENCODER(0)
+    NETFLOAT(26) = ENCODERVEL(0)
+    NETFLOAT(27) = VELERROR(_axis)
+    NETFLOAT(28) = FOLERROR(_axis)
+    NETFLOAT(29) = CurrentToTorque(CURRENTMEAS(_axis))
+    NETFLOAT(30) = CurrentRatio(CURRENTMEAS(_axis))
+    NETFLOAT(31) = EFFORT(_axis)
 End Sub
 
 Sub CommandTimeout()
@@ -91,28 +213,37 @@ Sub ResetCommandTimeout()
     cmdTimeoutStatus = 0
 End Sub
 
-Sub ResetNetData()
-    NETINTEGER(0) = 0
-    NETFLOAT(4) = 0
-    
+Sub ResetEnhancedTorqueMode()
+    enTqVelErrorSum = 0
+    enTqRef = 0
+    enTqVelRef = 0
 End Sub
 
-Event NETDATA1
-    nbCommand = nbCommand + 1
-    NETINTEGER(20) = nbCommand
-    
+Function TorqueToCurrent(ByVal torque) As Float
+    TorqueToCurrent = torque / _torque_constant
+End Function
+
+Function CurrentToTorque(ByVal current) As Float
+    CurrentToTorque =  current * _torque_constant
+End Function
+
+Function CurrentRatio(ByVal current) As Float
+    CurrentRatio =  (current / DRIVERATEDCURRENT(_axis)) * 100
+End Function
+
+Event NETDATA1 
     Dim prevCommand As CommandNetData
     Dim command As CommandNetData
     prevCommand = command
     command.all = NETINTEGER(1)
     
-    If command.drive_enable = 1Then
+    If command.drive_enable = 1 Then
         If DRIVEENABLEREADY(_axis) Then
             DRIVEENABLE(_axis) = 1
         Else
             command.drive_enable = 0
         End If
-    ElseIf prevCommand.drive_enable = 1Then
+    Else
         DRIVEENABLE(_axis) = 0
     End If
     
@@ -120,17 +251,47 @@ Event NETDATA1
         CANCEL(_axis)
     End If
     
-    If command.clear = 1 Then
+    If command.clear_errors = 1 Then
         ERRORCLEAR(_egALL, _axis)
-        command.clear = 0
-     End If
+        
+        command.clear_errors = 0
+    End If
+    
+    If command.reset_command = 1 Then
+        STOP(_axis)
+        ResetEnhancedTorqueMode
+        ABORT
+        ERRORCLEAR(_egALL, _axis)
+        command.reset_command = 0
+    End If
+    
+    If command.control_mode <> 0 Then
+        If command.control_mode <= 3 Then 
+            CONTROLMODE(_axis) = command.control_mode
+            command.control_mode = 0
+            enTqMode = 0
+        ElseIf command.control_mode = 4 Then
+            enTqMode = 1
+        Else
+            enTqMode = 0
+        End If
+    End If
+    
+    moveMode = command.move_mode '0: Absolute 1: Relative
+    
+    If command.go_command <> 0 Then
+        GO(_axis)
+        command.go_command = 0
+    End If
+    
+    NETINTEGER(1) = command.all
     
     ResetCommandTimeout
 End Event
     
-Event NETDATA4
+Event NETDATA3
     Dim cmdSpeed As Float
-    cmdSpeed = NETFLOAT(4)
+    cmdSpeed = NETFLOAT(3)
     
     If cmdSpeed <> 0 Then
         If cmdSpeed > _max_speed Then
@@ -139,16 +300,83 @@ Event NETDATA4
             cmdSpeed = _max_speed * -1
         End If
 
-        VELREF(_axis) = cmdSpeed
+        JOG(_axis) = cmdSpeed
     Else
         STOP(_axis)
     End If
     ResetCommandTimeout
 End Event
 
+Event NETDATA4
+    Dim cmdTqRef As Float
+    cmdTqRef = NETFLOAT(4)
+    
+    If cmdTqRef <> 0 Then
+        If enTqMode Then
+            enTqRef = Abs(cmdTqRef)
+        Else
+            TORQUEREF(_axis) = cmdTqRef
+        End If
+    Else
+        If enTqMode Then
+            enTqRef = 0
+        Else
+            TORQUEREF(_axis) = 0
+        End If
+        STOP(_axis)
+    End If
+    ResetCommandTimeout
+End Event
+
 Event NETDATA5
+    Dim cmdVelRef As Float
+    cmdVelRef = NETFLOAT(5)
+    
+    If cmdVelRef <> 0 Then
+        If enTqMode Then
+            enTqVelRef = cmdVelRef
+            enTqDirection = Int(Abs(enTqVelRef) / enTqVelRef)
+        Else
+            VELREF(_axis) = cmdVelRef
+        End If
+    Else
+        VELREF(_axis) = 0
+        STOP(_axis)
+    End If
+    ResetCommandTimeout
+End Event
+
+Event NETDATA6
+    Dim cmdPosRef As Float
+    cmdPosRef = NETFLOAT(6)
+    
+    If moveMode <> 0 Then
+        MOVEA(_axis) = cmdPosRef
+    Else
+        MOVER(_axis) = cmdPosRef
+    End If
+    ResetCommandTimeout
+End Event
+
+Event NETDATA10
+    Dim cmdTqRiseTime As Float
+    cmdTqRiseTime = NETFLOAT(10)
+    
+    TORQUEREFRISETIME(_axis) = cmdTqRiseTime
+    ResetCommandTimeout
+End Event
+
+Event NETDATA11
+    Dim cmdTqFallTime As Float
+    cmdTqFallTime = NETFLOAT(11)
+    
+    TORQUEREFFALLTIME(_axis) = cmdTqFallTime
+    ResetCommandTimeout
+End Event
+
+Event NETDATA12
     Dim cmdAcceleration As Float
-    cmdAcceleration = NETFLOAT(5)
+    cmdAcceleration = NETFLOAT(12)
     
     If cmdAcceleration <> 0 Then
         ACCEL(_axis) = cmdAcceleration
@@ -156,19 +384,13 @@ Event NETDATA5
     ResetCommandTimeout
 End Event
 
-Event NETDATA6
+Event NETDATA13
     Dim cmdDeceleration As Float
-    cmdDeceleration = NETFLOAT(6)
+    cmdDeceleration = NETFLOAT(13)
     
     If cmdDeceleration <> 0 Then
         DECEL(_axis) = cmdDeceleration
     End If
-    ResetCommandTimeout
-End Event
-
-Event NETDATA22
-    Dim tmo As Integer
-    tmo = NETINTEGER(22)
     ResetCommandTimeout
 End Event
 
@@ -183,49 +405,43 @@ Event ONERROR
         'If we have an axis error or warning
         If ( ERRCODE >= 10000 ) And ( ERRCODE < 30000 ) Then
             Select Case ERRCODE
-            Case _ecERROR_INPUT 
-                'Handle error input
+                Case _ecERROR_INPUT 
+                    'Handle error input
 
-            Case _ecFWD_HARD_LIMIT, _ecREV_HARD_LIMIT
-                CANCEL(_axis)
-        'Handle limits
+                Case _ecFWD_HARD_LIMIT, _ecREV_HARD_LIMIT
+                    ' Handle limits
+                    CANCEL(_axis)
 
-            Case _ecKINT_LIMIT
-        'Handle integrator windup
+                Case _ecKINT_LIMIT
+                    'Handle integrator windup
 
-            Case Else
-                OUTX(0) = 0
-        'All other errors and warnings handled here
+                Case Else
+                    'All other errors and warnings handled here
+                    STOP(_axis)
 
             End Select
             Exit Event
         End If
 
         If ERRCODE = _ecTABLE_ERROR Then
-      'Inform user there is no table data
+            'Inform user there is no table data
             Exit Event
         End If
 
-    'All other errors halt program
+        'All other errors halt program
         Print #_TERM2, "Error code: ", ERRCODE
         Print #_TERM2, "Description: ", ERRSTRING
         Print #_TERM2, "Axis (if applicable): ", ERRDATA(1)
         Print #_TERM2, "Line number (if applicable): ", ERRLINE
         Print #_TERM2, "Time: ", ERRTIME
 
-    'Stop all motion and exit program
-
-        DRIVEENABLE(_axis) = 0
-        'Run
-        End
+        'Stop all motion and exit program
+        ABORT
     End If
 End Event
 
 Startup
     Auto
-
-    CONTROLMODESTARTUP(_axis) = _ctrlMode
-    CONTROLMODE(_axis) = _ctrlMode
     
     If _bus = _busSERIAL1 Then
         BUSNODE(_bus) = 2                                            'MicroFlex e100 is node 2 on RTU network
@@ -237,9 +453,4 @@ Startup
     MODBUSPARAMETER(_bus, _mpREGISTER_MAPPING) = _rmNET_DATA         'Use Net data for data exchange
     MODBUSPARAMETER(_bus, _mpENABLE) = 1                             'Finally enable Modbus TCP communication
     
-    NETINTEGER(1) = 0
-    NETINTEGER(2) = 0
-    NETINTEGER(3) = 0
-    NETINTEGER(4) = 0
-
 End Startup
