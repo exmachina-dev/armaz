@@ -27,9 +27,10 @@ class SlaveMachine(AbstractMachine):
 
     class _Request(object):
         def __init__(self, attr, *args, **kwargs):
+            self._args = ()
+            self._attr = None
             if 'getitem' in kwargs and kwargs['getitem']:
                 self._item = attr
-                self._attr = None
             elif 'setitem' in kwargs and kwargs['setitem']:
                 self._item = attr
                 self._args = args
