@@ -129,7 +129,7 @@ class OscDriver(AbstractDriver):
                                                      repr(e)))
             except OscDriverError as e:
                 logging.error('Exception in %s: %s' % (self.__class__.__name__,
-                                                           repr(e)))
+                                                       repr(e)))
 
     def done_cb(self, *args):
         logging.debug(' '.join([str(i) for i in args]))
