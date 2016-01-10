@@ -126,8 +126,6 @@ class SlaveMachine(AbstractMachine):
         self.driver.connect()
         self._thread.start()
 
-        self.ping()
-
     def exit(self):
         self.running_ev.set()
         self._thread.join()
