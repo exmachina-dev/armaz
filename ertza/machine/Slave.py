@@ -169,24 +169,8 @@ class SlaveMachine(AbstractMachine):
         self.bridge.put(rq)
         return rq
 
-    def ping(self):
-        try:
-            ev = Event()
-
-            def _cb(data, event=None):
-                rtn = self._default_cb(data, event)
-
-                if rtn:
-                    dt = datetime.now() - rtn.args[0]
-                    self._latency = dt
-                    print(dt.microseconds / 1000)
-                    print(data)
-
-            self.request_from_remote(_cb, 'ping', event=ev)
-            return self._latency
-
-        except (SlaveMachineError, AbstractDriverError) as e:
-            raise SlaveMachineError('Unable to ping remote machine: %s' % e)
+    def enslave(self):
+        self.set_to_remote('machine:operation_mode', 'slave', self.machine.address)
 
     @property
     def infos(self):
@@ -203,12 +187,22 @@ class SlaveMachine(AbstractMachine):
         return self.slave.serialnumber
 
     def get_serialnumber(self):
-        return self.request_from_remote(self._get_cb,
-                                        'machine:serialnumber', getitem=True)
+        return self.get_from_remote('machine:serialnumber', block=True)
+
+    def ping(self, block=True):
+        ev = Event() if block is True else None
+
+        start_time = datetime.now()
+        cb = functools.partial(self._ping_cb, start_time)
+        rq = self.request_from_remote(cb, 'ping', event=ev)
+
+        if ev is not None and ev.wait(self.timeout):
+            return self._latency
+        return rq
 
     def get_from_remote(self, key, **kwargs):
         ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
-        print(ev)
+
         rq = self.request_from_remote(self._get_cb, key, getitem=True, event=ev)
 
         if ev is not None and ev.wait(self.timeout):
@@ -224,13 +218,24 @@ class SlaveMachine(AbstractMachine):
             return self._set_dict[key]
         return rq
 
+    def _ping_cb(self, start_time, data, event=None):
+        rtn = self._default_cb(data, event)
+
+        if rtn:
+            dt = datetime.now() - start_time
+            self._latency = dt.microseconds / 1000
+
+        if event:
+            event.set()
+
     def _get_cb(self, data, event=None):
         rtn = self._default_cb(data, event)
         logging.debug('Rtn data: %s' % rtn)
 
         if rtn:
-            self._get_dict[rtn.args[0]] = rtn.args[1]
-        raise SlaveMachineError('No data in {}'.format(rtn))
+            self._get_dict[rtn.args[1]] = rtn.args[2]
+        else:
+            raise SlaveMachineError('No data in {}'.format(rtn))
 
         if event:
             event.set()
@@ -240,8 +245,9 @@ class SlaveMachine(AbstractMachine):
         logging.debug('Rtn data: %s' % rtn)
 
         if rtn:
-            self._set_dict[rtn.args[0]] = rtn.args[1]
-        raise SlaveMachineError('No data in {}'.format(rtn))
+            self._set_dict[rtn.args[1]] = rtn.args[2]
+        else:
+            raise SlaveMachineError('No data in {}'.format(rtn))
 
         if event:
             event.set()

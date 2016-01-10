@@ -153,8 +153,6 @@ class Machine(AbstractMachine):
         return self.slaves
 
     def load_slaves(self):
-        self._check_operation_mode(raise_exception=False)
-
         if not self.slaves:
             if not self.search_slaves():
                 logging.info('No slaves found')
@@ -169,8 +167,6 @@ class Machine(AbstractMachine):
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *s.slave))
                 return
-
-            s.set_to_remote('machine:operation_mode', 'slave', self.address)
 
             sn = s.get_from_remote('machine:serialnumber', block=True)
             if type(sn) == str and s.serialnumber != sn:
@@ -262,7 +258,7 @@ class Machine(AbstractMachine):
                 for s in self.slaves:
                     s.enslave()
             elif mode == 'slave':
-                if self._check_operation_mode(mode, raise_exception=False):
+                if self.slave_mode:
                     raise MachineError('Operating mode {0} already active. '
                                        'You must disable {0} before '
                                        'reactiving it'.format(mode))
