@@ -57,46 +57,6 @@ class ModbusBackend(object):
         res = bitstring.BitArray('0b%s' % ''.join(self.rhr(start))).unpack(fmt)
         return res
 
-    @staticmethod
-    def to_int(bits, **kwargs):
-        bits = bitstring.Bits(bin=bits)
-        return bits.int
-
-    @staticmethod
-    def from_int(int_value, **kwargs):
-        bits = bitstring.Bits(int=int_value, length=32)
-        return bits.unpack('uintbe:16, uintbe')
-
-    @staticmethod
-    def to_float(bits, **kwargs):
-        bits = bitstring.Bits(bin=bits)
-        return bits.float
-
-    @staticmethod
-    def from_float(float_value, **kwargs):
-        bits = bitstring.Bits(float=float_value, length=32)
-        return bits.unpack('uintbe:16, uintbe')
-
-    @staticmethod
-    def to_bools(bits, **kwargs):
-        bits = bitstring.Bits(bin=bits)
-        l = list()
-        for b in bits:
-            l.append(b)
-
-        return l
-
-    @staticmethod
-    def _from_bools(bools, **kwargs):
-        bin_str = '0b'
-        bools.reverse()
-        for b in bools:
-            if b is None:
-                b = False
-            bin_str += str(int(b))
-        bits = bitstring.Bits(bin=bin_str)
-        return bits.unpack('uintbe:16, uintbe')
-
     def _read_holding_registers(self, address):
         count = self.register_nb_by_netdata
         rq = ReadHoldingRegistersRequest(address, count,
