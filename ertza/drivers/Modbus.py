@@ -125,12 +125,16 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         self.netdata_map = ModbusDriver.MFE100Map
         self._prev_data = {}
 
+        self.connected = None
+
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
         if not self.back.connect():
+            self.connected = False
             raise ModbusDriverError(
                 "Failed to connect %s:%i" % (self.target_address,
                                              self.target_port))
+        self.connected = True
 
     def exit(self):
         self['command:enable'] = False
