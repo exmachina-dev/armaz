@@ -228,14 +228,7 @@ class OscFutureResult(object):
 
     @property
     def uid(self):
-        if not self._result:
-            return self._uid
-        clean_path = self.result.path.replace('/ok', '', 1).replace('/error', '', 1)
-        if '/ping' in clean_path:
-            return clean_path
-        key_arg = self.result.args[0]
-        uid = ' '.join((clean_path, key_arg,))
-        return uid
+        return self._uid
 
     def __repr__(self):
-        return self.uid
+        return 'WF {}'.format(self.uid)
