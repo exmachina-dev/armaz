@@ -333,7 +333,7 @@ class Machine(AbstractMachine):
             raise KeyError('Unable to find {} in keys'.format(key))
 
         if 'serialnumber' == key:
-            return self.driver['serialnumber']
+            return self.serialnumber
 
     def __setitem__(self, key, value):
         if type(value) == tuple and len(value) == 1:
