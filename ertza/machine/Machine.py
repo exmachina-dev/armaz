@@ -236,7 +236,7 @@ class Machine(AbstractMachine):
         if len(args) >= 1:
             mode = args[0]
 
-            if mode not in ('master', 'slave'):
+            if mode not in ('master', 'slave', 'standalone'):
                 raise MachineError('Unrecognized mode %s' % mode)
 
             if mode == 'master':
@@ -266,7 +266,12 @@ class Machine(AbstractMachine):
                     master, port = master.split(':')
                 self.operation_mode = mode
                 self.master = master
+            elif mode == 'standalone':
+                if self.standalone_mode:
+                    logging.info('Operating mode {} already active'.format(mode))
+                    return
 
+                self.operation_mode = mode
         else:
             logging.info('Deactivating %s mode' % self.operation_mode)
 
@@ -286,6 +291,10 @@ class Machine(AbstractMachine):
     @property
     def master_mode(self):
         return self._check_operation_mode('master', raise_exception=False)
+
+    @property
+    def standalone_mode(self):
+        return self._check_operation_mode('standalone', raise_exception=False)
 
     def _check_operation_mode(self, mode='slave', raise_exception=True):
         if self.operation_mode == mode:
