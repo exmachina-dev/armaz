@@ -14,6 +14,10 @@ from pymodbus.pdu import ExceptionResponse
 import pymodbus.exceptions as pmde
 
 
+class ModbusBackendError(Exception):
+    pass
+
+
 class ModbusBackend(object):
     min_netdata = 0
     max_netdata = 999
@@ -125,8 +129,10 @@ class ModbusBackend(object):
 
         try:
             if not self.connected:
-                logging.error("Unable to send request, not connected")
-                return -1
+                logging.info("Not connected, connecting...")
+                if not self.connect():
+                    raise ModbusBackendError('Unable to connect.')
+
             response = self._end.execute(rq)
             rpt = type(response)
             if rpt == ExceptionResponse:

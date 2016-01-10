@@ -214,10 +214,14 @@ class Machine(AbstractMachine):
             for i, s in enumerate(self.slaves):
                 if serialnumber == s.slave.serialnumber:
                     return i, s
+            logging.error('Unable to find slave by S/N {}'.format(serialnumber))
         elif address:
             for i, s in enumerate(self.slaves):
                 if address == s.slave.address:
                     return i, s
+            logging.error('Unable to find slave by address {}'.format(address))
+
+        return None, None
 
     def init_slave(self, slave_machine):
         try:
@@ -236,7 +240,9 @@ class Machine(AbstractMachine):
                 raise MachineError('Unrecognized mode %s' % mode)
 
             if mode == 'master':
-                self._check_operation_mode(mode)
+                if self.master_mode:
+                    logging.info('Operating mode {} already active'.format(mode))
+                    return
 
                 if not self.slaves:
                     raise MachineError('No slaves found')
@@ -305,7 +311,7 @@ class Machine(AbstractMachine):
         key = key.replace('machine:', '', 1)
 
         if key not in self.MachineMap:
-            raise KeyError(key)
+            raise KeyError('Unable to find {} in keys'.format(key))
 
         if 'serialnumber' == key:
             return self.driver['serialnumber']

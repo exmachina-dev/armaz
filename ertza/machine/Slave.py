@@ -70,6 +70,10 @@ class SlaveMachine(AbstractMachine):
         def __getattr__(self, name):
             return self._kwargs[name]
 
+        def __repr__(self):
+            return '{} {} {} {}'.format('RQ', self.attribute,
+                                        ' '.join(self.args), self.callback)
+
     def __init__(self, slave):
 
         self.config = slave.config
