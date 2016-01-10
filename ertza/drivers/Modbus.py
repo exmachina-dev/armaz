@@ -33,7 +33,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'status':               netdata(0,
                                         'pad:24,bool,bool,bool,bool,bool,bool,bool,bool'),
         'command':              netdata(1,
-                                        'pad:24,bool,uint:1,uint:2,bool,bool,bool,bool'),
+                                        'pad:23,bool,uint:1,uint:3,bool,bool,bool,bool'),
         'error_code':           netdata(2, 'uint:32'),
         'jog':                  netdata(3, 'float:32'),
         'torque_ref':           netdata(4, 'float:32'),
@@ -53,10 +53,12 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'encoder_velocity':     netdata(26, 'float:32'),
         'velocity_error':       netdata(27, 'float:32'),
         'follow_error':         netdata(28, 'float:32'),
-        'effort':               netdata(29, 'float:32'),
+        'torque':               netdata(29, 'float:32'),
+        'current_ratio':        netdata(30, 'float:32'),
+        'effort':               netdata(31, 'float:32'),
 
-        'drive_temp':           netdata(30, 'float:32'),
-        'dropped_frames':       netdata(31, 'uint:32'),
+        'drive_temp':           netdata(50, 'float:32'),
+        'dropped_frames':       netdata(51, 'uint:32'),
     }
 
     MFE100Map = {
@@ -98,6 +100,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'encoder_velocity': parameter(MFNdata['encoder_velocity'], 0, float, 'r'),
         'velocity_error':   parameter(MFNdata['velocity_error'], 0, float, 'r'),
         'follow_error':     parameter(MFNdata['follow_error'], 0, float, 'r'),
+        'torque':           parameter(MFNdata['torque'], 0, float, 'r'),
+        'current_ratio':    parameter(MFNdata['current_ratio'], 0, float, 'r'),
         'effort':           parameter(MFNdata['effort'], 0, float, 'r'),
 
         'drive_temp':       parameter(MFNdata['drive_temp'], 0, float, 'r'),
