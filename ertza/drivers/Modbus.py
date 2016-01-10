@@ -5,6 +5,7 @@ from collections import namedtuple
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 
 from ertza.drivers.ModbusBackend import ModbusBackend
+from ertza.drivers.ModbusFrontend import ModbusDriverFrontend
 
 from ertza.drivers.Utils import retry
 
@@ -23,7 +24,7 @@ class WriteOnlyError(ModbusDriverError, IOError):
         super().__init__('%s is write-only' % key)
 
 
-class ModbusDriver(AbstractDriver):
+class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
     netdata = namedtuple('netdata', ['addr', 'fmt'])
     parameter = namedtuple('parameter', ['netdata', 'start',
