@@ -81,6 +81,14 @@ class Machine(AbstractMachine):
         for n, c in self.comms.items():
             c.exit()
 
+    def load_startup_mode(self):
+        m = self.config.get('machine', 'operating_mode', fallback='standalone')
+        logging.info('Loading {} operating mode'.format(m))
+
+        if m == 'master':
+            self.load_slaves()
+        self.set_operation_mode(m)
+
     def reply(self, command):
         if command.answer is not None:
             self.send_message(command.protocol, command.answer)

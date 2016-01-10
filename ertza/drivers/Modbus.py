@@ -106,6 +106,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
     def __init__(self, config):
 
+        self.config = config
+
         self.target_address = config.get("target_address")
         self.target_port = int(config.get("target_port"))
         self.target_nodeid = '.'.split(self.target_address)[-1]     # On MFE100, nodeid is always the last byte of his IP address

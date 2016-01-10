@@ -121,10 +121,6 @@ class Ertza(object):
         machine.comms['OSC'] = OscServer(self.machine)
         machine.comms['Serial'] = SerialServer(self.machine)
 
-        if machine.config.getboolean('slaves', 'got_slaves'):
-            logging.info('Searching for slaves')
-            machine.load_slaves()
-
     def start(self):
         """ Start the processes """
         self.running = True
@@ -152,9 +148,12 @@ class Ertza(object):
             comm.start()
             logging.info("%s communication module started" % name)
 
+        self.machine.load_startup_mode()
+
         for l in self.machine.leds:
             if l.function == 'status':
                 l.set_blink(50)
+
         logging.info("Ertza ready")
 
     def loop(self, machine_queue, name):
