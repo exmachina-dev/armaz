@@ -85,11 +85,7 @@ class OscMessage(object):
 
     @property
     def uid(self):
-        clean_path = self.path.replace('/ok', '', 1).replace('/error', '', 1)
-        if '/ping' in clean_path:
-            return clean_path
-        key_arg = self.args[0]
-        uid = ' '.join((clean_path, key_arg,))
+        uid = self.args[0]
         return uid
 
     def __repr__(self):

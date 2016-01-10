@@ -6,6 +6,7 @@ from datetime import datetime
 from threading import Thread
 from threading import Event
 from queue import Queue, Empty
+import uuid
 
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 from ertza.processors.osc.Osc import OscAddress, OscMessage
@@ -72,7 +73,7 @@ class OscDriver(AbstractDriver):
     def ping(self):
         m = self.message('/slave/ping')
         t = datetime.now().timestamp()
-        fut = self.to_machine(m, m.path)
+        fut = self.to_machine(m)
         reply = None
         try:
             reply = self.wait_for_future(fut)
@@ -85,14 +86,14 @@ class OscDriver(AbstractDriver):
     def to_machine(self, request, uid=None):
         try:
             if not uid:
-                uid = ' '.join((request.path, request.args[0]))
+                uid = uuid.uuid4().hex
             event = Event()
             future = OscFutureResult(uid)
             future.set_callback(self.done_cb)
             future.set_event(event)
             self._waiting_futures.append(future)
             logging.debug(self._waiting_futures)
-            self._send(request)
+            self._send(request, uid)
             return future
         except:
             raise
@@ -162,9 +163,9 @@ class OscDriver(AbstractDriver):
         except OscDriverError as e:
             logging.error(e)
 
-    def _send(self, message, *args, **kwargs):
+    def _send(self, message, uid, *args, **kwargs):
         try:
-            m = message
+            m = self.message(message.path, uid, *message.args)
             m.receiver = self.target
             lo.send((m.receiver.hostname, m.receiver.port), m.message)
         except OSError as e:
