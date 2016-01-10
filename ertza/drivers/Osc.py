@@ -90,7 +90,6 @@ class OscDriver(AbstractDriver):
             future.set_callback(self.done_cb)
             future.set_event(event)
             self._waiting_futures.append(future)
-            logging.debug(self._waiting_futures)
             self._send(request, uid)
             return future
         except:
@@ -116,7 +115,6 @@ class OscDriver(AbstractDriver):
                 del self._waiting_futures[f_id]
 
                 if self._check_error(recv_item):
-                    logging.debug(recv_item)
                     future.set_result((recv_item, OscDriverError(str(recv_item))))
                 else:
                     future.set_result(recv_item)
@@ -130,7 +128,8 @@ class OscDriver(AbstractDriver):
                                                        repr(e)))
 
     def done_cb(self, *args):
-        logging.debug(' '.join([str(i) for i in args]))
+        #logging.debug(' '.join([str(i) for i in args]))
+        pass
 
     def wait_for_future(self, fut):
         if fut.event.wait(self.timeout):

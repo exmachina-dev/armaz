@@ -165,7 +165,8 @@ class Machine(AbstractMachine):
             logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
             self.init_slave(s)
             try:
-                s.ping()
+                logging.info('Slave at {2} took {0}ms to respond'.format(
+                    s.ping(), *s.slave))
             except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *s.slave))
@@ -353,4 +354,4 @@ class Machine(AbstractMachine):
             value, = value
 
         if 'operation_mode' == key:
-            print(self.set_operation_mode(*value))
+            self.set_operation_mode(*value)

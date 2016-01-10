@@ -230,8 +230,12 @@ class SlaveMachine(AbstractMachine):
             event.set()
 
     def _get_cb(self, data, event=None):
-        rtn = self._default_cb(data, event)
-        logging.debug('Rtn data: %s' % rtn)
+        try:
+            rtn = self._default_cb(data, event)
+            logging.debug('Rtn data: %s' % rtn)
+        except SlaveMachineError as e:
+            logging.error(repr(e))
+            return
 
         if rtn:
             self._get_dict[rtn.args[1]] = rtn.args[2]
@@ -242,8 +246,12 @@ class SlaveMachine(AbstractMachine):
             event.set()
 
     def _set_cb(self, data, event=None):
-        rtn = self._default_cb(data, event)
-        logging.debug('Rtn data: %s' % rtn)
+        try:
+            rtn = self._default_cb(data, event)
+            logging.debug('Rtn data: %s' % rtn)
+        except SlaveMachineError as e:
+            logging.error(repr(e))
+            return
 
         if rtn:
             self._set_dict[rtn.args[1]] = rtn.args[2]
