@@ -106,6 +106,9 @@ class Machine(AbstractMachine):
 
     @property
     def serialnumber(self):
+        if self.config.get('machine', 'force_serialnumber', fallback=False):
+            return self.config.get('machine', 'force_serialnumber')
+
         if not self.cape_infos:
             return
 

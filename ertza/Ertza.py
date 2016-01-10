@@ -80,7 +80,7 @@ class Ertza(object):
         machine.config.load_variant()
 
         machine.cape_infos = machine.config.find_cape('ARMAZCAPE')
-        if machine.serialnumber:
+        if machine.cape_infos:
             name = machine.cape_infos['name']
             logging.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
             SerialCommandString.SerialNumber = machine.serialnumber
