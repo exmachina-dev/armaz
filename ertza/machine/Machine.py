@@ -325,6 +325,11 @@ class Machine(AbstractMachine):
                 pass
 
     def __getitem__(self, key):
+        dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
+
+        if dst is not self:
+            return dst[key]
         if key.startswith('drive:'):
             return self.driver[key]
 
@@ -339,18 +344,20 @@ class Machine(AbstractMachine):
         if 'serialnumber' == key:
             return self.serialnumber
 
+        if self.operation_mode == 'master':
+            for s in self.slaves:
+                s.get_from_remote(key)
+
     def __setitem__(self, key, value):
         if type(value) == tuple and len(value) == 1:
             value, = value
 
-        if key.startswith('drive:'):
-            self.driver[key] = value
-            return
+        dst = self._get_destination(key)
 
-        if not key.startswith('machine:'):
-            raise ValueError('Unable to find target %s' % key)
-
-        key = key.replace('machine:', '', 1)
+        if dst is not self:
+            key = key.split(':', maxsplit=1)[1]
+            dst[key] = value
+            return dst[key]
 
         if key not in self.MachineMap:
             raise IndexError('Unable to find %s in keys' % key)
@@ -359,3 +366,11 @@ class Machine(AbstractMachine):
 
         if 'operation_mode' == key:
             self.set_operation_mode(*value)
+
+    def _get_destination(self, key):
+        if key.startswith('drive:'):
+            return self.driver
+        elif key.startswith('machine:'):
+            return self
+
+        raise ValueError('Unable to find target %s' % key)
