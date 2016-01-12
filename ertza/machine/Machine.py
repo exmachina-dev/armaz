@@ -317,8 +317,12 @@ class Machine(AbstractMachine):
 
     def _switch_cb(self, sw_state):
         if sw_state['function']:
-            if 'drive_enable' in sw_state['function']:
+            s, f, h = sw_state, sw_state['function'], sw_state['hit']
+            logging.debug('Switch activated: {}'.format(repr(s)))
+            if 'drive_enable' == f:
                 print(sw_state, 'Got-it!')
+            elif 'allow_movement' == f:
+                pass
 
     def __getitem__(self, key):
         if key.startswith('drive:'):
