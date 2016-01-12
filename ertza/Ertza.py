@@ -290,9 +290,9 @@ class Ertza(object):
                                            "name_%s" % esw_n, fallback=esw_n)
             esw = Switch(esw_kc, name)
             esw.invert = self.machine.config.getboolean("switches",
-                                                        "invert_%s " % esw_n)
+                                                        "invert_%s" % esw_n)
             esw.function = self.machine.config.get("switches",
-                                                   "function_%s " % esw_n)
+                                                   "function_%s" % esw_n)
             self.machine.switches.append(esw)
             logging.debug("Found switch %s at keycode %d" % (name, esw_kc))
             esw_p += 1
