@@ -13,7 +13,7 @@ from multiprocessing import JoinableQueue
 import queue
 
 from ertza.ConfigParser import ConfigParser
-from ertza.machine.Machine import Machine
+from ertza.machine.Machine import Machine, MachineError
 
 from ertza.processors.OscProcessor import OscProcessor
 from ertza.processors.SerialProcessor import SerialProcessor
@@ -148,7 +148,10 @@ class Ertza(object):
             comm.start()
             logging.info("%s communication module started" % name)
 
-        self.machine.load_startup_mode()
+        try:
+            self.machine.load_startup_mode()
+        except MachineError as e:
+            logging.error(str(e))
 
         for l in self.machine.leds:
             if l.function == 'status':
