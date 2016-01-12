@@ -73,3 +73,41 @@ class SlaveMode(OscCommand, UnbufferedCommand):
     @property
     def alias(self):
         return '/machine/slave/mode'
+
+
+class MachineSet(OscCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        if len(c.args) < 2:
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            return
+
+        try:
+            k, v, = c.args
+            self.machine.driver[k] = v
+            self.ok(c, k, v)
+        except Exception as e:
+            self.error(c, k, e)
+
+    @property
+    def alias(self):
+        return '/machine/set'
+
+
+class MachineGet(OscCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        if len(c.args) != 1:
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            return
+
+        try:
+            k, = c.args
+            v = self.machine.driver[k]
+            self.ok(c, k, v)
+        except Exception as e:
+            self.error(c, k, e)
+
+    @property
+    def alias(self):
+        return '/machine/get'
