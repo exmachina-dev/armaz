@@ -232,12 +232,12 @@ class Ertza(object):
                 th_p += 1
 
     def _config_fans(self):
-
-        PWM.set_frequency(1000)
-
         self.machine.fans = []
 
+        # Get available fans
         if self.machine.config.getboolean('fans', 'got_fans'):
+            PWM.set_frequency(1000)
+
             f_p = 0
             while self.machine.config.has_option("fans", "address_F%d" % f_p):
                 fan_channel = self.machine.config.getint("fans",
