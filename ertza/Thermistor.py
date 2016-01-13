@@ -1,17 +1,30 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 from threading import Lock
 import logging
 
-from temp_chart import temp_chart
+from ertza.temp_chart import temp_chart
 
 _ADC_PATH = "/sys/bus/iio/devices/iio:device0"
 
 
+def transpose(it):
+    temp = list()
+    adcv = list()
+
+    for l in it:
+        if len(l) != 2:
+            raise ValueError('Tuple misformatted')
+
+        temp.append(l[0])
+        adcv.append(l[1])
+
+    return tuple((temp, adcv))
+
+
 class Thermistor(object):
 
-    temp_table = np.array(temp_chart['NTCLE100E3103JB0']).transpose()
+    temp_table = transpose(temp_chart['NTCLE100E3103JB0'])
     mutex = Lock()
 
     def __init__(self, pin, name):
@@ -37,7 +50,15 @@ class Thermistor(object):
         return temp
 
     def resistance_to_degrees(self, resistor_val):
-        idx = (np.abs(Thermistor.temp_table[1] - resistor_val)).argmin()
+        idx = -1
+        for i, v in enumerate(Thermistor.temp_table[1]):
+            if v - resistor_val <= 0:
+                idx = i
+                break
+
+        if idx == -1:
+            raise KeyError('Unable to find temperature for {}'.format(resistor_val))
+
         return Thermistor.temp_table[0][idx]
 
     def voltage_to_resistance(self, v_sense):
