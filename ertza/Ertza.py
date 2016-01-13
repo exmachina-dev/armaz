@@ -23,11 +23,7 @@ from ertza.processors.serial.SerialServer import SerialServer
 from ertza.processors.serial.Serial import SerialCommandString
 
 from ertza.PWM import PWM
-try:
-    from ertza.Thermistor import Thermistor
-    NO_TH = False
-except ImportError:
-    NO_TH = True
+from ertza.Thermistor import Thermistor
 
 from ertza.Fan import Fan
 from ertza.Switch import Switch
@@ -103,8 +99,7 @@ class Ertza(object):
             logging.error("Unable to find driver, exiting.")
             sys.exit(1)
 
-        if not NO_TH:
-            self._config_thermistors()
+        self._config_thermistors()
         self._config_fans()
         self._config_external_switches()
 
@@ -256,7 +251,7 @@ class Ertza(object):
             f.set_value(1)
 
         # Connect fans to thermistors
-        if self.machine.fans and not NO_TH:
+        if self.machine.fans:
             self.machine.temperature_watchers = []
             for t, therm in enumerate(self.machine.thermistors):
                 for f, fan in enumerate(self.machine.fans):
@@ -274,6 +269,15 @@ class Ertza(object):
                                 "thermistors", "max_temperature_TH%d" % t))
                         tw.enable()
                         self.machine.temperature_watchers.append(tw)
+        elif self.machine.thermistors:
+            self.machine.temperature_watchers = []
+            for t, therm in enumerate(self.machine.thermistors):
+                tw = TempWatcher(therm, None, "TempLogger-%d" % t)
+                tw.set_max_temperature(
+                    self.machine.config.getfloat(
+                        "thermistors", "max_temperature_TH%d" % t))
+                tw.enable(mode=False)
+                self.machine.temperature_watchers.append(tw)
 
     def _config_external_switches(self):
         Switch.callback = self.machine.switch_callback

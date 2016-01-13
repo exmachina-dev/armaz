@@ -34,15 +34,18 @@ class TempWatcher(object):
 
     @property
     def target_reached(self):
-        if self.tagret_temp == 0:
+        if self.target_temp == 0:
             return True
         err = abs(self.temperature - self.target_temp)
         return err < self.ok_range
 
-    def enable(self):
+    def enable(self, mode=True):
         self.enabled = True
         self.disabled = False
-        self.t = Thread(target=self.keep_temperature)
+        if mode:
+            self.t = Thread(target=self.keep_temperature)
+        else:
+            self.t = Thread(target=self.watch_temperature)
         self.t.daemon = True
         self.t.start()
 
@@ -55,15 +58,12 @@ class TempWatcher(object):
         self.fan.set_power(0.0)
 
     def keep_temperature(self):
-
         while self.enabled:
-            self.current_temp = self.thermistor.temperature
+            self.update_temp()
+
             error = self.target_temp - self.current_temp
             error *= -1
 
-            if self.current_temp >= self.max_temp:
-                if self.callback:
-                    self.callback()
             self.running_time += self.interval
             _P = self.P * error
 
@@ -82,3 +82,24 @@ class TempWatcher(object):
                            self.fan.channel, power, error, self.error_integral))
             time.sleep(self.interval)
         self.disabled = True
+
+    def watch_temperature(self):
+        while self.enabled:
+            self.update_temp()
+
+            if self.current_temp >= self.max_temp:
+                if self.callback:
+                    self.callback()
+
+            logging.debug("Current temp for %s: %d" %
+                          (self.thermistor.name, self.current_temp))
+            time.sleep(self.interval)
+        self.disabled = True
+
+    def update_temp(self):
+        self.current_temp = self.thermistor.temperature
+
+        if self.current_temp >= self.max_temp:
+            if self.callback:
+                self.callback(self)
+        return self.current_temp
