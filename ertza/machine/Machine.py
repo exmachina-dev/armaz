@@ -342,7 +342,10 @@ class Machine(AbstractMachine):
         if dst is not self:
             return dst[key]
         if key.startswith('drive:'):
-            return self.driver[key]
+            try:
+                return self.driver[key]
+            except AbstractDriverError as e:
+                logging.error(repr(e))
 
         if not key.startswith('machine:'):
             raise ValueError('Unable to find target %s' % key)
