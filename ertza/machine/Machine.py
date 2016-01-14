@@ -3,10 +3,11 @@
 import sys
 import logging
 
-from collections import namedtuple
-
 from ertza.machine.AbstractMachine import AbstractMachine
 from ertza.machine.AbstractMachine import AbstractMachineError
+from ertza.machine.MachineModes import StandaloneMachineMode
+from ertza.machine.MachineModes import MasterMachineMode
+from ertza.machine.MachineModes import SlaveMachineMode
 
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
@@ -19,15 +20,6 @@ class MachineError(AbstractMachineError):
 
 
 class Machine(AbstractMachine):
-
-    parameter = namedtuple('parameter', ['vtype', 'mode'])
-
-    MachineMap = {
-        'operation_mode':   parameter(str, 'rw'),
-        'master':       parameter(str, 'rw'),
-        'serialnumber': parameter(str, 'ro'),
-    }
-
     def __init__(self):
 
         SlaveMachine.machine = self
@@ -47,6 +39,7 @@ class Machine(AbstractMachine):
         self.slaves = []
         self.master = None
         self.operation_mode = None
+        self.machine_keys = None
 
         self.switch_callback = self._switch_cb
 
@@ -246,27 +239,17 @@ class Machine(AbstractMachine):
         if len(args) >= 1:
             mode = args[0]
 
-            if mode not in ('master', 'slave', 'standalone'):
-                raise MachineError('Unrecognized mode %s' % mode)
-
             if mode == 'master':
                 if self.master_mode:
                     logging.info('Operating mode {} already active'.format(mode))
                     return
 
-                if not self.slaves:
-                    raise MachineError('No slaves found')
-
-                self.operation_mode = mode
-
-                for s in self.slaves:
-                    s.enslave()
+                self.activate_mode(mode)
             elif mode == 'slave':
                 if self.slave_mode:
-                    raise MachineError('Operating mode {0} already active. '
-                                       'You must disable {0} before '
+                    raise MachineError('Operating mode {} already active. '
+                                       'You must disable {} before '
                                        'reactiving it'.format(mode))
-
                 if len(args) >= 2:
                     master = args[1]
                 else:
@@ -274,14 +257,18 @@ class Machine(AbstractMachine):
 
                 if ':' in master:
                     master, port = master.split(':')
-                self.operation_mode = mode
+
                 self.master = master
+                self.master_port = port if port else \
+                    self.config.get('driver_Osc', 'port', fallback=6969)
+
+                self.activate_mode(mode)
             elif mode == 'standalone':
                 if self.standalone_mode:
                     logging.info('Operating mode {} already active'.format(mode))
                     return
 
-                self.operation_mode = mode
+                self.activate_mode(mode)
         else:
             logging.info('Deactivating %s mode' % self.operation_mode)
 
@@ -292,7 +279,31 @@ class Machine(AbstractMachine):
             elif self.operation_mode == 'master':
                 pass
 
-        return self.operation_mode, self.master
+    def activate_mode(self, mode):
+        if mode not in ('standalone', 'master', 'slave'):
+            raise MachineError('Unexpected mode: {}'.format(mode))
+
+        if mode == 'standalone':
+            self.machine_keys = StandaloneMachineMode(self)
+            self.operation_mode = mode
+        elif mode == 'master':
+            if not self.slaves:
+                raise MachineError('No slaves found')
+
+            for s in self.slaves:
+                s.enslave()
+
+            self.machine_keys = MasterMachineMode(self)
+            self.operation_mode = mode
+        elif mode == 'slave':
+            if not self.master:
+                raise MachineError('No master specified')
+
+            if not self.master_port:
+                raise MachineError('No port specified for master')
+
+            self.machine_keys = SlaveMachineMode(self)
+            self.operation_mode = mode
 
     @property
     def slave_mode(self):
@@ -371,6 +382,6 @@ class Machine(AbstractMachine):
         if key.startswith('drive:'):
             return self.driver
         elif key.startswith('machine:'):
-            return self
+            return self.machine_keys[key]
 
         raise ValueError('Unable to find target %s' % key)
