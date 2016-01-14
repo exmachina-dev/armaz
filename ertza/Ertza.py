@@ -224,11 +224,10 @@ class Ertza(object):
                                                  "port_TH%d" % th_p):
                 adc_channel = self.machine.config.getint("thermistors",
                                                          "port_TH%d" % th_p)
-                self.machine.thermistors.append(Thermistor(adc_channel,
-                                                           "TH%d" % th_p))
-                logging.debug(
-                    "Found thermistor TH%d at ADC channel %d" % (th_p,
-                                                                 adc_channel))
+                therm = Thermistor(adc_channel, 'TH{}'.format(th_p))
+                self.machine.thermistors.append(therm)
+                logging.debug('Found thermistor TH{} '
+                              'at ADC channel {}'.format(th_p, adc_channel))
                 th_p += 1
 
     def _config_fans(self):
@@ -250,23 +249,25 @@ class Ertza(object):
         for f in self.machine.fans:
             f.set_value(1)
 
+        th_cf = self.machine.config["thermistors"]
+        tw_cf = self.machine.config["temperature_watchers"]
+
         # Connect fans to thermistors
         if self.machine.fans:
             self.machine.temperature_watchers = []
+
             for t, therm in enumerate(self.machine.thermistors):
                 for f, fan in enumerate(self.machine.fans):
-                    if self.machine.config.getboolean("temperature_watchers",
-                                                      "connect_TH%d_to_F%d" %
-                                                      (t, f),
-                                                      fallback=False):
+                    if tw_cf.getboolean("connect_TH{}_to_F{}".format(t, f),
+                                        fallback=False):
                         tw = TempWatcher(therm, fan,
-                                         "TempWatcher-%d-%d" % (t, f))
+                                         "TempWatcher-{}-{}".format(t, f))
                         tw.set_target_temperature(
-                            self.machine.config.getfloat(
-                                "thermistors", "target_temperature_TH%d" % t))
+                            th_cf.getfloat("target_temperature_TH%d" % t))
                         tw.set_max_temperature(
-                            self.machine.config.getfloat(
-                                "thermistors", "max_temperature_TH%d" % t))
+                            th_cf.getfloat("max_temperature_TH%d" % t))
+                        tw.interval = th_cf.getfloat('update_interval_TH{}'.format(t),
+                                                     fallback=5)
                         tw.enable()
                         self.machine.temperature_watchers.append(tw)
         elif self.machine.thermistors:
@@ -274,8 +275,9 @@ class Ertza(object):
             for t, therm in enumerate(self.machine.thermistors):
                 tw = TempWatcher(therm, None, "TempLogger-%d" % t)
                 tw.set_max_temperature(
-                    self.machine.config.getfloat(
-                        "thermistors", "max_temperature_TH%d" % t))
+                    th_cf.getfloat("max_temperature_TH%d" % t))
+                tw.interval = th_cf.getfloat('update_interval_TH{}'.format(t),
+                                             fallback=5)
                 tw.enable(mode=False)
                 self.machine.temperature_watchers.append(tw)
 
