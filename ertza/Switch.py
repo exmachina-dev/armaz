@@ -70,9 +70,14 @@ class Switch(object):
                 self.direction = None
 
     def __repr__(self):
-        return("Switch: %s at %i: dir %s hit %i" % (self.name, self.key_code,
-                                                    self.direction,
-                                                    self.hit))
+        i = {
+            'name': self.name,
+            'keycode': self.key_code,
+            'dir': self.direction,
+            'hit': self.hit,
+        }
+
+        return 'Switch {name} at {keycode} (dir {dir} hit {hit})'.format(**i)
 
 if __name__ == '__main__':
     import signal
