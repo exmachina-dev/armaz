@@ -5,8 +5,8 @@ from collections import namedtuple
 
 
 class SerialCommandString(object):
-    CmdStruct = namedtuple('SerialCmd', ('protocol', 'serial_number', 'data', 'end'))
-    CmdFormat = 'bits:64,bits:96,bits,bits:16'
+    CmdStruct = namedtuple('SerialCmd', ('protocol', 'length', 'serial_number', 'data', 'end'))
+    CmdFormat = 'bits:64,bits:16,bits:96,bits,bits:16'
     CmdEnd = b'\r\n'
     CmdSep = b':'
 
@@ -20,7 +20,7 @@ class SerialCommandString(object):
             self._b = bs.pack(self.CmdFormat, cmd_bytes)
             self._c = self.CmdStruct(self._b.unpack())
         else:
-            self._c = self.CmdStruct(b'', b'', b'', b'')
+            self._c = self.CmdStruct(b'', b'\x00\x00', b'', b'', b'')
             self['serial_number'] = self.SerialNumber.encode()
             self['end'] = self.CmdEnd
             self['protocol'] = kwargs['protocol'] if 'protocol' in kwargs \
@@ -28,6 +28,9 @@ class SerialCommandString(object):
 
     @property
     def tobytes(self):
+        command_len = len(bs.pack(self.CmdFormat, *self._c).tobytes())
+        self['length'] = bs.pack('uint:16', command_len).tobytes()
+
         return bs.pack(self.CmdFormat, *self._c).tobytes()
 
     @property
@@ -40,11 +43,11 @@ class SerialCommandString(object):
 
     def _pack(self, value):
         if type(value) == str:
-            value = bs.Bits(value.encode())
+            value = value.encode()
         elif type(value) == int:
-            value = bs.Bits(int=value, length=self.IntLength)
+            value = bs.Bits(int=value, length=self.IntLength).tobytes()
         elif type(value) == float:
-            value = bs.Bits(float=value, length=self.FloatLength)
+            value = bs.Bits(float=value, length=self.FloatLength).tobytes()
 
         return value
 
@@ -63,7 +66,7 @@ class SerialCommandString(object):
         return self
 
     def __len__(self):
-        return self.tobytes.len
+        return len(self.tobytes)
 
     def __repr__(self):
         return "%s %s %s" % (self['protocol'], self['serial_number'], self['data'])
