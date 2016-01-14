@@ -47,12 +47,12 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
         if not self.check_args(c, 'ge', 3):
             return
 
-        if c.args[1]  not in ('machine:operation_mode',):
+        if c.args[1] not in ('machine:operation_mode',):
             super().execute(c)
 
         try:
             print(c.args)
-            uid, dst, *args = c.args
+            uid, dst, args, = c.args
             self.machine[dst] = args
 
             self.ok(c, uid, dst, *args)

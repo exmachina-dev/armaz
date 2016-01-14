@@ -87,7 +87,7 @@ class MachineSet(OscCommand, UnbufferedCommand):
             self.machine.driver[k] = v
             self.ok(c, k, v)
         except Exception as e:
-            self.error(c, k, e)
+            self.error(c, k, str(e))
 
     @property
     def alias(self):
@@ -106,7 +106,7 @@ class MachineGet(OscCommand, UnbufferedCommand):
             v = self.machine.driver[k]
             self.ok(c, k, v)
         except Exception as e:
-            self.error(c, k, e)
+            self.error(c, k, str(e))
 
     @property
     def alias(self):
