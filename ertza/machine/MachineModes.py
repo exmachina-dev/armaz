@@ -33,7 +33,7 @@ class AbstractMachineMode(object):
             raise KeyError('{} not in StandaloneMachineMode keys'.format(key))
 
     def __getitem__(self, key):
-        key = key.split(':', maxsplit=1)[1] if key.startwith('machine:') else key
+        key = key.split(':', maxsplit=1)[1] if key.startswith('machine:') else key
         self._check_read_access(key)
         return self._machine[key]
 
