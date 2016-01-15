@@ -238,6 +238,7 @@ class Machine(AbstractMachine):
     def set_operation_mode(self, *args):
         if len(args) >= 1:
             mode = args[0]
+            logging.info('Setting operating mode to {}'.format(mode))
 
             if mode == 'master':
                 if self.master_mode:
