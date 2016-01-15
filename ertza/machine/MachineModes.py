@@ -35,11 +35,11 @@ class AbstractMachineMode(object):
     def __getitem__(self, key):
         key = key.split(':', maxsplit=1)[1] if key.startswith('machine:') else key
         self._check_read_access(key)
-        return self._machine[key]
+        return self._machine.getitem(key)
 
     def __setitem__(self, key, value):
         self._check_write_access(key)
-        self._machine[key] = self.MachineMap[key].vtype(value)
+        self._machine.setitem(key, self.MachineMap[key].vtype(value))
 
 
 class StandaloneMachineMode(AbstractMachineMode):

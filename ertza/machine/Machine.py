@@ -336,31 +336,7 @@ class Machine(AbstractMachine):
                 pass
 
     def __getitem__(self, key):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            return dst[key]
-        if key.startswith('drive:'):
-            try:
-                return self.driver[key]
-            except AbstractDriverError as e:
-                logging.error(repr(e))
-
-        if not key.startswith('machine:'):
-            raise ValueError('Unable to find target %s' % key)
-
-        key = key.replace('machine:', '', 1)
-
-        if key not in self.MachineMap:
-            raise KeyError('Unable to find {} in keys'.format(key))
-
-        if 'serialnumber' == key:
-            return self.serialnumber
-
-        if self.operation_mode == 'master':
-            for s in self.slaves:
-                s.get_from_remote(key)
+        return self.machine_keys[key]
 
     def __setitem__(self, key, value):
         if type(value) == tuple and len(value) == 1:
@@ -373,13 +349,10 @@ class Machine(AbstractMachine):
             dst[key] = value
             return dst[key]
 
-        if key not in self.MachineMap:
-            raise IndexError('Unable to find %s in keys' % key)
         if type(value) == tuple and len(value) == 1:
             value, = value
 
-        if 'operation_mode' == key:
-            self.set_operation_mode(*value)
+        self.machine_keys[key] = value
 
     def _get_destination(self, key):
         if key.startswith('drive:'):
@@ -388,3 +361,21 @@ class Machine(AbstractMachine):
             return self.machine_keys[key]
 
         raise ValueError('Unable to find target %s' % key)
+
+    def getitem(self, key):
+        dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
+
+        if dst is not self:
+            try:
+                return dst[key]
+            except AbstractDriverError as e:
+                logging.error(repr(e))
+            except Exception as e:
+                logging.error('Unknown exception: {}'.format(repr(e)))
+
+        if key in ('infos', 'serialnumber', 'address', 'operation_mode',):
+            return getattr(self, key)
+
+    def setitem(self, key, value):
+        pass
