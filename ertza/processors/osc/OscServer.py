@@ -15,7 +15,7 @@ class OscServer(lo.Server):
 
         port = machine.config.getint('osc', 'listen_port', fallback=6969)
         self.reply_port = machine.config.getint('osc', 'reply_port',
-                                                fallback=6970)
+                                                fallback=6969)
 
         super().__init__(port, lo.UDP)
         logging.info('Started OSC server on port %d' % port)
