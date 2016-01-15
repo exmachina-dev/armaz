@@ -7,7 +7,7 @@ class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
 
     MachineMap = {
-        'machine:operation_mode':   _param(str, 'r'),
+        'machine:operation_mode':   _param(str, 'rw'),
         'machine:serialnumber':     _param(str, 'r'),
         'machine:address':          _param(str, 'r'),
     }
