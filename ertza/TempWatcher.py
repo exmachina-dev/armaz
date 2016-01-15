@@ -76,10 +76,11 @@ class TempWatcher(object):
             power = max(min(power, 1.0), 0.0)
 
             self.fan.set_value(power)
-            logging.debug("Current temp for %s: %d, Fan \
-                          %s set to %s | E: %d I: %d" %
-                          (self.thermistor.name, self.current_temp,
-                           self.fan.channel, power, error, self.error_integral))
+            logging.debug('Current temp for {}: {}°C, Fan '
+                          '{} set to {} | E: {} I: {}'.format(
+                              self.thermistor.name, self.current_temp,
+                              self.fan.channel, power, error,
+                              self.error_integral))
             time.sleep(self.interval)
         self.disabled = True
 
@@ -91,8 +92,8 @@ class TempWatcher(object):
                 if self.callback:
                     self.callback()
 
-            logging.debug("Current temp for %s: %d" %
-                          (self.thermistor.name, self.current_temp))
+            logging.debug('Current temp for {}: {}°C'.format(
+                self.thermistor.name, self.current_temp))
             time.sleep(self.interval)
         self.disabled = True
 
