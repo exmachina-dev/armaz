@@ -52,7 +52,7 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
 
         try:
             print(c.args)
-            uid, dst, args, = c.args
+            uid, dst, *args = c.args
             self.machine[dst] = args
 
             self.ok(c, uid, dst, *args)
