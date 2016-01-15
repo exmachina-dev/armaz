@@ -358,7 +358,7 @@ class Machine(AbstractMachine):
         if key.startswith('drive:'):
             return self.driver
         elif key.startswith('machine:'):
-            return self.machine_keys[key]
+            return self
 
         raise ValueError('Unable to find target %s' % key)
 

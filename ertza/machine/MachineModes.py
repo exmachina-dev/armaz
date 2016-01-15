@@ -7,33 +7,32 @@ class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
 
     MachineMap = {
-        'operation_mode':   _param(str, 'r'),
-        'serialnumber':     _param(str, 'r'),
-        'address':          _param(str, 'r'),
+        'machine:operation_mode':   _param(str, 'r'),
+        'machine:serialnumber':     _param(str, 'r'),
+        'machine:address':          _param(str, 'r'),
     }
 
     def __init__(self, machine):
         self._machine = machine
 
     @classmethod
-    def _check_read_access(key):
-        AbstractMachineMode._check_access(key)
-        if 'r' not in AbstractMachineMode.MachineMap[key].mode:
+    def _check_read_access(cls, key):
+        cls._check_key(key)
+        if 'r' not in cls.MachineMap[key].mode:
             raise KeyError('{} is not readable'.format(key))
 
     @classmethod
-    def _check_write_access(key):
-        AbstractMachineMode._check_access(key)
-        if 'w' not in AbstractMachineMode.MachineMap[key].mode:
+    def _check_write_access(cls, key):
+        cls._check_key(key)
+        if 'w' not in cls.MachineMap[key].mode:
             raise KeyError('{} is not writable'.format(key))
 
     @classmethod
-    def _check_key(key):
-        if key not in AbstractMachineMode.MachineMap.keys():
+    def _check_key(cls, key):
+        if key not in cls.MachineMap.keys():
             raise KeyError('{} not in StandaloneMachineMode keys'.format(key))
 
     def __getitem__(self, key):
-        key = key.split(':', maxsplit=1)[1] if key.startswith('machine:') else key
         AbstractMachineMode._check_read_access(key)
         return self._machine.getitem(key)
 
