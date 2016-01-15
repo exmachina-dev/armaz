@@ -12,6 +12,16 @@ class AbstractMachineMode(object):
         'machine:address':          _param(str, 'r'),
     }
 
+    DirectAttributesGet = (
+        'machine:serialnumber',
+        'machine:operation_mode',
+        'machine:infos',
+        'machine:address',
+    )
+
+    DirectAttributesSet = (
+    )
+
     def __init__(self, machine):
         self._machine = machine
 
@@ -34,11 +44,22 @@ class AbstractMachineMode(object):
 
     def __getitem__(self, key):
         AbstractMachineMode._check_read_access(key)
-        return self._machine.getitem(key)
+
+        if key in self.DirectAttributesGet:
+            return self._machine.getitem(key)
 
     def __setitem__(self, key, value):
         AbstractMachineMode._check_write_access(key)
         self._machine.setitem(key, self.MachineMap[key].vtype(value))
+
+        if key in self.DirectAttributesSet:
+            return self._machine.getitem(key)
+
+        if key is 'machine:operation_mode':
+            if isinstance(value, (list, tuple)):
+                self._machine.set_operation_mode(*value)
+            else:
+                self._machine.set_operation_mode(value)
 
 
 class StandaloneMachineMode(AbstractMachineMode):
@@ -58,4 +79,10 @@ class SlaveMachineMode(AbstractMachineMode):
 
     AbstractMachineMode.MachineMap.update({
         'master':           _param(str, 'r'),
+        'master_port':           _param(str, 'r'),
     })
+
+    DirectAttributesGet = AbstractMachineMode.DirectAttributesGet + (
+        'machine:master',
+        'machine:master_port',
+    )

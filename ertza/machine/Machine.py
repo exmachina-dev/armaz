@@ -374,8 +374,19 @@ class Machine(AbstractMachine):
             except Exception as e:
                 logging.error('Unknown exception: {}'.format(repr(e)))
 
-        if key in ('infos', 'serialnumber', 'address', 'operation_mode',):
-            return getattr(self, key)
+        return getattr(self, key)
 
     def setitem(self, key, value):
-        pass
+        dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
+
+        if dst is not self:
+            try:
+                dst[key] = value
+                return
+            except AbstractDriverError as e:
+                logging.error(repr(e))
+            except Exception as e:
+                logging.error('Unknown exception: {}'.format(repr(e)))
+
+        setattr(self, key, value)
