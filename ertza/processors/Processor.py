@@ -85,7 +85,7 @@ class Processor(object):
             self.machine.unbuffered_commands.put(message)
 
     def _check_in_commands(self, message):
-        alias = message.path
+        alias = message.command
         if alias not in self.commands:
             logging.error("Alias not found in commands.")
             return None

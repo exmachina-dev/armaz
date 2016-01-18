@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from copy import copy
-from liblo import Message
+from liblo import Message as OMessage
+
+from ertza.processors.Message import Message
 
 
 class OscPath(str):
@@ -37,7 +39,7 @@ class OscAddress(object):
         return "%s:%d" % (self.hostname, self.port)
 
 
-class OscMessage(object):
+class OscMessage(Message):
 
     def __init__(self, path, *args, **kwargs):
         self.path, self._args = OscPath(path), args
@@ -60,12 +62,12 @@ class OscMessage(object):
         self.protocol = 'OSC'
 
     @property
-    def target(self):
-        return repr(self.path)
+    def command(self):
+        return str(self.path)
 
     @property
-    def action(self):
-        return self.path.levels[-1]
+    def target(self):
+        return self.command.split('/')[0]
 
     @property
     def args(self):
@@ -76,8 +78,8 @@ class OscMessage(object):
             a = []
             for i in zip(self.types, self.args):
                 a.append(i)
-            return Message(self.path, *a)
-        return Message(self.path, *self.args)
+            return OMessage(self.path, *a)
+        return OMessage(self.path, *self.args)
 
     @property
     def message(self):
