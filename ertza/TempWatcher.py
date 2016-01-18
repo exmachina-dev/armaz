@@ -76,7 +76,7 @@ class TempWatcher(object):
             power = max(min(power, 1.0), 0.0)
 
             self.fan.set_value(power)
-            logging.debug('Current temp for {}: {}°C, Fan '
+            logging.debug('Current temp for {}: {:.2} deg C, Fan '
                           '{} set to {} | E: {} I: {}'.format(
                               self.thermistor.name, self.current_temp,
                               self.fan.channel, power, error,
@@ -92,7 +92,7 @@ class TempWatcher(object):
                 if self.callback:
                     self.callback()
 
-            logging.debug('Current temp for {}: {}°C'.format(
+            logging.debug('Current temp for {}: {:.2} deg C'.format(
                 self.thermistor.name, self.current_temp))
             time.sleep(self.interval)
         self.disabled = True
