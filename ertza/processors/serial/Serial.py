@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 import bitstring as bs
 from collections import namedtuple
 
@@ -18,7 +20,9 @@ class SerialCommandString(object):
     def __init__(self, cmd_bytes=None, **kwargs):
         if cmd_bytes:
             self._b = bs.pack(self.CmdFormat, cmd_bytes)
+            logging.debug(self._b)
             self._c = self.CmdStruct(self._b.unpack())
+            logging.debug(self._c)
         else:
             self._c = self.CmdStruct(b'', b'\x00\x00', b'', b'', b'')
             self['serial_number'] = self.SerialNumber.encode()
