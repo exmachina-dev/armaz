@@ -114,6 +114,8 @@ class SerialMessage(object):
     def command(self):
         return self.cmd_bytes.command
 
+    target = command
+
     @property
     def args(self):
         return self.cmd_bytes.args
