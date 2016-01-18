@@ -93,6 +93,6 @@ class SerialServer(sr.Serial):
         if pos >= 0:
             packet, self.data_buffer = self.data_buffer[:pos+2], \
                 self.data_buffer[pos+2:]
-            m = SerialMessage(packet)
+            m = SerialMessage(cmd_bytes=packet)
             self.processor.enqueue(m)
             self.find_serial_packets()
