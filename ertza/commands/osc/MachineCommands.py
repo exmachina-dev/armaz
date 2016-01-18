@@ -65,7 +65,7 @@ class SlaveMode(OscCommand, UnbufferedCommand):
 
         try:
             k, = c.args
-            v = self.machine.driver[k]
+            v = self.machine[k]
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, e)
@@ -84,7 +84,7 @@ class MachineSet(OscCommand, UnbufferedCommand):
 
         try:
             k, v, = c.args
-            self.machine.driver[k] = v
+            self.machine[k] = v
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, k, str(e))
@@ -103,7 +103,7 @@ class MachineGet(OscCommand, UnbufferedCommand):
 
         try:
             k, = c.args
-            v = self.machine.driver[k]
+            v = self.machine[k]
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, k, str(e))
