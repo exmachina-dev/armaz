@@ -21,7 +21,7 @@ class SerialCommandString(object):
         if cmd_bytes:
             self._b = bs.pack('bits', cmd_bytes)
             logging.debug(self._b)
-            self._c = self.CmdStruct(*self._b.unpack(self.CmdFormat))
+            self._c = self.CmdStruct(*[b.bytes for b in self._b.unpack(self.CmdFormat)])
             logging.debug(self._c)
         else:
             self._c = self.CmdStruct(b'', b'\x00\x00', b'', b'', b'')
