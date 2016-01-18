@@ -16,12 +16,12 @@ class SerialCommand(AbstractCommand):
             SerialMessage()
 
         for d in args:
-            m.cmd_bytes['data'] += d
+            m.cmd_bytes += d
 
         self.machine.send_message(m)
 
     def ok(self, command, *args, **kwargs):
-        self.send(self.alias + ':ok', **kwargs)
+        self.send(self.alias + '.ok', *args, **kwargs)
 
     def error(self, command, *args, **kwargs):
-        self.send(self.alias + ':error', **kwargs)
+        self.send(self.alias + '.error', *args, **kwargs)

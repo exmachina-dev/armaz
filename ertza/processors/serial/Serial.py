@@ -70,7 +70,10 @@ class SerialCommandString(object):
     def __add__(self, value):
         value = self._pack(value)
 
-        self['data'] += self.CmdSep + value
+        if self['data'] != b'':
+            self['data'] += self.CmdSep + value
+        else:
+            self['data'] = value
         return self
 
     def __len__(self):
