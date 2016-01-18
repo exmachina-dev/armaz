@@ -89,7 +89,7 @@ class SerialServer(sr.Serial):
         self.close()
 
     def find_serial_packets(self):
-        pos = self.data_buffer.lfind(SerialCommandString.CmdEnd)
+        pos = self.data_buffer.find(SerialCommandString.CmdEnd)
         if pos >= 0:
             packet, self.data_buffer = self.data_buffer[:pos+2], \
                 self.data_buffer[pos+2:]
