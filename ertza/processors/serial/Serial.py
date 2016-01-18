@@ -6,8 +6,10 @@ import bitstring as bs
 from collections import namedtuple
 
 
+SerialCommandStruct = namedtuple('SerialCommandStruct', ('protocol', 'length', 'serial_number', 'data', 'end'))
+
+
 class SerialCommandString(object):
-    CmdStruct = namedtuple('CmdStruct', ('protocol', 'length', 'serial_number', 'data', 'end'))
     CmdFormat = 'bits:64,bits:16,bits:96,bits,bits:16'
     CmdEnd = b'\r\n'
     CmdSep = b':'
@@ -21,10 +23,10 @@ class SerialCommandString(object):
         if cmd_bytes:
             self._b = bs.pack('bits', cmd_bytes)
             logging.debug(self._b)
-            self._c = self.CmdStruct(*[b.bytes for b in self._b.unpack(self.CmdFormat)])
+            self._c = SerialCommandStruct(*[b.bytes for b in self._b.unpack(self.CmdFormat)])
             logging.debug(self._c)
         else:
-            self._c = self.CmdStruct(b'', b'\x00\x00', b'', b'', b'')
+            self._c = SerialCommandStruct(b'', b'\x00\x00', b'', b'', b'')
             self['serial_number'] = self.SerialNumber.encode()
             self['end'] = self.CmdEnd
             self['protocol'] = kwargs['protocol'] if 'protocol' in kwargs \
