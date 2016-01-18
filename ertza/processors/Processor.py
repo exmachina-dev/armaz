@@ -87,7 +87,7 @@ class Processor(object):
     def _check_in_commands(self, message):
         alias = message.command
         if alias not in self.commands:
-            logging.error("Alias not found in commands.")
+            logging.error('Alias {} not found in commands.'.format(alias))
             return None
 
         return alias

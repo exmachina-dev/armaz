@@ -114,11 +114,11 @@ class SerialMessage(Message):
 
     @property
     def command(self):
-        return str(self.cmd_bytes.command)
+        return self.cmd_bytes.command.decode()
 
     @property
     def target(self):
-        return str(self.command).split('.')[0]
+        return self.command.split('.')[0]
 
     @property
     def args(self):

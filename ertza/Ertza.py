@@ -162,7 +162,7 @@ class Ertza(object):
                 except queue.Empty:
                     continue
 
-                logging.debug("Executing %s from %s" % (message.target, name))
+                logging.debug("Executing %s from %s" % (message.command, name))
 
                 try:
                     p = self.machine.processors[message.protocol]
