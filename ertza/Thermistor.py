@@ -28,6 +28,8 @@ class Thermistor(object):
     mutex = Lock()
 
     def __init__(self, pin, name):
+        self.broken_resistor = 200000
+
         self.pin = "%s/in_voltage%d_raw" % (_ADC_PATH, pin)
         self.name = name
 
@@ -50,6 +52,9 @@ class Thermistor(object):
         return temp
 
     def resistance_to_degrees(self, resistor_val):
+        if resistor_val > self.broken_resistor:
+            raise ValueError('Resistance value is off limit. Possible broken connection')
+
         idx = -1
         for i, v in enumerate(Thermistor.temp_table[1]):
             if v - resistor_val <= 0:
@@ -59,7 +64,12 @@ class Thermistor(object):
         if idx == -1:
             raise KeyError('Unable to find temperature for {}'.format(resistor_val))
 
-        return Thermistor.temp_table[0][idx]
+        Ta = (Thermistor.temp_table[0][idx] - Thermistor.temp_table[0][idx-1])
+        Tb = (Thermistor.temp_table[1][idx-1] - Thermistor.temp_table[1][idx])
+        Ta /= Tb
+        Tb = Thermistor.temp_table[0][idx-1] - Ta * Thermistor.temp_table[1][idx]
+
+        return Ta * resistor_val + Tb
 
     def voltage_to_resistance(self, v_sense):
         if v_sense == 0 or (abs(v_sense - 1.8) < 0.001):
