@@ -29,6 +29,7 @@ class Machine(AbstractMachine):
         self.config = None
         self.driver = None
         self.cape_infos = None
+        self.ip_address = None
 
         self.comms = {}
         self.processors = {}
@@ -112,7 +113,7 @@ class Machine(AbstractMachine):
 
     @property
     def address(self):
-        a = self.config.get('osc', 'listen_addr')
+        a = self.ip_address
         p = self.config.getint('osc', 'listen_port')
         return '{addr}:{port}'.format(addr=a, port=p)
 

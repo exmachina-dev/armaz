@@ -30,6 +30,8 @@ from ertza.Switch import Switch
 from ertza.TempWatcher import TempWatcher
 from ertza.Led import Led
 
+from ertza.NetworkUtils import IpAddress
+
 version = "0.0.2~Firstimer"
 
 _DEFAULT_CONF = "/etc/ertza/default.conf"
@@ -80,6 +82,8 @@ class Ertza(object):
             name = machine.cape_infos['name']
             logging.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
             SerialCommandString.SerialNumber = machine.serialnumber
+
+        machine.ip_address = IpAddress(machine.config.get('machine', 'interface', fallback=None)).ips[0].split('/')[0]
 
         self._config_leds()
         for l in self.machine.leds:
