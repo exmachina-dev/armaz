@@ -7,7 +7,7 @@ from collections import namedtuple
 
 
 class SerialCommandString(object):
-    CmdStruct = namedtuple('SerialCmd', ('protocol', 'length', 'serial_number', 'data', 'end'))
+    CmdStruct = namedtuple('CmdStruct', ('protocol', 'length', 'serial_number', 'data', 'end'))
     CmdFormat = 'bits:64,bits:16,bits:96,bits,bits:16'
     CmdEnd = b'\r\n'
     CmdSep = b':'
