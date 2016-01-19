@@ -59,7 +59,10 @@ class TempWatcher(object):
 
     def keep_temperature(self):
         while self.enabled:
-            self.update_temp()
+            try:
+                self.update_temp()
+            except (ValueError, KeyError) as e:
+                logging.warn('Unable to update temperature: {!s}'.format(e))
 
             error = self.target_temp - self.current_temp
             error *= -1
@@ -86,7 +89,10 @@ class TempWatcher(object):
 
     def watch_temperature(self):
         while self.enabled:
-            self.update_temp()
+            try:
+                self.update_temp()
+            except (ValueError, KeyError) as e:
+                logging.warn('Unable to update temperature: {!s}'.format(e))
 
             if self.current_temp >= self.max_temp:
                 if self.callback:
