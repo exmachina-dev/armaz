@@ -43,6 +43,7 @@ class Machine(AbstractMachine):
         self.machine_keys = None
 
         self.switch_callback = self._switch_cb
+        self.switch_states = {}
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
@@ -333,9 +334,14 @@ class Machine(AbstractMachine):
             s, f, h = sw_state, sw_state['function'], sw_state['hit']
             logging.debug('Switch activated: {}'.format(repr(s)))
             if 'drive_enable' == f:
-                print(sw_state, 'Got-it!')
-            elif 'allow_movement' == f:
-                pass
+                self['machine:command:drive_enable'] = True if h else False
+                self.switch_states[s.name] = h
+            elif 'toggle_drive_enable' == f:
+                if h:
+                    sw_st = self.switch_states.get(s.name, False)
+
+                    self['machine:command:drive_enable'] = not sw_st
+                    self.switch_states[s.name] = not sw_st
 
     def __getitem__(self, key):
         return self.machine_keys[key]
