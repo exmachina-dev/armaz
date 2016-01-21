@@ -239,7 +239,7 @@ class Ertza(object):
 
         # Get available fans
         if self.machine.config.getboolean('fans', 'got_fans'):
-            PWM.set_frequency(1000)
+            PWM.set_frequency(1560)
 
             f_p = 0
             while self.machine.config.has_option("fans", "address_F%d" % f_p):
