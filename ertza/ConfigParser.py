@@ -42,9 +42,18 @@ class ConfigParser(configparser.ConfigParser):
             logging.warn("Variant already loaded: %s" % self.variant)
             return False
         if not variant:
-            variant = self.get('machine', 'variant', fallback=False)
+            cape_infos = self.find_cape()
+            if cape_infos:
+                try:
+                    variant = cape_infos['variant'].lower()
+                except Exception as e:
+                    logging.warn('Got exception while decoding eeprom: {!s}'.format(e))
             if not variant:
-                logging.warn("Couldn't get variant from config")
+                logging.warn("Couldn't get variant from eeprom")
+                variant = self.get('machine', 'variant', fallback=False)
+
+            if not variant:
+                logging.warn("Couldn't get variant from eeprom or config")
                 return False
 
         variant_cfg = os.path.join(_VARIANT_PATH, variant + ".conf")
@@ -91,7 +100,7 @@ class ConfigParser(configparser.ConfigParser):
         with open(custom_configfile, 'w') as cf:
             save_config.write(cf)
 
-    def find_cape(self, partnumber):
+    def find_cape(self, partnumber='ARMAZCAPE'):
         capes = self.get_cape_infos()
         for c in capes:
             if not c:
@@ -113,7 +122,7 @@ class ConfigParser(configparser.ConfigParser):
     def get_eeprom_infos(self, eeprom):
         try:
             with open(eeprom, "rb") as f:
-                data = f.read(88)
+                data = f.read(260)
                 infos = {
                     'eeprom_header': data[0:4],
                     'eeprom_rev': data[4:6].decode(),
@@ -121,10 +130,11 @@ class ConfigParser(configparser.ConfigParser):
                     'revision': data[38:42].decode(),
                     'manufacturer': data[42:58].strip().decode(),
                     'partnumber': data[58:74].strip().decode(),
-                    'nb_pins_used': struct.unpack('>h', data[74:76]),
+                    'nb_pins_used': struct.unpack('>h', data[74:76])[0],
                     'serialnumber': data[76:88].decode(),
                     'variant': data[244:260].strip().decode(),
                 }
                 return infos
-        except IOError:
-            pass
+        except IOError as e:
+            logging.error('Error while reading eeprom: {!s}'.format(e))
+            return False
