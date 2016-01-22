@@ -38,7 +38,7 @@ pin_usage['EHRPWM2A'] = _unused
 pin_usage['EHRPWM2A'] = _unused
 pin_usage['GPIO0_26'] = _unused
 pin_usage['GPIO0_27'] = _unused
-pin_usage['UART4_RXD'] = (1, 1, 0, 0, 1, 1, 0, 6,)
+pin_usage['UART4_RXD'] = (1, 1, 0, 1, 1, 0, 6,)
 pin_usage['UART4_TXD'] = _unused
 pin_usage['GPIO1_0'] = _unused
 pin_usage['GPIO1_1'] = _unused
@@ -131,17 +131,35 @@ data['partnumber'] = 'ARMAZCAPE'.ljust(16).encode()
 data['nb_pins_used'] = struct.pack('>h', 92)
 data['serialnumber'] = serial_gen().encode()
 
+power_data = OrderedDict()
+power_data['VDD_3V3B_current'] = struct.pack('>h', 400)
+power_data['VDD_5V_current'] = struct.pack('>h', 400)
+power_data['SYS_5V_current'] = struct.pack('>h', 0)
+power_data['DC_supplied_current'] = struct.pack('>h', 2000)
+
 custom_data = OrderedDict()
 custom_data['variant'] = variant.ljust(16).encode()
 
 with open(eeprom, 'wb') as e:
+    e.write(b'\x00'*260)
+
+    e.seek(0)
     for d in data.items():
         e.write(d[1])
 
-    pin_format = 'bit:1, bit: 2, bit:6, bits:1, bits:1, bits:1, bits:1, bits:3'
+    pin_format = 'uint:1, uint:2, pad:6, uint:1, uint:1, uint:1, uint:1, uint:3'
+    e.seek(88)
     for p in pin_usage.items():
+        if len(p[1]) != 7:
+            print('Invalid pin config: {0}, {1}'.format(*p))
+            continue
+
         p_b = bs.pack(pin_format, *p[1])
         e.write(p_b.bytes)
+
+    e.seek(236)
+    for d in power_data.items():
+        e.write(d[1])
 
     e.seek(244)
     for d in custom_data.items():

@@ -123,6 +123,7 @@ class ConfigParser(configparser.ConfigParser):
                     'partnumber': data[58:74].strip().decode(),
                     'nb_pins_used': struct.unpack('>h', data[74:76]),
                     'serialnumber': data[76:88].decode(),
+                    'variant': data[244:260].strip().decode(),
                 }
                 return infos
         except IOError:
