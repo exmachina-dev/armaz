@@ -80,10 +80,10 @@ class SerialCommandString(object):
         return len(self.tobytes)
 
     def __repr__(self):
-        return "%s %s %s" % (self['protocol'], self['serial_number'], self['data'])
+        return '{0[protocol]} {0[serial_number]} {0[data]}'.format(self)
 
     def __str__(self):
-        return "%s %s %s" % (self['protocol'], self['serial_number'], self['data'])
+        return '{0[protocol]} {0[serial_number]} {0[data]}'.format(self)
 
 
 class SerialTarget(object):
