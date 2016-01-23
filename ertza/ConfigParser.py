@@ -123,18 +123,22 @@ class ConfigParser(configparser.ConfigParser):
         try:
             with open(eeprom, "rb") as f:
                 data = f.read(260)
-                infos = {
-                    'eeprom_header': data[0:4],
-                    'eeprom_rev': data[4:6].decode(),
-                    'name': data[6:38].strip().decode(),
-                    'revision': data[38:42].decode(),
-                    'manufacturer': data[42:58].strip().decode(),
-                    'partnumber': data[58:74].strip().decode(),
-                    'nb_pins_used': struct.unpack('>h', data[74:76])[0],
-                    'serialnumber': data[76:88].decode(),
-                    'variant': data[244:260].strip().decode(),
-                }
-                return infos
+                try:
+                    infos = {
+                        'eeprom_header': data[0:4],
+                        'eeprom_rev': data[4:6].decode(),
+                        'name': data[6:38].strip().decode(),
+                        'revision': data[38:42].decode(),
+                        'manufacturer': data[42:58].strip().decode(),
+                        'partnumber': data[58:74].strip().decode(),
+                        'nb_pins_used': struct.unpack('>h', data[74:76])[0],
+                        'serialnumber': data[76:88].decode(),
+                        'variant': data[244:260].strip().decode(),
+                    }
+                    return infos
+                except UnicodeDecodeError as e:
+                    logging.error('Error while decoding eeprom: {!s}'.format(e))
+                    return False
         except IOError as e:
             logging.error('Error while reading eeprom: {!s}'.format(e))
             return False
