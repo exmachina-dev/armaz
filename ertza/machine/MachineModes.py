@@ -3,6 +3,10 @@
 from collections import namedtuple
 
 
+class ContinueException(BaseException):
+    pass
+
+
 class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
 
@@ -48,6 +52,8 @@ class AbstractMachineMode(object):
         if key in self.DirectAttributesGet:
             return self._machine.getitem(key)
 
+        raise ContinueException()
+
     def __setitem__(self, key, value):
         AbstractMachineMode._check_write_access(key)
         self._machine.setitem(key, self.MachineMap[key].vtype(value))
@@ -57,13 +63,33 @@ class AbstractMachineMode(object):
 
         if key is 'machine:operation_mode':
             if isinstance(value, (list, tuple)):
-                self._machine.set_operation_mode(*value)
+                return self._machine.set_operation_mode(*value)
             else:
-                self._machine.set_operation_mode(value)
+                return self._machine.set_operation_mode(value)
+
+        raise ContinueException()
 
 
 class StandaloneMachineMode(AbstractMachineMode):
-    pass
+    def __setitem__(self, key, value):
+        try:
+            super().__setitem__(key, value)
+        except ContinueException:
+            try:
+                skey = key.split(':', maxsplit=1)[1]
+                self._machine.driver[skey] = value
+            except KeyError as e:
+                raise e
+
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except ContinueException:
+            try:
+                skey = key.split(':', maxsplit=1)[1]
+                return self._machine.driver[skey]
+            except KeyError as e:
+                raise e
 
 
 class MasterMachineMode(AbstractMachineMode):
