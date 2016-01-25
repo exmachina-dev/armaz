@@ -104,12 +104,52 @@ class StandaloneMachineMode(AbstractMachineMode):
                 raise e
 
 
-class MasterMachineMode(AbstractMachineMode):
+class MasterMachineMode(StandaloneMachineMode):
     _param = AbstractMachineMode._param
 
     AbstractMachineMode.MachineMap.update({
         'slaves':   _param(str, 'r'),
     })
+
+    ForwardKeys = {
+        'torque': (
+            'machine:torque_ref',
+            'machine:torque_rise_time',
+            'machine:torque_fall_time',
+        ),
+        'enhanced_torque': (
+            'machine:torque_ref',
+            'machine:torque_rise_time',
+            'machine:torque_fall_time',
+            'machine:velocity_ref',
+        ),
+        'speed': (
+            'machine:velocity_ref',
+            'machine:acceleration',
+            'machine:deceleration',
+        ),
+    }
+
+    def __getitem__(self, key):
+        g_list = []
+        g_list.append(super().__getitem__(key))
+
+        for s in self._machine.slaves:
+            g_list.append(s.get_from_remote(key, block=True))
+
+        return g_list
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+
+        for s in self._machine.slaves:
+            sm = s.slave.config.get('slave_mode', None)
+            self._send_to_slave(s, sm, key, value)
+
+    def _send_to_slave(self, slave, mode=None, key='', value=None):
+        if key in self.ForwardKeys[mode]:
+            value = slave.slave.config.get(key, False) or value
+            slave.set_to_remote(key, value)
 
 
 class SlaveMachineMode(AbstractMachineMode):
