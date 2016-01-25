@@ -152,7 +152,7 @@ class MasterMachineMode(StandaloneMachineMode):
             slave.set_to_remote(key, value)
 
 
-class SlaveMachineMode(AbstractMachineMode):
+class SlaveMachineMode(StandaloneMachineMode):
     _param = AbstractMachineMode._param
 
     AbstractMachineMode.MachineMap.update({
