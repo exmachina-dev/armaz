@@ -142,6 +142,17 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
         self.back.close()
 
+    def get_attribute_map(self):
+        attr_map = {}
+        for a, p in self.netdata_map.items():
+            if isinstance(p, dict):
+                for sa, sp in p.items():
+                    attr_map.update({'{}:{}'.format(a, sa): (sp.vtype, sp.mode,),})
+            else:
+                attr_map.update({a: (p.vtype, p.mode,),})
+
+        return attr_map
+
     def __getitem__(self, key):
         if len(key.split(':')) == 2:
             seckey, subkey = key.split(':')

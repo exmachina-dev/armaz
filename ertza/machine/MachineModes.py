@@ -29,25 +29,22 @@ class AbstractMachineMode(object):
     def __init__(self, machine):
         self._machine = machine
 
-    @classmethod
-    def _check_read_access(cls, key):
-        cls._check_key(key)
-        if 'r' not in cls.MachineMap[key].mode:
+    def _check_read_access(self, key):
+        self._check_key(key)
+        if 'r' not in self.MachineMap[key].mode:
             raise KeyError('{} is not readable'.format(key))
 
-    @classmethod
-    def _check_write_access(cls, key):
-        cls._check_key(key)
-        if 'w' not in cls.MachineMap[key].mode:
+    def _check_write_access(self, key):
+        self._check_key(key)
+        if 'w' not in self.MachineMap[key].mode:
             raise KeyError('{} is not writable'.format(key))
 
-    @classmethod
-    def _check_key(cls, key):
-        if key not in cls.MachineMap.keys():
-            raise KeyError('{} not in StandaloneMachineMode keys'.format(key))
+    def _check_key(self, key):
+        if key not in self.MachineMap.keys():
+            raise KeyError('{0} not in {1.__class__.__name__} keys'.format(key, self))
 
     def __getitem__(self, key):
-        AbstractMachineMode._check_read_access(key)
+        self._check_read_access(key)
 
         if key in self.DirectAttributesGet:
             return self._machine.getitem(key)
@@ -55,7 +52,7 @@ class AbstractMachineMode(object):
         raise ContinueException()
 
     def __setitem__(self, key, value):
-        AbstractMachineMode._check_write_access(key)
+        self._check_write_access(key)
         self._machine.setitem(key, self.MachineMap[key].vtype(value))
 
         if key in self.DirectAttributesSet:
@@ -71,6 +68,21 @@ class AbstractMachineMode(object):
 
 
 class StandaloneMachineMode(AbstractMachineMode):
+    _param = AbstractMachineMode._param
+
+    def __init__(self, machine):
+        super().__init__(machine)
+
+        try:
+            drv_attr_map = self._machine.driver.get_attribute_map()
+            for a, p in drv_attr_map.items():
+                StandaloneMachineMode.MachineMap.update({
+                    'machine:{}'.format(a): self._param(*p),})
+                print(a, p)
+
+        except AttributeError:
+            pass
+
     def __setitem__(self, key, value):
         try:
             super().__setitem__(key, value)
