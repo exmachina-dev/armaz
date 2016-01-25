@@ -170,9 +170,9 @@ class Machine(AbstractMachine):
             sn = s.get_from_remote('machine:serialnumber', block=True)
             if type(sn) == str and s.serialnumber != sn:
                 infos = s.slave + (s.get_serialnumber(),)
-                logging.error(MachineError('S/N don\'t match for {2} slave '
-                                           'at {1} ({0} vs {4})'
-                                           ''.format(*infos)))
+                logging.warn(MachineError('S/N don\'t match for {2} slave '
+                                          'at {1} ({0} vs {4})'
+                                          ''.format(*infos)))
 
     def add_slave(self, driver, address):
         self._check_operation_mode()
