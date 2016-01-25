@@ -334,14 +334,14 @@ class Machine(AbstractMachine):
             s, f, h = sw_state, sw_state['function'], sw_state['hit']
             logging.debug('Switch activated: {}'.format(repr(s)))
             if 'drive_enable' == f:
-                self['machine:command:drive_enable'] = True if h else False
-                self.switch_states[s.name] = h
+                self['machine:command:enable'] = True if h else False
+                self.switch_states[s['name']] = h
             elif 'toggle_drive_enable' == f:
                 if h:
-                    sw_st = self.switch_states.get(s.name, False)
+                    sw_st = self.switch_states.get(s['name'], False)
 
-                    self['machine:command:drive_enable'] = not sw_st
-                    self.switch_states[s.name] = not sw_st
+                    self['machine:command:enable'] = not sw_st
+                    self.switch_states[s['name']] = not sw_st
 
     def __getitem__(self, key):
         return self.machine_keys[key]
