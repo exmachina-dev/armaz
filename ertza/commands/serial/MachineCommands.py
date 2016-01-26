@@ -12,7 +12,7 @@ class MachineSet(SerialCommand):
 
         try:
             k, v, = c.args
-            nk = k.replace('.', ':')
+            nk = k.decode().replace('.', ':')
             self.machine[nk] = v
             self.ok(c, k, v)
         except Exception as e:
@@ -32,7 +32,7 @@ class MachineGet(SerialCommand):
 
         try:
             k, = c.args
-            nk = k.replace('.', ':')
+            nk = k.decode().replace('.', ':')
             v = self.machine[nk]
             self.ok(c, k, v)
         except Exception as e:
