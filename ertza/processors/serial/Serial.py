@@ -47,7 +47,7 @@ class SerialCommandString(object):
 
     @property
     def args(self):
-        return tuple(self['data'].decode().split(':')[1:])
+        return tuple(self['data'].split(self.CmdSep)[1:])
 
     def _pack(self, value):
         if type(value) == str:
