@@ -23,9 +23,11 @@ class Fan(PWM):
     def __init__(self, channel):
         """ Channel is the channel that the fan is on (0-7) """
         self.channel = channel
+        self.min_speed = 0.0
 
     def set_value(self, value):
         """ Set the amount of on-time from 0..1 """
+        value = self.min_speed if value < self.min_speed else value
         PWM.set_value(value, self.channel)
 
 if __name__ == '__main__':

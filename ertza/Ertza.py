@@ -245,7 +245,9 @@ class Ertza(object):
             while self.machine.config.has_option("fans", "address_F%d" % f_p):
                 fan_channel = self.machine.config.getint("fans",
                                                          "address_F%d" % f_p)
-                self.machine.fans.append(Fan(fan_channel))
+                fan = Fan(fan_channel)
+                fan.min_speed = self.machine.config.getfloat("fans", 'min_speed_F{}'.format(f_p), fallback=0.0)
+                self.machine.fans.append(fan)
                 logging.debug(
                     "Found fan F%d at channel %d" % (f_p, fan_channel))
                 f_p += 1
