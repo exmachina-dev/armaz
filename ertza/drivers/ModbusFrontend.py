@@ -151,6 +151,7 @@ class ModbusDriverFrontend(object):
 
     def _input_value_coefficient(self, key, value):
         if 'velocity_ref' == key:
+            value /= self.application_coeff
             return value * self.gearbox_ratio
 
         return value
