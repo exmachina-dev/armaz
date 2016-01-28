@@ -121,25 +121,34 @@ class ModbusDriverFrontend(object):
         self['torque_rise_time'] = self.torque_rise_time
         self['torque_fall_time'] = self.torque_fall_time
 
-    def _value_clamper(self, key, value):
+    def _output_value_limit(self, key, value):
         if 'acceleration' == key:
-            return value if self.max_acceleration < value else self.max_acceleration
+            return value if value < self.max_acceleration < value else self.max_acceleration
         elif 'deceleration' == key:
-            return value if self.max_deceleration < value else self.max_deceleration
+            return value if value < self.max_deceleration < value else self.max_deceleration
         elif 'torque_rise_time' == key:
-            return value if self.min_torque_rise_time < value else self.min_torque_rise_time
+            return value if value > self.min_torque_rise_time else self.min_torque_rise_time
         elif 'torque_fall_time' == key:
-            return value if self.min_torque_fall_time < value else self.min_torque_fall_time
+            return value if value > self.min_torque_fall_time else self.min_torque_fall_time
         elif 'velocity_ref' == key:
-            value /= self.gearbox_ratio
-            return value if self.max_velocity < value else self.max_velocity
-        elif 'torque_fall_time' == key:
-            return value if self.min_torque_fall_time < value else self.min_torque_fall_time
+            return value if value < self.max_velocity else self.max_velocity
 
         return value
 
-    def _value_formatter(self, key, value):
+    def _output_value_coefficient(self, key, value):
+        if 'velocity_ref' == key:
+            return value / self.gearbox_ratio
+
+        return value
+
+    def _output_value(self, key, value):
+        return self._output_value_limit(key, self._output_value_coefficient(key, value))
+
+    def _input_value_coefficient(self, key, value):
         if 'velocity_ref' == key:
             return value * self.gearbox_ratio
 
         return value
+
+    def _input_value(self, key, value):
+        return self._input_value_coefficient(key, value)

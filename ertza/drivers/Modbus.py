@@ -201,7 +201,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             self._prev_data[seckey] = data
         else:
             ndk = self.netdata_map[seckey]
-            data = (ndk.vtype(value),)
+            data = (self._output_value(key, ndk.vtype(value)),)
 
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
@@ -216,7 +216,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
         res = self.back.read_netdata(nd.addr, nd.fmt)
 
-        return vt(res[st])
+        return self._input_value(key, vt(res[st]))
 
 if __name__ == "__main__":
     c = {
