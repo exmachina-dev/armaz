@@ -38,7 +38,7 @@ class MachineSet(SerialCommand):
                 v = struct.unpack('?', v)[0]
 
             self.machine[nk] = v
-            self.ok(c, k, v)
+            self.ok(c, k, int(v))
         except Exception as e:
             self.error(c, k, str(e))
 
