@@ -24,6 +24,9 @@ class ModbusDriverFrontend(object):
         self.torque_rise_time = float(config["torque_rise_time"])
         self.torque_fall_time = float(config["torque_fall_time"])
 
+        self.application_coeff = config.get('application_coefficient', 1)
+        self.invert = config.get('invert', False)
+
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
             raise AttributeError('Config not found')
@@ -137,7 +140,9 @@ class ModbusDriverFrontend(object):
 
     def _output_value_coefficient(self, key, value):
         if 'velocity_ref' == key:
-            return value / self.gearbox_ratio
+            value = value * -1 if self.invert else value
+            value /= self.gearbox_ratio
+            return value * self.application_coeff
 
         return value
 
