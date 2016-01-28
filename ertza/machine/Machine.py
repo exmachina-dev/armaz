@@ -65,10 +65,15 @@ class Machine(AbstractMachine):
             return False
 
         logging.debug("%s driver loaded" % drv)
+
+        self.frontend_config = self.config['motor']
+        self.driver.load_frontend_config(self.frontend_config)
         return drv
 
     def start(self):
         self.driver.connect()
+
+        self.driver.send_default_values()
 
     def exit(self):
         self.driver.exit()

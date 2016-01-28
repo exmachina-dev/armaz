@@ -6,8 +6,8 @@ class ModbusDriverFrontend(object):
     def load_frontend_config(self, config):
         self.frontend_config = config
 
-        self.gearbox_ratio = (float(config["gearbox_input"]) /
-                              float(config["gearbox_output"]))
+        self.gearbox_ratio = (float(config["gearbox_input_coefficient"]) /
+                              float(config["gearbox_output_coefficient"]))
 
         # Limits
         self.max_velocity = float(config["max_velocity"])
@@ -26,7 +26,7 @@ class ModbusDriverFrontend(object):
 
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
-            raise ValueError('Config not found')
+            raise AttributeError('Config not found')
 
     def enable_drive(self):
         self['jog'] = 0
@@ -114,3 +114,32 @@ class ModbusDriverFrontend(object):
         self['deceleration'] = acc
 
         return acc, dec
+
+    def send_default_values(self):
+        self['acceleration'] = self.acceleration
+        self['deceleration'] = self.deceleration
+        self['torque_rise_time'] = self.torque_rise_time
+        self['torque_fall_time'] = self.torque_fall_time
+
+    def _value_clamper(self, key, value):
+        if 'acceleration' == key:
+            return value if self.max_acceleration < value else self.max_acceleration
+        elif 'deceleration' == key:
+            return value if self.max_deceleration < value else self.max_deceleration
+        elif 'torque_rise_time' == key:
+            return value if self.min_torque_rise_time < value else self.min_torque_rise_time
+        elif 'torque_fall_time' == key:
+            return value if self.min_torque_fall_time < value else self.min_torque_fall_time
+        elif 'velocity_ref' == key:
+            value /= self.gearbox_ratio
+            return value if self.max_velocity < value else self.max_velocity
+        elif 'torque_fall_time' == key:
+            return value if self.min_torque_fall_time < value else self.min_torque_fall_time
+
+        return value
+
+    def _value_formatter(self, key, value):
+        if 'velocity_ref' == key:
+            return value * self.gearbox_ratio
+
+        return value
