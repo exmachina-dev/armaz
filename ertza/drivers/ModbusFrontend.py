@@ -24,7 +24,7 @@ class ModbusDriverFrontend(object):
         self.torque_rise_time = float(config["torque_rise_time"])
         self.torque_fall_time = float(config["torque_fall_time"])
 
-        self.application_coeff = config.get('application_coefficient', 1)
+        self.application_coeff = float(config.get('application_coefficient', 1))
         self.invert = config.get('invert', False)
 
     def init_startup_mode(self):
