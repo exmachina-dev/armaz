@@ -126,9 +126,9 @@ class ModbusDriverFrontend(object):
 
     def _output_value_limit(self, key, value):
         if 'acceleration' == key:
-            return value if value < self.max_acceleration < value else self.max_acceleration
+            return value if value < self.max_acceleration else self.max_acceleration
         elif 'deceleration' == key:
-            return value if value < self.max_deceleration < value else self.max_deceleration
+            return value if value < self.max_deceleration else self.max_deceleration
         elif 'torque_rise_time' == key:
             return value if value > self.min_torque_rise_time else self.min_torque_rise_time
         elif 'torque_fall_time' == key:
