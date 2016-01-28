@@ -8,6 +8,7 @@ from ertza.commands.SerialCommand import SerialCommand
 class MachineSet(SerialCommand):
     _uint_keys = (
         'machine:command:control_mode',
+        'machine:command:move_mode',
     )
     _float_keys = (
         'machine:torque_ref',
@@ -19,6 +20,8 @@ class MachineSet(SerialCommand):
     _bool_keys = (
         'machine:command:enable',
         'machine:command:cancel',
+        'machine:command:reset',
+        'machine:command:go',
         'machine:command:set_home',
     )
 
