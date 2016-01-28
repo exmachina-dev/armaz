@@ -193,7 +193,9 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                 data = list((0,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
             else:
-                pdata = self._prev_data[seckey]
+                pdata = list(self._prev_data[seckey])
+                for forget_value in (0, 1, 3, 4, 6,):
+                    pdata[forget_value] = False
                 data = list((-1,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
                 data = tuple(map(lambda x, y: y if x == -1 else x,
