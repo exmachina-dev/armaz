@@ -194,12 +194,21 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                 data[ndk.start] = ndk.vtype(value)
             else:
                 pdata = list(self._prev_data[seckey])
-                for forget_value in (0, 1, 3, 4, 6,):
-                    pdata[forget_value] = False
+
+                forget_values = (0, 1, 4, 6,)
+                unique_values = (3,)
                 data = list((-1,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
-                data = tuple(map(lambda x, y: y if x == -1 else x,
-                                 data, pdata))
+                for i, pvalue in enumerate(pdata):
+                    if ndk.start == i and ndk.start in unique_values:
+                        if data[ndk.start] == pvalue:
+                            return
+                    elif ndk.start != i:
+                        if i in forget_values:
+                            data[i] = 0
+                        else:
+                            data[i] = pvalue
+
             self._prev_data[seckey] = data
         else:
             ndk = self.netdata_map[seckey]
