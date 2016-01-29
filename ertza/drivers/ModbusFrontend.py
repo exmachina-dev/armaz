@@ -142,9 +142,9 @@ class ModbusDriverFrontend(object):
 
     def _output_value_coefficient(self, key, value):
         if key in ('velocity_ref', 'position_ref',):
-            value = value * -1 if self.invert else value
+            value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
-            return value * self.application_coeff
+            value *= self.application_coeff
 
         return value
 
@@ -154,7 +154,7 @@ class ModbusDriverFrontend(object):
     def _input_value_coefficient(self, key, value):
         if key in ('velocity_ref', 'position_ref',):
             value /= self.application_coeff
-            return value * self.gearbox_ratio
+            value *= self.gearbox_ratio
 
         return value
 
