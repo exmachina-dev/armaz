@@ -17,6 +17,7 @@ Code modified by Benoit Rapidel:
 """
 
 from threading import Thread
+import logging
 
 
 class Switch(object):
@@ -65,7 +66,10 @@ class Switch(object):
                     self.hit = True
 
                 if Switch.callback is not None:
-                    Switch.callback(self.state)
+                    try:
+                        Switch.callback(self.state)
+                    except Exception as e:
+                        logging.warn('Exception in {!s}: {!s}'.format(self, e))
             else:
                 self.direction = None
 
