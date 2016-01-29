@@ -153,10 +153,11 @@ class ModbusDriverFrontend(object):
             if self.custom_max_velocity is not None and key == 'velocity_ref':
                 value = value if value < self.custom_max_velocity else self.custom_max_velocity
                 value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
-            elif self.custom_max_position is not None and key == 'position_ref':
-                value = value if value < self.custom_max_position else self.custom_max_position
-            elif self.custom_min_position is not None and key == 'position_ref':
-                value = value if value > self.custom_min_position else self.custom_min_position
+            elif key == 'position_ref':
+                if self.custom_max_position is not None:
+                    value = value if value < self.custom_max_position else self.custom_max_position
+                if self.custom_min_position is not None:
+                    value = value if value > self.custom_min_position else self.custom_min_position
 
             value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
