@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 
 class ModbusDriverFrontend(object):
 
@@ -157,12 +155,11 @@ class ModbusDriverFrontend(object):
             if self.custom_max_velocity is not None and key == 'velocity_ref':
                 value = value if value < self.custom_max_velocity else self.custom_max_velocity
                 value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
-            elif self.custom_max_position is not None and key == 'position_ref':
-                value = value if value < self.custom_max_position else self.custom_max_position
-            elif self.custom_min_position is not None and key == 'position_ref':
-                value = value if value > self.custom_min_position else self.custom_min_position
-                if value == self.custom_min_position:
-                    logging.warn('Min position limit reached, clamping value')
+            elif key == 'position_ref':
+                if self.custom_max_position is not None:
+                    value = value if value < self.custom_max_position else self.custom_max_position
+                if self.custom_min_position is not None:
+                    value = value if value > self.custom_min_position else self.custom_min_position
 
             value /= self.gearbox_ratio
             value *= self.application_coeff
