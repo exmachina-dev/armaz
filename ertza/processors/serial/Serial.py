@@ -47,7 +47,6 @@ class SerialCommandString(object):
 
     @property
     def args(self):
-        print(tuple(self['data'].split(self.CmdSep, maxsplit=2)[1:]))
         return tuple(self['data'].split(self.CmdSep, maxsplit=2)[1:])
 
     def _pack(self, value):
