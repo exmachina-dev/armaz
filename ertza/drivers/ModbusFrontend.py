@@ -26,6 +26,7 @@ class ModbusDriverFrontend(object):
 
         self.application_coeff = float(config.get('application_coefficient', 1))
         self.invert = config.get('invert', False)
+        self.acceleration_time_mode = bool(int(config.get('acceleration_time_mode', False)))
 
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
@@ -145,6 +146,11 @@ class ModbusDriverFrontend(object):
             value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
             value *= self.application_coeff
+        elif key in ('acceleration', 'deceleration',):
+            value /= self.gearbox_ratio
+            value *= self.application_coeff
+            if self.acceleration_time_mode:
+                value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
 
         return value
 
@@ -155,6 +161,11 @@ class ModbusDriverFrontend(object):
         if key in ('velocity_ref', 'position_ref',):
             value /= self.application_coeff
             value *= self.gearbox_ratio
+        if key in ('acceleration', 'deceleration',):
+            value *= self.gearbox_ratio
+            value /= self.application_coeff
+            if self.acceleration_time_mode:
+                value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
 
         return value
 
