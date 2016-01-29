@@ -134,7 +134,9 @@ class ModbusDriverFrontend(object):
         elif 'torque_fall_time' == key:
             return value if value > self.min_torque_fall_time else self.min_torque_fall_time
         elif 'velocity_ref' == key:
-            return value if value < self.max_velocity else self.max_velocity
+            value = value if value < self.max_velocity else self.max_velocity
+            value = value if value > -self.max_velocity else -self.max_velocity
+
 
         return value
 
