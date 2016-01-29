@@ -24,9 +24,14 @@ class ModbusDriverFrontend(object):
         self.torque_rise_time = float(config["torque_rise_time"])
         self.torque_fall_time = float(config["torque_fall_time"])
 
+        # Application parameters
         self.application_coeff = float(config.get('application_coefficient', 1))
         self.invert = True if config.get('invert', '') == 'True' else False
         self.acceleration_time_mode = True if config.get('acceleration_time_mode', '') == 'True' else False
+
+        self.custom_max_velocity = float(config["custom_max_velocity"]) or None
+        self.custom_max_acceleration = float(config["custom_max_acceleration"]) or None
+        self.custom_max_deceleration = float(config["custom_max_deceleration"]) or None
 
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
@@ -146,11 +151,20 @@ class ModbusDriverFrontend(object):
             value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
             value *= self.application_coeff
+            if self.custom_max_velocity is not None and key == 'velocity_ref':
+                value = value if value < self.custom_max_velocity else self.custom_max_velocity
+                value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
+
         elif key in ('acceleration', 'deceleration',):
             value /= self.gearbox_ratio
             value *= self.application_coeff
             if self.acceleration_time_mode:
                 value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
+
+            if self.custom_max_acceleration is not None and key == 'acceleration':
+                value = value if value < self.custom_max_acceleration else self.custom_max_acceleration
+            if self.custom_max_deceleration is not None and key == 'deceleration':
+                value = value if value < self.custom_max_deceleration else self.custom_max_deceleration
 
         return value
 
