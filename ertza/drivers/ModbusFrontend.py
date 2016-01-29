@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 
 class ModbusDriverFrontend(object):
 
@@ -157,6 +159,8 @@ class ModbusDriverFrontend(object):
                 value = value if value < self.custom_max_position else self.custom_max_position
             elif self.custom_min_position is not None and key == 'position_ref':
                 value = value if value > self.custom_min_position else self.custom_min_position
+                if value == self.custom_min_position:
+                    logging.warn('Min position limit reached, clamping value')
 
             value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
