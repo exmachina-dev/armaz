@@ -33,6 +33,9 @@ class ModbusDriverFrontend(object):
         self.custom_max_acceleration = float(config["custom_max_acceleration"]) or None
         self.custom_max_deceleration = float(config["custom_max_deceleration"]) or None
 
+        self.custom_max_position = float(config["custom_max_position"]) or None
+        self.custom_min_position = float(config["custom_min_position"]) or None
+
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
             raise AttributeError('Config not found')
@@ -143,7 +146,6 @@ class ModbusDriverFrontend(object):
             value = value if value < self.max_velocity else self.max_velocity
             value = value if value > -self.max_velocity else -self.max_velocity
 
-
         return value
 
     def _output_value_coefficient(self, key, value):
@@ -151,6 +153,10 @@ class ModbusDriverFrontend(object):
             if self.custom_max_velocity is not None and key == 'velocity_ref':
                 value = value if value < self.custom_max_velocity else self.custom_max_velocity
                 value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
+            elif self.custom_max_position is not None and key == 'position_ref':
+                value = value if value < self.custom_max_position else self.custom_max_position
+            elif self.custom_min_position is not None and key == 'position_ref':
+                value = value if value > self.custom_min_position else self.custom_min_position
 
             value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
