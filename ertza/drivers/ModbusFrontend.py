@@ -25,8 +25,8 @@ class ModbusDriverFrontend(object):
         self.torque_fall_time = float(config["torque_fall_time"])
 
         self.application_coeff = float(config.get('application_coefficient', 1))
-        self.invert = config.get('invert', False)
-        self.acceleration_time_mode = bool(int(config.get('acceleration_time_mode', False)))
+        self.invert = True if config.get('invert', '') == 'True' else False
+        self.acceleration_time_mode = True if config.get('acceleration_time_mode', '') == 'True' else False
 
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
