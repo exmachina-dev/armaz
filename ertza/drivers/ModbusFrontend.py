@@ -33,8 +33,15 @@ class ModbusDriverFrontend(object):
         self.custom_max_acceleration = float(config["custom_max_acceleration"]) or None
         self.custom_max_deceleration = float(config["custom_max_deceleration"]) or None
 
-        self.custom_max_position = float(config["custom_max_position"]) or None
-        self.custom_min_position = float(config["custom_min_position"]) or None
+        try:
+            self.custom_max_position = float(config["custom_max_position"])
+        except KeyError:
+            self.custom_max_position = None
+
+        try:
+            self.custom_min_position = float(config["custom_min_position"])
+        except KeyError:
+            self.custom_max_position = None
 
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
