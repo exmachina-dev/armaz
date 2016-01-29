@@ -152,6 +152,8 @@ class ModbusDriverFrontend(object):
 
     def _output_value_coefficient(self, key, value):
         if key in ('velocity_ref', 'position_ref',):
+            value = value * -1 if not self.invert else value
+
             if self.custom_max_velocity is not None and key == 'velocity_ref':
                 value = value if value < self.custom_max_velocity else self.custom_max_velocity
                 value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
@@ -162,7 +164,6 @@ class ModbusDriverFrontend(object):
                 if value == self.custom_min_position:
                     logging.warn('Min position limit reached, clamping value')
 
-            value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
             value *= self.application_coeff
         elif key in ('acceleration', 'deceleration',):
