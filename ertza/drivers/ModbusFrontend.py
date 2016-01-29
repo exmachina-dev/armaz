@@ -148,23 +148,23 @@ class ModbusDriverFrontend(object):
 
     def _output_value_coefficient(self, key, value):
         if key in ('velocity_ref', 'position_ref',):
-            value = value * -1 if not self.invert else value
-            value /= self.gearbox_ratio
-            value *= self.application_coeff
             if self.custom_max_velocity is not None and key == 'velocity_ref':
                 value = value if value < self.custom_max_velocity else self.custom_max_velocity
                 value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
 
-        elif key in ('acceleration', 'deceleration',):
+            value = value * -1 if not self.invert else value
             value /= self.gearbox_ratio
             value *= self.application_coeff
-            if self.acceleration_time_mode:
-                value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
-
+        elif key in ('acceleration', 'deceleration',):
             if self.custom_max_acceleration is not None and key == 'acceleration':
                 value = value if value < self.custom_max_acceleration else self.custom_max_acceleration
             if self.custom_max_deceleration is not None and key == 'deceleration':
                 value = value if value < self.custom_max_deceleration else self.custom_max_deceleration
+
+            value /= self.gearbox_ratio
+            value *= self.application_coeff
+            if self.acceleration_time_mode:
+                value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
 
         return value
 
