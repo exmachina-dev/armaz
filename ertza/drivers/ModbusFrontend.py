@@ -6,42 +6,36 @@ class ModbusDriverFrontend(object):
     def load_frontend_config(self, config):
         self.frontend_config = config
 
-        self.gearbox_ratio = (float(config["gearbox_input_coefficient"]) /
-                              float(config["gearbox_output_coefficient"]))
+        self.gearbox_ratio = (
+            self._safe_config_get("gearbox_input_coefficient", float, 1) /
+            self._safe_config_get("gearbox_output_coefficient", float, 1))
 
         # Limits
-        self.max_velocity = float(config["max_velocity"])
-        self.max_acceleration = float(config["max_acceleration"])
-        self.max_deceleration = float(config["max_deceleration"])
+        self.max_velocity = self._safe_config_get("max_velocity", float, 1)
+        self.max_acceleration = self._safe_config_get("max_acceleration", float, 1)
+        self.max_deceleration = self._safe_config_get("max_deceleration", float, 1)
 
-        self.min_torque_rise_time = float(config["min_torque_rise_time"])
-        self.min_torque_fall_time = float(config["min_torque_fall_time"])
+        self.min_torque_rise_time = self._safe_config_get("min_torque_rise_time", float, 5000)
+        self.min_torque_fall_time = self._safe_config_get("min_torque_fall_time", float, 5000)
 
         # Actual values
-        self.acceleration = float(config.get("acceleration", 1))
-        self.deceleration = float(config.get("deceleration", 1))
+        self.acceleration = self._safe_config_get("acceleration", float, 1)
+        self.deceleration = self._safe_config_get("deceleration", float, 1)
 
-        self.torque_rise_time = float(config.get("torque_rise_time", 5000))
-        self.torque_fall_time = float(config.get("torque_fall_time", 5000))
+        self.torque_rise_time = self._safe_config_get("torque_rise_time", float, 5000)
+        self.torque_fall_time = self._safe_config_get("torque_fall_time", float, 5000)
 
         # Application parameters
-        self.application_coeff = float(config.get('application_coefficient', 1))
-        self.invert = True if config.get('invert', '') == 'True' else False
-        self.acceleration_time_mode = True if config.get('acceleration_time_mode', '') == 'True' else False
+        self.application_coeff = self._safe_config_get('application_coefficient', float, 1)
+        self.invert = self._safe_config_get('invert', bool, False)
+        self.acceleration_time_mode = self._safe_config_get('acceleration_time_mode', bool, False)
 
-        self.custom_max_velocity = float(config["custom_max_velocity"]) or None
-        self.custom_max_acceleration = float(config["custom_max_acceleration"]) or None
-        self.custom_max_deceleration = float(config["custom_max_deceleration"]) or None
+        self.custom_max_velocity = self._safe_config_get("custom_max_velocity", float)
+        self.custom_max_acceleration = self._safe_config_get("custom_max_acceleration", float)
+        self.custom_max_deceleration = self._safe_config_get("custom_max_deceleration", float)
 
-        try:
-            self.custom_max_position = float(config["custom_max_position"])
-        except KeyError:
-            self.custom_max_position = None
-
-        try:
-            self.custom_min_position = float(config["custom_min_position"])
-        except KeyError:
-            self.custom_max_position = None
+        self.custom_max_position = self._safe_config_get("custom_max_position", float)
+        self.custom_min_position = self._safe_config_get("custom_min_position", float)
 
     def init_startup_mode(self):
         if not hasattr(self, 'frontend_config'):
@@ -199,3 +193,12 @@ class ModbusDriverFrontend(object):
 
     def _input_value(self, key, value):
         return self._input_value_coefficient(key, value)
+
+    def _safe_config_get(self, key, vtype=None, fallback=None):
+        try:
+            if vtype:
+                return vtype(self.frontend_config[key])
+            else:
+                return self.frontend_config[key]
+        except KeyError:
+            return fallback
