@@ -159,6 +159,9 @@ Sub Status()
     If enTqMode Then
         NETFLOAT(4) = enTqRef
         NETFLOAT(5) = enTqVelRef
+    ElseIf CONTROLMODE(_axis) = 3 Then
+        NETFLOAT(4) = TORQUEREF(_axis)
+        NETFLOAT(5) = SPEED(_axis)
     Else
         NETFLOAT(4) = TORQUEREF(_axis)
         NETFLOAT(5) = VELREF(_axis)
