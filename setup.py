@@ -21,10 +21,10 @@ setup(
     author="Benoit Rapidel, ExMachina SAS",
     author_email="benoit.rapidel+devs@exmachina.fr",
     url="http://github.org/exmachina-dev/ertza.git",
-    package_data={'': ['COPYING']},
+    package_data={'': ['LICENSE']},
     include_package_data=True,
     install_requires=[],
-    license=file_content('COPYING'),
+    license=file_content('LICENSE'),
     platforms = ["Beaglebone"],
     entry_points = {
         'console_scripts': [
@@ -32,8 +32,9 @@ setup(
         ]
     },
     classifiers=(
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.2',
