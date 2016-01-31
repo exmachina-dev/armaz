@@ -251,8 +251,9 @@ Event NETDATA1
     End If
     
     If command.drive_cancel = 1 Then
-        CANCEL(_axis)
+        STOP(_axis)
     End If
+    command.drive_cancel = 0
     
     If command.clear_errors = 1 Then
         ERRORCLEAR(_egALL, _axis)
