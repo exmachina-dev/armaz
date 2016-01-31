@@ -368,9 +368,9 @@ Event NETDATA6
     cmdPosRef = NETFLOAT(6)
     
     If moveMode <> 0 Then
-        MOVEA(_axis) = cmdPosRef
-    Else
         MOVER(_axis) = cmdPosRef
+    Else
+        MOVEA(_axis) = cmdPosRef
     End If
     ResetCommandTimeout
 End Event
