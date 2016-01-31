@@ -428,6 +428,9 @@ Event ONERROR
                 Case _ecKINT_LIMIT
                     'Handle integrator windup
 
+                Case _ecMOTION_IN_PROGRESS
+                    'Don't do anything
+
                 Case Else
                     'All other errors and warnings handled here
                     STOP(_axis)
