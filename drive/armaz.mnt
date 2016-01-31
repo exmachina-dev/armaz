@@ -360,6 +360,10 @@ Event NETDATA5
 End Event
 
 Event NETDATA6
+    If CONTROLMODE(_axis) <> 3 Then
+        Exit Event
+    End If
+
     Dim cmdPosRef As Float
     cmdPosRef = NETFLOAT(6)
     
