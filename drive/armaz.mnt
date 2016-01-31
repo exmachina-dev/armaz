@@ -107,24 +107,12 @@ Loop
         End If
             
         enTq =  pTerm + iTerm
-
-        'If VEL(_axis) > entqMaxVel And enTqDirection = 1 Then
-        '    enTq = enTq + enTqCorrection
-        '    If enTq < 0 Then
-        '        enTq = 0
-        '    End If
-        'ElseIf VEL(_axis) < tqMaxVel And enTqDirection = 1 Then
-        '     enTq = enTq - enTqCorrection
-        'End If
-            
-            'Print(enTq)
  
         If enTq > enTqLimit Then
             enTq = enTqLimit
         ElseIf enTq < -enTqLimit Then
             enTq = -enTqLimit
         End If
-        Print(enTq)
             
         TORQUEREF(_axis) = enTq
             
@@ -258,7 +246,7 @@ Event NETDATA1
         
         command.clear_errors = 0
     End If
-    
+
     If command.reset_command = 1 Then
         STOP(_axis)
         ResetEnhancedTorqueMode
@@ -266,7 +254,7 @@ Event NETDATA1
         ERRORCLEAR(_egALL, _axis)
         command.reset_command = 0
     End If
-    
+
     If command.control_mode <> 0 Then
         If command.control_mode <= 3 Then 
             CONTROLMODE(_axis) = command.control_mode
@@ -278,14 +266,14 @@ Event NETDATA1
             enTqMode = 0
         End If
     End If
-    
+
     moveMode = command.move_mode '0: Absolute 1: Relative
     
     If command.go_command <> 0 Then
         GO(_axis)
         command.go_command = 0
     End If
-    
+
     If command.set_home <> 0 Then
         POS(_axis) = 0
         command.set_home = 0
@@ -465,7 +453,7 @@ Startup
     End If
 
     MODBUSPARAMETER(_bus, _mpBYTE_ORDER) = 0                         'Use big endian byte order (default)
-    MODBUSPARAMETER(_bus, _mpWORD_ORDER) = 0                         'Use little endian word order (default)
+    MODBUSPARAMETER(_bus, _mpWORD_ORDER) = 0                         'Use big endian word order (default: little endian)
     MODBUSPARAMETER(_bus, _mpREGISTER_MAPPING) = _rmNET_DATA         'Use Net data for data exchange
     MODBUSPARAMETER(_bus, _mpENABLE) = 1                             'Finally enable Modbus TCP communication
     
