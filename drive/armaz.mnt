@@ -344,11 +344,15 @@ Event NETDATA5
         If enTqMode Then
             enTqVelRef = cmdVelRef
             enTqDirection = Int(Abs(enTqVelRef) / enTqVelRef)
+        ElseIf CONTROLMODE(_axis) = 3 Then
+            SPEED(_axis) = Abs(cmdVelRef)
         Else
             VELREF(_axis) = cmdVelRef
         End If
     Else
         VELREF(_axis) = 0
+        SPEED(_axis) = 0
+        enTqVelRef = 0
         STOP(_axis)
     End If
     ResetCommandTimeout
