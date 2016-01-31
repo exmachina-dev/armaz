@@ -29,7 +29,7 @@ Const _statusSlowRefreshRate = 10
 Const _enTqEnableRefreshRate = 0
 Const _enTqDisableRefreshRate = 100
 
-Const _cmdTimeout = 500     'Command timeout
+Const _cmdTimeout = 1000     'Command timeout
 Const _axis = 0
 
 Dim _max_speed As Float
