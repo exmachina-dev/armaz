@@ -189,8 +189,8 @@ Sub NetdataValues()
     NETFLOAT(26) = ENCODERVEL(0)
     NETFLOAT(27) = VELERROR(_axis)
     NETFLOAT(28) = FOLERROR(_axis)
-    NETFLOAT(29) = CurrentToTorque(CURRENTMEAS(_axis))
-    NETFLOAT(30) = CurrentRatio(CURRENTMEAS(_axis))
+    NETFLOAT(29) = CurrentToTorque(CURRENTMEAS(_axis, 5))
+    NETFLOAT(30) = CurrentRatio(CURRENTMEAS(_axis, 5))
     NETFLOAT(31) = EFFORT(_axis)
 End Sub
 
