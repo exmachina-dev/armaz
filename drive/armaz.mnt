@@ -9,7 +9,7 @@ Bitfield StatusNetData
 End Bitfield
 
 Bitfield CommandNetData
-    all As 0 To 9
+    all As 0 To 10
     drive_enable As 0 To 0
     drive_cancel As 1 To 1
     clear_errors As 2 To 2
@@ -18,6 +18,7 @@ Bitfield CommandNetData
     move_mode As 7 To 7
     go_command As 8 To 8
     set_home As 9 To 9
+    go_home As 10 To 10
 End Bitfield
 
 Const _bus = _busETHERNET
@@ -288,6 +289,12 @@ Event NETDATA1
     If command.set_home <> 0 Then
         POS(_axis) = 0
         command.set_home = 0
+    End If
+
+    If command.go_home <> 0 AndAlso CONTROLMODE(_axis) = 3 Then
+        MOVEA(_axis) = 0
+        GO(_axis)
+        command.go_home = 0
     End If
 
     NETINTEGER(1) = command.all
