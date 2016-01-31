@@ -18,11 +18,11 @@ class ModbusDriverFrontend(object):
         self.min_torque_fall_time = float(config["min_torque_fall_time"])
 
         # Actual values
-        self.acceleration = float(config["acceleration"])
-        self.deceleration = float(config["deceleration"])
+        self.acceleration = float(config.get("acceleration", 1))
+        self.deceleration = float(config.get("deceleration", 1))
 
-        self.torque_rise_time = float(config["torque_rise_time"])
-        self.torque_fall_time = float(config["torque_fall_time"])
+        self.torque_rise_time = float(config.get("torque_rise_time", 5000))
+        self.torque_fall_time = float(config.get("torque_fall_time", 5000))
 
         # Application parameters
         self.application_coeff = float(config.get('application_coefficient', 1))
