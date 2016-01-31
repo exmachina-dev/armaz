@@ -77,8 +77,8 @@ class StandaloneMachineMode(AbstractMachineMode):
             drv_attr_map = self._machine.driver.get_attribute_map()
             for a, p in drv_attr_map.items():
                 StandaloneMachineMode.MachineMap.update({
-                    'machine:{}'.format(a): self._param(*p),})
-                print(a, p)
+                    'machine:{}'.format(a): self._param(*p),
+                })
 
         except AttributeError:
             pass
