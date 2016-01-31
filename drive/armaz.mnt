@@ -282,8 +282,8 @@ Event NETDATA1
     End If
 
     moveMode = command.move_mode '0: Absolute 1: Relative
-    
-    If command.go_command <> 0 Then
+
+    If command.go_command <> 0 AndAlso CONTROLMODE(_axis) = 3 Then
         GO(_axis)
         command.go_command = 0
     End If
