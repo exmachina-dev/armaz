@@ -270,15 +270,15 @@ Event NETDATA1
     End If
 
     If command.control_mode <> 0 Then
-        If command.control_mode <= 3 Then 
+        If command.control_mode <= 3 Then
             CONTROLMODE(_axis) = command.control_mode
-            command.control_mode = 0
             enTqMode = 0
         ElseIf command.control_mode = 4 Then
             enTqMode = 1
         Else
             enTqMode = 0
         End If
+        command.control_mode = 0
     End If
 
     moveMode = command.move_mode '0: Absolute 1: Relative
