@@ -224,6 +224,16 @@ Function CurrentRatio(ByVal current) As Float
     CurrentRatio =  (current / DRIVERATEDCURRENT(_axis)) * 100
 End Function
 
+Function ClampToMaxSpeed(ByVal nSpeed As Float) As Float
+    If nSpeed > _max_speed Then
+        ClampToMaxSpeed = _max_speed
+    ElseIf nSpeed < _max_speed * -1 Then
+        ClampToMaxSpeed = _max_speed * -1
+    Else
+        ClampToMaxSpeed = nSpeed
+    End If
+
+
 Event NETDATA1 
     Dim prevCommand As CommandNetData
     Dim command As CommandNetData
@@ -298,13 +308,7 @@ Event NETDATA3
     cmdSpeed = NETFLOAT(3)
     
     If cmdSpeed <> 0 Then
-        If cmdSpeed > _max_speed Then
-            cmdSpeed = _max_speed
-        ElseIf cmdSpeed < _max_speed * -1 Then
-            cmdSpeed = _max_speed * -1
-        End If
-
-        JOG(_axis) = cmdSpeed
+        JOG(_axis) = ClampToMaxSpeed(cmdSpeed)
     Else
         STOP(_axis)
     End If
@@ -334,7 +338,7 @@ End Event
 
 Event NETDATA5
     Dim cmdVelRef As Float
-    cmdVelRef = NETFLOAT(5)
+    cmdVelRef = ClampToMaxSpeed(NETFLOAT(5))
     
     If cmdVelRef <> 0 Then
         If enTqMode Then
