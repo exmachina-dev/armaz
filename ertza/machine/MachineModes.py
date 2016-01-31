@@ -143,10 +143,12 @@ class MasterMachineMode(StandaloneMachineMode):
         super().__setitem__(key, value)
 
         for s in self._machine.slaves:
-            sm = s.slave.config.get('slave_mode', None)
+            sm = s.slave.slave_mode
             self._send_to_slave(s, sm, key, value)
 
     def _send_to_slave(self, slave, mode=None, key='', value=None):
+        if not mode:
+            return
         if key in self.ForwardKeys[mode]:
             value = slave.slave.config.get(key, False) or value
             slave.set_to_remote(key, value)
