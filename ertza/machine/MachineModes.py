@@ -128,6 +128,16 @@ class MasterMachineMode(StandaloneMachineMode):
             'machine:acceleration',
             'machine:deceleration',
         ),
+        'position': (
+            'machine:command:move_mode',
+            'machine:command:go',
+            'machine:command:set_home',
+            'machine:command:go_home',
+            'machine:velocity_ref',
+            'machine:position_ref',
+            'machine:acceleration',
+            'machine:deceleration',
+        ),
     }
 
     def __getitem__(self, key):
