@@ -1,0 +1,7 @@
+# -*- coding: utf-8 -*-
+import daemon
+
+from ertza import Ertza
+
+with daemon.DaemonContext():
+    Ertza.main()
