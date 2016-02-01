@@ -150,6 +150,14 @@ class MasterMachineMode(StandaloneMachineMode):
         ),
     }
 
+    def __init__(self, machine):
+        super().__init__(machine)
+
+        self._slv_config = {}
+        for s in self._machine.slaves:
+            s_cf = s.slave.config
+            self._slv_config[s.slave.serialnumber] = s_cf
+
     def __getitem__(self, key):
         g_list = []
         g_list.append(super().__getitem__(key))
@@ -169,11 +177,38 @@ class MasterMachineMode(StandaloneMachineMode):
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
             return
-        if key in self.ForwardKeys[mode]:
-            value = slave.slave.config.get(key, False) or value
+        if key in self.ForwardKeys[mode].keys():
+            value = self.get_value_for_slave(slave, key, value) or value
             slave.set_to_remote(key, value)
         if key in self.DefaultForwardKeys.keys():
             slave.set_to_remote(key, value)
+
+    def get_value_for_slave(self, slave, key, value):
+        if slave.slave.serialnumber not in self._slv_config.keys():
+            logging.warn('No config registered for slave {!s}'.format(slave))
+            return
+
+        _cf = self._slv_config[slave.slave.serialnumber]
+        vl_mode = _cf.get('{}_mode'.format(key), None)
+        if vl_mode is None:
+            return
+        elif vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
+            logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
+            return
+
+        vl_value = _cf.get('{}_value'.format(key), None)
+        if vl_mode == 'foward':
+            return value
+        elif vl_mode == 'multiply':
+            return vl_value * value
+        elif vl_mode == 'divide':
+            return vl_value / value
+        elif vl_mode == 'add':
+            return vl_value + value
+        elif vl_mode == 'substract':
+            return vl_value - value
+        elif vl_mode == 'default':
+            return vl_value
 
 
 class SlaveMachineMode(StandaloneMachineMode):
