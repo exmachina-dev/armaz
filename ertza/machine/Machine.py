@@ -270,6 +270,8 @@ class Machine(AbstractMachine):
 
                 if ':' in master:
                     master, port = master.split(':')
+                else:
+                    port = None
 
                 self.master = master
                 self.master_port = port if port else \
