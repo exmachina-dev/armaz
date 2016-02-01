@@ -12,9 +12,10 @@ class IpAddress(object):
     def update_table(self):
         c = ['ip', 'addr', 'show']
         if self.interface:
-            c.append(['dev', self.interface, ])
+            c += ['dev', self.interface,]
 
-        r = [l.lstrip() for l in subprocess.check_output(c).splitlines()]
+        output = subprocess.check_output(c)
+        r = [l.lstrip() for l in output.splitlines()]
 
         self._r = []
         for line in r:
