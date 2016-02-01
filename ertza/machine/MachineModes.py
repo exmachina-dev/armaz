@@ -114,12 +114,12 @@ class MasterMachineMode(StandaloneMachineMode):
         'slaves':   _param(str, 'r'),
     })
 
-    DefaultForwardKeys = {
+    DefaultForwardKeys = (
         'machine:command:enable',
         'machine:command:cancel',
         'machine:command:clear_errors',
         'machine:command:reset',
-    }
+    )
 
     ForwardKeys = {
         'torque': (
@@ -177,10 +177,10 @@ class MasterMachineMode(StandaloneMachineMode):
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
             return
-        if key in self.ForwardKeys[mode].keys():
+        if key in self.ForwardKeys[mode]:
             value = self.get_value_for_slave(slave, key, value) or value
             slave.set_to_remote(key, value)
-        if key in self.DefaultForwardKeys.keys():
+        if key in self.DefaultForwardKeys:
             slave.set_to_remote(key, value)
 
     def get_value_for_slave(self, slave, key, value):
