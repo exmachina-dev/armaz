@@ -87,7 +87,11 @@ class Machine(AbstractMachine):
 
         if m == 'master':
             self.load_slaves()
-        self.set_operation_mode(m)
+        if m == 'slave':
+            master = self.config.get('machine', 'master')
+            self.set_operation_mode(m, master)
+        else:
+            self.set_operation_mode(m)
 
     def reply(self, command):
         if command.answer is not None:
