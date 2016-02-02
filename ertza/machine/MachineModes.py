@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from collections import namedtuple
 
 
@@ -75,10 +76,12 @@ class StandaloneMachineMode(AbstractMachineMode):
 
         try:
             drv_attr_map = self._machine.driver.get_attribute_map()
+            logging.info('Appending driver attribute map '
+                         'to {0.__class__.__name__}'.format(self))
             for a, p in drv_attr_map.items():
                 StandaloneMachineMode.MachineMap.update({
-                    'machine:{}'.format(a): self._param(*p),})
-                print(a, p)
+                    'machine:{}'.format(a): self._param(*p),
+                })
 
         except AttributeError:
             pass
@@ -111,6 +114,13 @@ class MasterMachineMode(StandaloneMachineMode):
         'slaves':   _param(str, 'r'),
     })
 
+    DefaultForwardKeys = (
+        'machine:command:enable',
+        'machine:command:cancel',
+        'machine:command:clear_errors',
+        'machine:command:reset',
+    )
+
     ForwardKeys = {
         'torque': (
             'machine:torque_ref',
@@ -128,28 +138,81 @@ class MasterMachineMode(StandaloneMachineMode):
             'machine:acceleration',
             'machine:deceleration',
         ),
+        'position': (
+            'machine:command:move_mode',
+            'machine:command:go',
+            'machine:command:set_home',
+            'machine:command:go_home',
+            'machine:velocity_ref',
+            'machine:position_ref',
+            'machine:acceleration',
+            'machine:deceleration',
+        ),
     }
 
-    def __getitem__(self, key):
-        g_list = []
-        g_list.append(super().__getitem__(key))
+    def __init__(self, machine):
+        super().__init__(machine)
 
+        self._slv_config = {}
         for s in self._machine.slaves:
-            g_list.append(s.get_from_remote(key, block=True))
+            s_cf = s.slave.config
+            self._slv_config[s.slave.serialnumber] = s_cf
 
-        return g_list
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except ContinueException:
+            g_list = []
+            g_list.append(super().__getitem__(key))
+
+            for s in self._machine.slaves:
+                g_list.append(s.get_from_remote(key, block=True))
+
+            return g_list
 
     def __setitem__(self, key, value):
-        super().__setitem__(key, value)
-
-        for s in self._machine.slaves:
-            sm = s.slave.config.get('slave_mode', None)
-            self._send_to_slave(s, sm, key, value)
+        try:
+            return super().__setitem__(key, value)
+        except ContinueException:
+            for s in self._machine.slaves:
+                sm = s.slave.slave_mode
+                self._send_to_slave(s, sm, key, value)
 
     def _send_to_slave(self, slave, mode=None, key='', value=None):
+        if not mode:
+            return
         if key in self.ForwardKeys[mode]:
-            value = slave.slave.config.get(key, False) or value
+            value = self.get_value_for_slave(slave, key, value) or value
             slave.set_to_remote(key, value)
+        if key in self.DefaultForwardKeys:
+            slave.set_to_remote(key, value)
+
+    def get_value_for_slave(self, slave, key, value):
+        if slave.slave.serialnumber not in self._slv_config.keys():
+            logging.warn('No config registered for slave {!s}'.format(slave))
+            return
+
+        _cf = self._slv_config[slave.slave.serialnumber]
+        vl_mode = _cf.get('{}_mode'.format(key), None)
+        if vl_mode is None:
+            return
+        elif vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
+            logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
+            return
+
+        vl_value = _cf.get('{}_value'.format(key), None)
+        if vl_mode == 'foward':
+            return value
+        elif vl_mode == 'multiply':
+            return vl_value * value
+        elif vl_mode == 'divide':
+            return vl_value / value
+        elif vl_mode == 'add':
+            return vl_value + value
+        elif vl_mode == 'substract':
+            return vl_value - value
+        elif vl_mode == 'default':
+            return vl_value
 
 
 class SlaveMachineMode(StandaloneMachineMode):

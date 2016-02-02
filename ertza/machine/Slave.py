@@ -14,7 +14,7 @@ from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
 
-Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'config'))
+Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
 
 
 class SlaveMachineError(AbstractMachineError):
@@ -289,5 +289,6 @@ class SlaveMachine(AbstractMachine):
             'port': self.driver_config['target_port'],
             'prot': self.slave.driver,
             'serial': self.slave.serialnumber,
+            'mode': self.slave.slave_mode,
         }
-        return '{name}: {addr}:{port} via {prot} ({serial})'.format(**i)
+        return '{name}: {addr}:{port} via {prot} ({serial}) in {mode} mode'.format(**i)

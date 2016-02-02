@@ -23,14 +23,14 @@ class ListSlaves(OscCommand, UnbufferedCommand):
 class AddSlave(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
-        if self.check_args(c, 'ne', 2):
+        if self.check_args(c, 'ne', 3):
             self.error(c, 'Invalid number of arguments for %s' % self.alias)
             return
 
         try:
-            driver, address = c.args
-            n_slave = self.machine.add_slave(driver, address)
-            self.ok(c, n_slave.driver, n_slave.address, n_slave.serialnumber)
+            driver, address, mode = c.args
+            n_slave = self.machine.add_slave(driver, address, mode)
+            self.ok(c, n_slave.driver, n_slave.address, n_slave.serialnumber, n_slave.slave_mode)
         except Exception as e:
             self.error(c, e)
 

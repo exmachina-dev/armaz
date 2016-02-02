@@ -87,7 +87,11 @@ class Machine(AbstractMachine):
 
         if m == 'master':
             self.load_slaves()
-        self.set_operation_mode(m)
+        if m == 'slave':
+            master = self.config.get('machine', 'master')
+            self.set_operation_mode(m, master)
+        else:
+            self.set_operation_mode(m)
 
     def reply(self, command):
         if command.answer is not None:
@@ -132,6 +136,7 @@ class Machine(AbstractMachine):
                 slave_id = int(key.split('_')[2])
                 slave_sn = item
                 slave_ip = slaves_cf['slave_address_%d' % slave_id]
+                slave_md = slaves_cf['slave_mode_%d' % slave_id]
                 slave_dv = slaves_cf.get('slave_driver_%d' % slave_id,
                                          fallback='Osc').title()
 
@@ -139,7 +144,7 @@ class Machine(AbstractMachine):
                 if self.config.has_section('slave_%s' % slave_sn):
                     slave_cf = self.config['slave_%s' % slave_sn]
 
-                s = Slave(slave_sn, slave_ip, slave_dv, slave_cf)
+                s = Slave(slave_sn, slave_ip, slave_dv, slave_md, slave_cf)
                 logging.info('Found {2} slave at {1} '
                              'with S/N {0}'.format(*s))
                 slaves.append(s)
@@ -179,23 +184,23 @@ class Machine(AbstractMachine):
                                           'at {1} ({0} vs {4})'
                                           ''.format(*infos)))
 
-    def add_slave(self, driver, address):
+    def add_slave(self, driver, address, mode):
         self._check_operation_mode()
 
         try:
-            s = Slave(None, address, driver.title(), {})
-            m = SlaveMachine(s)
-            self.init_slave(m)
-            m.ping()
-            m.set_master(self.serialnumber, self.address(driver))
+            s = Slave(None, address, driver.title(), mode, {})
+            sm = SlaveMachine(s)
+            self.init_slave(sm)
+            sm.ping()
+            sm.set_master(self.serialnumber, self.address(driver))
 
-            existing_s = self.get_slave(serialnumber=m.serialnumber)
+            existing_s = self.get_slave(serialnumber=sm.serialnumber)
             if existing_s:
                 raise MachineError('Already existing {2} at {1} '
                                    'with S/N {0}'.format(*existing_s.slave))
 
-            self.slaves.append(m)
-            s = m.slave
+            self.slaves.append(sm)
+            s = sm.slave
             logging.info('New {2} slave at {1} '
                          'with S/N {0}'.format(*s))
             return s
@@ -265,6 +270,8 @@ class Machine(AbstractMachine):
 
                 if ':' in master:
                     master, port = master.split(':')
+                else:
+                    port = None
 
                 self.master = master
                 self.master_port = port if port else \
