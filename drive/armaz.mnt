@@ -232,7 +232,7 @@ Function ClampToMaxSpeed(ByVal nSpeed As Float) As Float
     Else
         ClampToMaxSpeed = nSpeed
     End If
-
+End Function
 
 Event NETDATA1 
     Dim prevCommand As CommandNetData
