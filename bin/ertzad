@@ -16,16 +16,21 @@ class ErtzaDaemon(Daemon):
             Ertza.main()
 
 
-parser = argparse.ArgumentParser(description='Ertza daemon program')
-parser.add_argument('action', help='action to execute', choices=['start', 'stop', 'restart'])
+parser = argparse.ArgumentParser(prog='ertzad', description='Ertza daemon program',
+                                 argument_default=argparse.SUPPRESS)
+parser.add_argument('action', help='action to execute',
+                    choices=['start', 'stop', 'restart'])
 parser.add_argument('-p', '--pidfile', help='pid file', default='/var/run/ertza.pid')
+parser.add_argument('-i', '--stdin', help='redirect standard input to FILE')
+parser.add_argument('-o', '--stdout', help='redirect standard output to FILE')
+parser.add_argument('-e', '--stderr', help='redirect standard error output to FILE')
 
 args, args_remaining = parser.parse_known_args()
 
-daemon = ErtzaDaemon(args.pidfile)
+daemon = ErtzaDaemon(**vars(args))
 
 if args.action == 'start':
-    print('Starting ertza...', end='')
+    print('Starting ertza...')
     daemon.start(parent_parser=args_remaining, done_msg=' done.')
     print(' done.')
 elif args.action == 'stop':
