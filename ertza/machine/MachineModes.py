@@ -12,16 +12,16 @@ class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
 
     MachineMap = {
-        'machine:operation_mode':   _param(str, 'rw'),
-        'machine:serialnumber':     _param(str, 'r'),
-        'machine:address':          _param(str, 'r'),
+        'operation_mode':   _param(str, 'rw'),
+        'serialnumber':     _param(str, 'r'),
+        'address':          _param(str, 'r'),
     }
 
     DirectAttributesGet = (
-        'machine:serialnumber',
-        'machine:operation_mode',
-        'machine:infos',
-        'machine:address',
+        'serialnumber',
+        'operation_mode',
+        'infos',
+        'address',
     )
 
     DirectAttributesSet = (
@@ -115,38 +115,38 @@ class MasterMachineMode(StandaloneMachineMode):
     })
 
     DefaultForwardKeys = (
-        'machine:command:enable',
-        'machine:command:cancel',
-        'machine:command:clear_errors',
-        'machine:command:reset',
+        'command:enable',
+        'command:cancel',
+        'command:clear_errors',
+        'command:reset',
     )
 
     ForwardKeys = {
         'torque': (
-            'machine:torque_ref',
-            'machine:torque_rise_time',
-            'machine:torque_fall_time',
+            'torque_ref',
+            'torque_rise_time',
+            'torque_fall_time',
         ),
         'enhanced_torque': (
-            'machine:torque_ref',
-            'machine:torque_rise_time',
-            'machine:torque_fall_time',
-            'machine:velocity_ref',
+            'torque_ref',
+            'torque_rise_time',
+            'torque_fall_time',
+            'velocity_ref',
         ),
         'speed': (
-            'machine:velocity_ref',
-            'machine:acceleration',
-            'machine:deceleration',
+            'velocity_ref',
+            'acceleration',
+            'deceleration',
         ),
         'position': (
-            'machine:command:move_mode',
-            'machine:command:go',
-            'machine:command:set_home',
-            'machine:command:go_home',
-            'machine:velocity_ref',
-            'machine:position_ref',
-            'machine:acceleration',
-            'machine:deceleration',
+            'command:move_mode',
+            'command:go',
+            'command:set_home',
+            'command:go_home',
+            'velocity_ref',
+            'position_ref',
+            'acceleration',
+            'deceleration',
         ),
     }
 
