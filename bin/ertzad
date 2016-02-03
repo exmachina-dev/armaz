@@ -7,9 +7,9 @@ from ertza import Ertza
 
 
 class ErtzaDaemon(Daemon):
-    def run(self, parent_parser=None):
-        if parent_parser:
-            Ertza.main(parent_parser=parent_parser)
+    def run(self, parent_args=None):
+        if parent_args:
+            Ertza.main(parent_args=parent_args)
         else:
             Ertza.main()
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     if args.action == 'start':
         print('Starting ertza...')
-        daemon.start(parent_parser=args_remaining, done_msg=' done.')
+        daemon.start(parent_args=args_remaining, done_msg=' done.')
         print(' done.')
     elif args.action == 'stop':
         print('Stopping ertza...', end='')
