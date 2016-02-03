@@ -336,10 +336,13 @@ class Ertza(object):
         p.execute(c)
 
 
-def main():
+def main(parent_parser=None):
     import argparse
 
-    parser = argparse.ArgumentParser(prog='ertza')
+    if parent_parser:
+        parser = argparse.ArgumentParser(prog='ertza', parents=[parent_parser,])
+    else:
+        parser = argparse.ArgumentParser(prog='ertza')
     parser.add_argument('--config', nargs=1, help='Use CONFIG as custom config file')
 
     args = parser.parse_args()

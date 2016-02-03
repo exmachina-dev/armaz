@@ -2,14 +2,37 @@
 # -*- coding: utf-8 -*-
 # vim: ft=python
 
-import daemon
+import argparse
 
+from ertza.Daemon import Daemon
 from ertza import Ertza
 
-daemon_context = daemon.DaemonContext()
-daemon_context.pidfile = '/var/run/ertza.pid'
-daemon_context.detach_process = True
 
-with daemon_context:
-    print('Starting ertza')
-    Ertza.main()
+class ErtzaDaemon(Daemon):
+    def run(self, parent_parser=None):
+        if parent_parser:
+            Ertza.main(parent_parser=parent_parser)
+        else:
+            Ertza.main()
+
+
+parser = argparse.ArgumentParser(description='Ertza daemon program')
+parser.add_argument('action', help='action to execute', choices=['start', 'stop', 'restart'])
+parser.add_argument('-p', '--pidfile', help='pid file', default='/var/run/ertza.pid')
+
+args, args_remaining = parser.parse_known_args()
+
+daemon = ErtzaDaemon(args.pidfile)
+
+if args.action == 'start':
+    print('Starting ertza...', end='')
+    daemon.start(parent_parser=args_remaining, done_msg=' done.')
+    print(' done.')
+elif args.action == 'stop':
+    print('Stopping ertza...', end='')
+    daemon.stop()
+    print(' done.')
+elif args.action == 'restart':
+    print('Restarting ertza...', end='')
+    daemon.restart()
+    print(' done.')
