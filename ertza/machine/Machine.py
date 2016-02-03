@@ -356,6 +356,12 @@ class Machine(AbstractMachine):
                     self.switch_states[s['name']] = not sw_st
 
     def __getitem__(self, key):
+        dst = self._get_destination(key)
+
+        if dst is not self:
+            key = key.split(':', maxsplit=1)[1]
+            return dst[key]
+
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
