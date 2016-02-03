@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim: ft=python
 
-import argparse
-
 from ertza.Daemon import Daemon
 from ertza import Ertza
 
@@ -16,28 +14,31 @@ class ErtzaDaemon(Daemon):
             Ertza.main()
 
 
-parser = argparse.ArgumentParser(prog='ertzad', description='Ertza daemon program',
-                                 argument_default=argparse.SUPPRESS)
-parser.add_argument('action', help='action to execute',
-                    choices=['start', 'stop', 'restart'])
-parser.add_argument('-p', '--pidfile', help='pid file', default='/var/run/ertza.pid')
-parser.add_argument('-i', '--stdin', help='redirect standard input to FILE')
-parser.add_argument('-o', '--stdout', help='redirect standard output to FILE')
-parser.add_argument('-e', '--stderr', help='redirect standard error output to FILE')
+if __name__ == '__main__':
+    import argparse
 
-args, args_remaining = parser.parse_known_args()
+    parser = argparse.ArgumentParser(prog='ertzad', description='Ertza daemon program',
+                                    argument_default=argparse.SUPPRESS)
+    parser.add_argument('action', help='action to execute',
+                        choices=['start', 'stop', 'restart'])
+    parser.add_argument('-p', '--pidfile', help='pid file', default='/var/run/ertza.pid')
+    parser.add_argument('-i', '--stdin', help='redirect standard input to FILE')
+    parser.add_argument('-o', '--stdout', help='redirect standard output to FILE')
+    parser.add_argument('-e', '--stderr', help='redirect standard error output to FILE')
 
-daemon = ErtzaDaemon(**vars(args))
+    args, args_remaining = parser.parse_known_args()
 
-if args.action == 'start':
-    print('Starting ertza...')
-    daemon.start(parent_parser=args_remaining, done_msg=' done.')
-    print(' done.')
-elif args.action == 'stop':
-    print('Stopping ertza...', end='')
-    daemon.stop()
-    print(' done.')
-elif args.action == 'restart':
-    print('Restarting ertza...', end='')
-    daemon.restart()
-    print(' done.')
+    daemon = ErtzaDaemon(**vars(args))
+
+    if args.action == 'start':
+        print('Starting ertza...')
+        daemon.start(parent_parser=args_remaining, done_msg=' done.')
+        print(' done.')
+    elif args.action == 'stop':
+        print('Stopping ertza...', end='')
+        daemon.stop()
+        print(' done.')
+    elif args.action == 'restart':
+        print('Restarting ertza...', end='')
+        daemon.restart()
+        print(' done.')
