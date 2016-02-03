@@ -189,7 +189,10 @@ class MasterMachineMode(StandaloneMachineMode):
         if key in self.DefaultForwardKeys:
             slave.set_to_remote(key, value)
 
-    def get_value_for_slave(self, slave, key, value):
+    def get_value_for_slave(self, slave, key, value=None):
+        if not value:
+            value = self._machine.getitem(key)
+
         if slave.slave.serialnumber not in self._slv_config.keys():
             logging.warn('No config registered for slave {!s}'.format(slave))
             return

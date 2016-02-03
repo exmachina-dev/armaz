@@ -18,6 +18,14 @@ logging = logging.getLogger(__name__)
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
 
 
+OPERATING_MODES = {
+    'torque':           1,
+    'velocity':         2,
+    'position':         3,
+    'enhanced_torque':  4,
+}
+
+
 class SlaveMachineError(AbstractMachineError):
     pass
 
@@ -88,9 +96,6 @@ class SlaveMachine(AbstractMachine):
             'target_port': int(self.config.get('reply_port', 6969)),
         }
 
-        self._thread = Thread(target=self.loop)
-        self._thread.daemon = True
-
         self.running_ev = Event()
         self.newdata_ev = Event()
 
@@ -101,6 +106,8 @@ class SlaveMachine(AbstractMachine):
         self._get_dict = {}
         self._set_dict = {}
         self._latency = None
+
+        self.last_values = {}
 
     def init_driver(self):
         drv = self.slave.driver
@@ -123,12 +130,20 @@ class SlaveMachine(AbstractMachine):
         return drv
 
     def start(self):
+        self._thread = Thread(target=self.loop)
+        self._thread.daemon = True
+
+        self._watcher_thread = Thread(target=self.watcher_loop)
+        self._watcher_thread.daemon = True
+
         self.running_ev.clear()
         self.driver.connect()
         self._thread.start()
+        self._watcher_thread.start()
 
     def exit(self):
         self.running_ev.set()
+        self._watcher_thread.join()
         self._thread.join()
         self.driver.exit()
 
@@ -157,6 +172,27 @@ class SlaveMachine(AbstractMachine):
                 self.bridge.task_done()
         except Empty:
             pass
+
+    def watcher_loop(self):
+        smode = self.slave.slave_mode
+        self.last_values = {}
+        self.set_operation_mode(smode)
+        while not self.running_ev.is_set():
+            if smode == 'torque':
+                self._send_if_latest('machine:torque_ref', source='machine:torque')
+                self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
+                self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
+            elif smode == 'enhanced_torque':
+                self._send_if_latest('machine:torque_ref', source='machine:torque')
+                self._send_if_latest('machine:velocity_ref', source='machine:velocity')
+                self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
+                self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
+            elif smode == 'velocity':
+                self._send_if_latest('machine:velocity_ref', source='machine:velocity')
+                self._send_if_latest('machine:acceleration')
+                self._send_if_latest('machine:acceleration')
+
+            self.running_ev.wait(self.timeout)
 
     def request_from_remote(self, callback, attribute, *args, **kwargs):
         event = kwargs.pop('event', None)
@@ -217,6 +253,24 @@ class SlaveMachine(AbstractMachine):
         if ev is not None and ev.wait(self.timeout):
             return self._set_dict[key]
         return rq
+
+    def set_operation_mode(self, mode):
+        if mode not in OPERATING_MODES.keys():
+            raise KeyError('Unexpected mode: {0}'.format(mode))
+
+        return self.set_to_remote('machine:operation_mode', OPERATING_MODES[mode], block=True)
+
+    def _send_if_latest(self, dest, source=None):
+        source = source or dest
+        lvalue = self.last_value.get(dest, None)
+        value = self.machine.machine_keys.get_value_for_slave(self, source)
+        if lvalue:
+            if value != lvalue:
+                self.set_to_remote(dest, value)
+                self.last_values[dest] = value
+        else:
+            self.set_to_remote(dest, value)
+            self.last_values[dest] = value
 
     def _ping_cb(self, start_time, data, event=None):
         rtn = self._default_cb(data, event)
