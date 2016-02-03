@@ -186,11 +186,11 @@ class Machine(AbstractMachine):
                                           'at {1} ({0} vs {4})'
                                           ''.format(*infos)))
 
-    def add_slave(self, driver, address, mode):
+    def add_slave(self, driver, address, mode, conf={}):
         self._check_operation_mode()
 
         try:
-            s = Slave(None, address, driver.title(), mode, {})
+            s = Slave(None, address, driver.title(), mode, conf)
             sm = SlaveMachine(s)
             self.init_slave(sm)
             sm.ping()
