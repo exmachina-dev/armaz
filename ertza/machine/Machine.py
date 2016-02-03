@@ -393,30 +393,7 @@ class Machine(AbstractMachine):
         raise ValueError('Unable to find target %s' % key)
 
     def getitem(self, key):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            try:
-                return dst[key]
-            except AbstractDriverError as e:
-                logging.error(repr(e))
-            except Exception as e:
-                logging.error('Unknown exception: {}'.format(repr(e)))
-
         return getattr(self, key)
 
     def setitem(self, key, value):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            try:
-                dst[key] = value
-                return
-            except AbstractDriverError as e:
-                logging.error(repr(e))
-            except Exception as e:
-                logging.error('Unknown exception: {}'.format(repr(e)))
-
         setattr(self, key, value)
