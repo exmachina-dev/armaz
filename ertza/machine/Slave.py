@@ -258,7 +258,7 @@ class SlaveMachine(AbstractMachine):
         if mode not in CONTROL_MODES.keys():
             raise KeyError('Unexpected mode: {0}'.format(mode))
 
-        return self.set_to_remote('machine:control_mode', CONTROL_MODES[mode], block=True)
+        return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
     def _send_if_latest(self, dest, source=None):
         source = source or dest
