@@ -343,9 +343,9 @@ def main(parent_parser=None):
         parser = argparse.ArgumentParser(prog='ertza', parents=[parent_parser,])
     else:
         parser = argparse.ArgumentParser(prog='ertza')
-    parser.add_argument('--config', nargs=1, help='Use CONFIG as custom config file')
+    parser.add_argument('--config', nargs=1, help='use CONFIG as custom config file')
 
-    args = parser.parse_args()
+    args, args_remaining = parser.parse_known_args()
 
     e = Ertza(**vars(args))
 
