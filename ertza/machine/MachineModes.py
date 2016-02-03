@@ -3,6 +3,8 @@
 import logging
 from collections import namedtuple
 
+logging = logging.getLogger(__name__)
+
 
 class ContinueException(BaseException):
     pass

@@ -3,7 +3,7 @@
 
 # Main class for ertza
 
-import logging
+import logging as lg
 import os
 import os.path
 import sys
@@ -38,10 +38,11 @@ _DEFAULT_CONF = "/etc/ertza/default.conf"
 _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s \
-                    %(levelname)-8s %(message)s',
-                    datefmt='%Y/%m/%d %H:%M:%S')
+lg.basicConfig(level=lg.DEBUG,
+               format='%(asctime)s %(name)-12s \
+               %(levelname)-8s %(message)s',
+               datefmt='%Y/%m/%d %H:%M:%S')
+logging = lg.getLogger(__name__)
 
 
 class Ertza(object):
@@ -94,7 +95,7 @@ class Ertza(object):
         level = self.machine.config.getint('system', 'loglevel')
         if level > 0:
             logging.info("Setting loglevel to %d" % level)
-            logging.getLogger().setLevel(level)
+            lg.getLogger().setLevel(level)
 
         drv = machine.init_driver()
         if drv:

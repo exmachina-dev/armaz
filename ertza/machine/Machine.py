@@ -14,6 +14,8 @@ from ertza.drivers.AbstractDriver import AbstractDriverError
 
 from ertza.machine.Slave import Slave, SlaveMachine, SlaveMachineError
 
+logging = logging.getLogger(__name__)
+
 
 class MachineError(AbstractMachineError):
     pass

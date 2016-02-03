@@ -5,6 +5,8 @@ import os
 import struct
 import configparser
 
+logging = logging.getLogger(__name__)
+
 _VARIANT_PATH = "/etc/ertza/variants"
 
 

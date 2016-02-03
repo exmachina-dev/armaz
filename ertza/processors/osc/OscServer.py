@@ -6,6 +6,8 @@ from threading import Thread
 
 from .Osc import OscMessage
 
+logging = logging.getLogger(__name__)
+
 
 class OscServer(lo.Server):
 

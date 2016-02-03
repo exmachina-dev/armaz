@@ -13,6 +13,7 @@ from ertza.machine.AbstractMachine import AbstractMachine, AbstractMachineError
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
+logging = logging.getLogger(__name__)
 
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
 
