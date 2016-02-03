@@ -18,7 +18,7 @@ logging = logging.getLogger(__name__)
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
 
 
-OPERATING_MODES = {
+CONTROL_MODES = {
     'torque':           1,
     'velocity':         2,
     'position':         3,
@@ -176,7 +176,7 @@ class SlaveMachine(AbstractMachine):
     def watcher_loop(self):
         smode = self.slave.slave_mode
         self.last_values = {}
-        self.set_operation_mode(smode)
+        self.set_control_mode(smode)
         while not self.running_ev.is_set():
             if smode == 'torque':
                 self._send_if_latest('machine:torque_ref', source='machine:torque')
@@ -254,11 +254,11 @@ class SlaveMachine(AbstractMachine):
             return self._set_dict[key]
         return rq
 
-    def set_operation_mode(self, mode):
-        if mode not in OPERATING_MODES.keys():
+    def set_control_mode(self, mode):
+        if mode not in CONTROL_MODES.keys():
             raise KeyError('Unexpected mode: {0}'.format(mode))
 
-        return self.set_to_remote('machine:operation_mode', OPERATING_MODES[mode], block=True)
+        return self.set_to_remote('machine:control_mode', CONTROL_MODES[mode], block=True)
 
     def _send_if_latest(self, dest, source=None):
         source = source or dest
