@@ -180,7 +180,8 @@ class ModbusDriverFrontend(object):
         return self._output_value_limit(key, self._output_value_coefficient(key, value))
 
     def _input_value_coefficient(self, key, value):
-        if key in ('velocity_ref', 'position_ref',):
+        if key in ('velocity_ref', 'velocity',
+                   'position_ref', 'position', 'position_target', 'position_remaining',):
             value /= self.application_coeff
             value *= self.gearbox_ratio
         if key in ('acceleration', 'deceleration',):
