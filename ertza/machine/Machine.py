@@ -362,6 +362,7 @@ class Machine(AbstractMachine):
             key = key.split(':', maxsplit=1)[1]
             return dst[key]
 
+        key = key.split(':', maxsplit=1)[1]
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
@@ -378,6 +379,7 @@ class Machine(AbstractMachine):
         if type(value) == tuple and len(value) == 1:
             value, = value
 
+        key = key.split(':', maxsplit=1)[1]
         self.machine_keys[key] = value
 
     def _get_destination(self, key):
