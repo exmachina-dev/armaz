@@ -221,6 +221,6 @@ class SlaveMachineMode(StandaloneMachineMode):
     })
 
     DirectAttributesGet = AbstractMachineMode.DirectAttributesGet + (
-        'machine:master',
-        'machine:master_port',
+        'master',
+        'master_port',
     )
