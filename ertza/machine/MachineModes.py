@@ -154,7 +154,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
     def __getitem__(self, key):
         try:
-            return super().__getitem__(key)
+            return super(StandaloneMachineMode, self).__getitem__(key)
         except ContinueException:
             g_list = []
             g_list.append(super().__getitem__(key))
