@@ -262,8 +262,8 @@ class Machine(AbstractMachine):
                 self.activate_mode(mode)
             elif mode == 'slave':
                 if self.slave_mode:
-                    raise MachineError('Operating mode {} already active. '
-                                       'You must disable {} before '
+                    raise MachineError('Operating mode {0} already active. '
+                                       'You must disable {0} mode before '
                                        'reactiving it'.format(mode))
                 if len(args) >= 2:
                     master = args[1]
