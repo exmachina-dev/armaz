@@ -32,7 +32,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
     MFNdata = {
         'status':               netdata(0, 'pad:24,bool,bool,bool,bool,'
                                         'bool,bool,bool,bool'),
-        'command':              netdata(1, 'pad:22,bool,bool,bool,uint:1,uint:3,'
+        'command':              netdata(1, 'pad:21,bool,bool,bool,uint:1,uint:3,'
                                         'bool,bool,bool,bool'),
         'error_code':           netdata(2, 'uint:32'),
         'jog':                  netdata(3, 'float:32'),
