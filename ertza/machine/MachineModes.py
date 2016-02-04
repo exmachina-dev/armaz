@@ -169,10 +169,9 @@ class MasterMachineMode(StandaloneMachineMode):
             return
 
         _cf = self._slv_config[slave.slave.serialnumber]
-        vl_mode = _cf.get('{}_mode'.format(key), None)
-        if vl_mode is None:
-            return
-        elif vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
+        vl_mode = _cf.get('{}_mode'.format(key), 'forward')
+
+        if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
             logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
             return
 
