@@ -191,7 +191,7 @@ class SlaveMachine(AbstractMachine):
             elif smode == 'velocity':
                 self._send_if_latest('machine:velocity_ref', source='machine:velocity')
                 self._send_if_latest('machine:acceleration')
-                self._send_if_latest('machine:acceleration')
+                self._send_if_latest('machine:deceleration')
 
             self.running_ev.wait(self.refresh_interval)
 
