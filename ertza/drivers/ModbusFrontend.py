@@ -10,8 +10,11 @@ class ModbusDriverFrontend(object):
             self._safe_config_get("gearbox_input_coefficient", float, 1) /
             self._safe_config_get("gearbox_output_coefficient", float, 1))
 
+        self.torque_constant = self._safe_config_get("torque_constant", float, 1)  # in Nm/A
+        self.drive_rated_current = self._safe_config_get("drive_rated_current", float, 1)  # in A
+
         # Limits
-        self.max_velocity = self._safe_config_get("max_velocity", float, 1)
+        self.max_velocity = self._safe_config_get("max_velocity", float, 1)     # in rpm (motor side)
         self.max_acceleration = self._safe_config_get("max_acceleration", float, 1)
         self.max_deceleration = self._safe_config_get("max_deceleration", float, 1)
 
@@ -30,7 +33,7 @@ class ModbusDriverFrontend(object):
         self.invert = self._safe_config_get('invert', bool, False)
         self.acceleration_time_mode = self._safe_config_get('acceleration_time_mode', bool, False)
 
-        self.custom_max_velocity = self._safe_config_get("custom_max_velocity", float)
+        self.custom_max_velocity = self._safe_config_get("custom_max_velocity", float)  # in rpm (application side)
         self.custom_max_acceleration = self._safe_config_get("custom_max_acceleration", float)
         self.custom_max_deceleration = self._safe_config_get("custom_max_deceleration", float)
 
@@ -173,6 +176,12 @@ class ModbusDriverFrontend(object):
             value *= self.application_coeff
             if self.acceleration_time_mode:
                 value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
+        elif key in ('torque_ref'):
+            value = value * -1 if not self.invert else value
+            value *= self.gearbox_ratio
+            value /= self.torque_constant
+            value /= self.drive_rated_current
+            value *= 100
 
         return value
 
@@ -189,6 +198,12 @@ class ModbusDriverFrontend(object):
             value /= self.application_coeff
             if self.acceleration_time_mode:
                 value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
+        elif key in ('torque_ref'):
+            value /= 100
+            value *= self.drive_rated_current
+            value *= self.torque_constant
+            value /= self.gearbox_ratio
+            value = value * -1 if not self.invert else value
 
         return value
 
