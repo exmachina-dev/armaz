@@ -182,11 +182,12 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             seckey, subkey = key, None
 
         if seckey not in self.netdata_map:
-            raise KeyError(seckey)
+            raise KeyError('Unable to find {} in netdata map'.format(seckey))
 
         if type(self.netdata_map[seckey]) == dict and subkey:
             if subkey not in self.netdata_map[seckey]:
-                raise KeyError(subkey)
+                raise KeyError('Unable to find {0} in {1} '
+                               'netdata map'.format(subkey, seckey))
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
             if seckey not in self._prev_data.keys():
