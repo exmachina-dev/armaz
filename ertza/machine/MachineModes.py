@@ -182,7 +182,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
     def get_value_for_slave(self, slave, key, value=None):
         if not value:
-            value = self._machine.getitem(key)
+            value = self._machine[key]
 
         if slave.slave.serialnumber not in self._slv_config.keys():
             logging.warn('No config registered for slave {!s}'.format(slave))
