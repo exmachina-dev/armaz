@@ -9,9 +9,9 @@ Bitfield StatusNetData
 End Bitfield
 
 Bitfield CommandNetData
-    all As 0 To 10
+    all As 0 To 11
     drive_enable As 0 To 0
-    drive_cancel As 1 To 1
+    cancel_command As 1 To 1
     clear_errors As 2 To 2
     reset_command As 3 To 3
     control_mode  As 4 To 6
@@ -19,6 +19,7 @@ Bitfield CommandNetData
     go_command As 8 To 8
     set_home As 9 To 9
     go_home As 10 To 10
+    stop_command As 11 To 11
 End Bitfield
 
 Const _bus = _busETHERNET
@@ -250,10 +251,10 @@ Event NETDATA1
         DRIVEENABLE(_axis) = 0
     End If
     
-    If command.drive_cancel = 1 Then
-        STOP(_axis)
+    If command.cancel_command = 1 Then
+        CANCEL(_axis)
     End If
-    command.drive_cancel = 0
+    command.cancel_command = 0
     
     If command.clear_errors = 1 Then
         ERRORCLEAR(_egALL, _axis)
@@ -296,6 +297,11 @@ Event NETDATA1
     If command.go_home <> 0 AndAlso CONTROLMODE(_axis) = 3 Then
         MOVEA(_axis) = 0
         GO(_axis)
+        command.go_home = 0
+    End If
+
+    If command.stop_command <> 0 Then
+        STOP(_axis)
         command.go_home = 0
     End If
 
