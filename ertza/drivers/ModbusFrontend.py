@@ -204,6 +204,11 @@ class ModbusDriverFrontend(object):
             value *= self.torque_constant
             value /= self.gearbox_ratio
             value = value * -1 if not self.invert else value
+        elif key in ('torque'):
+            value /= self.gearbox_ratio
+            value = value * -1 if not self.invert else value
+        elif key in ('current_ratio'):
+            value = value * -1 if not self.invert else value
 
         return value
 
