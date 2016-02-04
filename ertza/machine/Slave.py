@@ -107,6 +107,7 @@ class SlaveMachine(AbstractMachine):
         self.newdata_ev = Event()
 
         self.timeout = 2.0
+        self.refresh_interval = 0.250
 
         self.bridge = Queue()
 
@@ -199,7 +200,7 @@ class SlaveMachine(AbstractMachine):
                 self._send_if_latest('machine:acceleration')
                 self._send_if_latest('machine:acceleration')
 
-            self.running_ev.wait(self.timeout)
+            self.running_ev.wait(self.refresh_interval)
 
     def request_from_remote(self, callback, attribute, *args, **kwargs):
         event = kwargs.pop('event', None)
