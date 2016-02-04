@@ -29,8 +29,16 @@ class AbstractMachineMode(object):
     DirectAttributesSet = (
     )
 
+    StaticKeys = (
+        'machine:acceleration',
+        'machine:decceleration',
+        'machine:torque_rise_time',
+        'machine:torque_fall_time',
+    )
+
     def __init__(self, machine):
         self._machine = machine
+        self._last_values = {}
 
     def _check_read_access(self, key):
         self._check_key(key)
@@ -98,6 +106,9 @@ class StandaloneMachineMode(AbstractMachineMode):
             super().__setitem__(key, value)
         except ContinueException:
             self._machine.driver[key] = value
+
+        if key in self.StaticKeys:
+            self.StaticKeys[key] = value
 
 
 class MasterMachineMode(StandaloneMachineMode):
@@ -173,7 +184,10 @@ class MasterMachineMode(StandaloneMachineMode):
             return
 
         if not value:
-            value = self._machine[key]
+            if key in self.StaticKeys:
+                value = self._last_values.get(key, self._machine[key])
+            else:
+                value = self._machine[key]
 
         vl_value = _cf.get('{}_value'.format(key), None)
         if vl_mode == 'forward':
