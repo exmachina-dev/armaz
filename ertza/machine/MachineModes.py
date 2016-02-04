@@ -161,9 +161,6 @@ class MasterMachineMode(StandaloneMachineMode):
             slave.set_to_remote(key, value)
 
     def get_value_for_slave(self, slave, key, value=None):
-        if not value:
-            value = self._machine[key]
-
         if slave.slave.serialnumber not in self._slv_config.keys():
             logging.warn('No config registered for slave {!s}'.format(slave))
             return
@@ -174,6 +171,9 @@ class MasterMachineMode(StandaloneMachineMode):
         if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
             logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
             return
+
+        if not value:
+            value = self._machine[key]
 
         vl_value = _cf.get('{}_value'.format(key), None)
         if vl_mode == 'foward':
