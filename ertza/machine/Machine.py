@@ -359,29 +359,24 @@ class Machine(AbstractMachine):
 
     def __getitem__(self, key):
         dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
 
         if dst is not self:
-            key = key.split(':', maxsplit=1)[1]
             return dst[key]
 
-        key = key.split(':', maxsplit=1)[1]
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
-        if type(value) == tuple and len(value) == 1:
+        if isinstance(value, (tuple, list)) and len(value) == 1:
             value, = value
 
         dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
 
         if dst is not self:
-            key = key.split(':', maxsplit=1)[1]
             dst[key] = value
             return dst[key]
 
-        if type(value) == tuple and len(value) == 1:
-            value, = value
-
-        key = key.split(':', maxsplit=1)[1]
         self.machine_keys[key] = value
 
     def _get_destination(self, key):
