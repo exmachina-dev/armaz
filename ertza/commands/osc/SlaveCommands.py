@@ -5,6 +5,8 @@ import logging
 from ertza.commands.AbstractCommands import UnbufferedCommand
 from ertza.commands.OscCommand import OscCommand
 
+logging = logging.getLogger(__name__)
+
 
 class SlaveCommand(OscCommand):
     """
@@ -51,7 +53,6 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
             super().execute(c)
 
         try:
-            print(c.args)
             uid, dst, *args = c.args
             self.machine[dst] = args
 
