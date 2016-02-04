@@ -176,7 +176,7 @@ class MasterMachineMode(StandaloneMachineMode):
             value = self._machine[key]
 
         vl_value = _cf.get('{}_value'.format(key), None)
-        if vl_mode == 'foward':
+        if vl_mode == 'forward':
             return value
         elif vl_mode == 'multiply':
             return vl_value * value
