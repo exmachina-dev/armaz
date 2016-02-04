@@ -56,16 +56,16 @@ class AbstractMachineMode(object):
 
     def __setitem__(self, key, value):
         self._check_write_access(key)
-        self._machine.setitem(key, self.MachineMap[key].vtype(value))
 
-        if key in self.DirectAttributesSet:
-            return self._machine.getitem(key)
 
         if key is 'operation_mode':
             if isinstance(value, (list, tuple)):
                 return self._machine.set_operation_mode(*value)
             else:
                 return self._machine.set_operation_mode(value)
+
+        if key in self.DirectAttributesSet:
+            return self._machine.setitem(key)
 
         raise ContinueException()
 
@@ -88,23 +88,17 @@ class StandaloneMachineMode(AbstractMachineMode):
         except AttributeError:
             pass
 
-    def __setitem__(self, key, value):
-        try:
-            super().__setitem__(key, value)
-        except ContinueException:
-            try:
-                self._machine.driver[key] = value
-            except KeyError as e:
-                raise e
-
     def __getitem__(self, key):
         try:
             return super().__getitem__(key)
         except ContinueException:
-            try:
-                return self._machine.driver[key]
-            except KeyError as e:
-                raise e
+            return self._machine.driver[key]
+
+    def __setitem__(self, key, value):
+        try:
+            super().__setitem__(key, value)
+        except ContinueException:
+            self._machine.driver[key] = value
 
 
 class MasterMachineMode(StandaloneMachineMode):
