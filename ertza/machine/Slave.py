@@ -34,6 +34,13 @@ class SlaveMachine(AbstractMachine):
 
     machine = None
 
+    StaticKeys = (
+        'machine:acceleration',
+        'machine:decceleration',
+        'machine:torque_rise_time',
+        'machine:torque_fall_time',
+    )
+
     class _Request(object):
         def __init__(self, attr, *args, **kwargs):
             self._args = ()
@@ -268,7 +275,11 @@ class SlaveMachine(AbstractMachine):
             logging.warn('Machine keys not found')
             return
 
-        value = self.machine.machine_keys.get_value_for_slave(self, source)
+        if dest in self.StaticKeys:
+            value = self.machine.machine_keys.get_value_for_slave(self, source, lvalue)
+        else:
+            value = self.machine.machine_keys.get_value_for_slave(self, source)
+
         if value is None:
             logging.warn('Unable to get {0} for {1!s}'.format(source, self))
             return
