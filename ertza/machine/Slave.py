@@ -270,6 +270,7 @@ class SlaveMachine(AbstractMachine):
 
         value = self.machine.machine_keys.get_value_for_slave(self, source)
         if value is None:
+            logging.warn('Unable to get {0} for {1!s}'.format(source, self))
             return
 
         if lvalue:
