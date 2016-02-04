@@ -263,6 +263,11 @@ class SlaveMachine(AbstractMachine):
     def _send_if_latest(self, dest, source=None):
         source = source or dest
         lvalue = self.last_values.get(dest, None)
+
+        if not self.machine.machine_keys:
+            logging.warn('Machine keys not found')
+            return
+
         value = self.machine.machine_keys.get_value_for_slave(self, source)
         if lvalue:
             if value != lvalue:
