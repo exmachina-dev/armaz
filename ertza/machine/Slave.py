@@ -269,6 +269,9 @@ class SlaveMachine(AbstractMachine):
             return
 
         value = self.machine.machine_keys.get_value_for_slave(self, source)
+        if value is None:
+            return
+
         if lvalue:
             if value != lvalue:
                 self.set_to_remote(dest, value)
