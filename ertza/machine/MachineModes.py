@@ -151,26 +151,6 @@ class MasterMachineMode(StandaloneMachineMode):
             s_cf = s.slave.config
             self._slv_config[s.slave.serialnumber] = s_cf
 
-    def __getitem__(self, key):
-        try:
-            return super().__getitem__(key)
-        except ContinueException:
-            g_list = []
-            g_list.append(super().__getitem__(key))
-
-            for s in self._machine.slaves:
-                g_list.append(s.get_from_remote(key, block=True))
-
-            return g_list
-
-    def __setitem__(self, key, value):
-        try:
-            return super().__setitem__(key, value)
-        except ContinueException:
-            for s in self._machine.slaves:
-                sm = s.slave.slave_mode
-                self._send_to_slave(s, sm, key, value)
-
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
             return
