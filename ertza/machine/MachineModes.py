@@ -82,7 +82,7 @@ class StandaloneMachineMode(AbstractMachineMode):
                          'to {0.__class__.__name__}'.format(self))
             for a, p in drv_attr_map.items():
                 StandaloneMachineMode.MachineMap.update({
-                    'machine:{}'.format(a): self._param(*p),
+                    '{}'.format(a): self._param(*p),
                 })
 
         except AttributeError:
