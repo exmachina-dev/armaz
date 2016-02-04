@@ -61,7 +61,7 @@ class AbstractMachineMode(object):
         if key in self.DirectAttributesSet:
             return self._machine.getitem(key)
 
-        if key is 'machine:operation_mode':
+        if key is 'operation_mode':
             if isinstance(value, (list, tuple)):
                 return self._machine.set_operation_mode(*value)
             else:
@@ -93,8 +93,7 @@ class StandaloneMachineMode(AbstractMachineMode):
             super().__setitem__(key, value)
         except ContinueException:
             try:
-                skey = key.split(':', maxsplit=1)[1]
-                self._machine.driver[skey] = value
+                self._machine.driver[key] = value
             except KeyError as e:
                 raise e
 
@@ -103,8 +102,7 @@ class StandaloneMachineMode(AbstractMachineMode):
             return super().__getitem__(key)
         except ContinueException:
             try:
-                skey = key.split(':', maxsplit=1)[1]
-                return self._machine.driver[skey]
+                return self._machine.driver[key]
             except KeyError as e:
                 raise e
 
