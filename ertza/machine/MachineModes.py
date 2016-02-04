@@ -57,8 +57,7 @@ class AbstractMachineMode(object):
     def __setitem__(self, key, value):
         self._check_write_access(key)
 
-
-        if key is 'operation_mode':
+        if key == 'operation_mode':
             if isinstance(value, (list, tuple)):
                 return self._machine.set_operation_mode(*value)
             else:
