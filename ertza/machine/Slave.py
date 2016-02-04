@@ -262,7 +262,7 @@ class SlaveMachine(AbstractMachine):
 
     def _send_if_latest(self, dest, source=None):
         source = source or dest
-        lvalue = self.last_value.get(dest, None)
+        lvalue = self.last_values.get(dest, None)
         value = self.machine.machine_keys.get_value_for_slave(self, source)
         if lvalue:
             if value != lvalue:
