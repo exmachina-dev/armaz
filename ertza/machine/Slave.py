@@ -100,7 +100,7 @@ class SlaveMachine(AbstractMachine):
         self.newdata_ev = Event()
 
         self.timeout = 2.0
-        self.refresh_interval = 0.250
+        self.refresh_interval = 0.075
 
         self.bridge = Queue()
 
