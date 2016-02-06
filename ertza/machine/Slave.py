@@ -184,7 +184,7 @@ class SlaveMachine(AbstractMachine):
                 self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
                 self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
             elif smode == 'enhanced_torque':
-                self._send_if_latest('machine:torque_ref', source='machine:torque')
+                self._send_if_latest('machine:torque_ref', source='machine:current_ratio')
                 self._send_if_latest('machine:velocity_ref', source='machine:velocity')
                 self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
                 self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
