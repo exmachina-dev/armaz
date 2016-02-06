@@ -345,17 +345,21 @@ class Machine(AbstractMachine):
 
     def _switch_cb(self, sw_state):
         if sw_state['function']:
-            s, f, h = sw_state, sw_state['function'], sw_state['hit']
-            logging.debug('Switch activated: {}'.format(repr(s)))
+            n, f, h = sw_state['name'], sw_state['function'], sw_state['hit']
+            logging.debug('Switch activated: {0}, {1}, {2}'.format(n, f, h))
             if 'drive_enable' == f:
                 self['machine:command:enable'] = True if h else False
-                self.switch_states[s['name']] = h
+                self.switch_states[n] = h
+                logging.info('Switch: {0} {1} with {2}'.format(
+                    f, 'enabled' if h else 'disabled', n))
             elif 'toggle_drive_enable' == f:
                 if h:
-                    sw_st = self.switch_states.get(s['name'], False)
+                    sw_st = self.switch_states.get(n, False)
 
                     self['machine:command:enable'] = not sw_st
-                    self.switch_states[s['name']] = not sw_st
+                    self.switch_states[n] = not sw_st
+                    logging.info('Switch: {0} toggled ({1}) with {2}'.format(
+                        f, 'on' if not sw_st else 'off', n))
 
     def __getitem__(self, key):
         dst = self._get_destination(key)
