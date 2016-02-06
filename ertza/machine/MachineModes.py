@@ -97,9 +97,11 @@ class StandaloneMachineMode(AbstractMachineMode):
 
     def __getitem__(self, key):
         try:
-            return super().__getitem__(key)
+            res = super().__getitem__(key)
         except ContinueException:
-            return self._machine.driver[key]
+            res = self._machine.driver[key]
+
+        return res
 
     def __setitem__(self, key, value):
         try:
