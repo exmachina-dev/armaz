@@ -3,7 +3,7 @@
 
 # Main class for ertza
 
-import logging
+import logging as lg
 import os
 import os.path
 import sys
@@ -38,10 +38,11 @@ _DEFAULT_CONF = "/etc/ertza/default.conf"
 _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s \
-                    %(levelname)-8s %(message)s',
-                    datefmt='%Y/%m/%d %H:%M:%S')
+lg.basicConfig(level=lg.DEBUG,
+               format='%(asctime)s %(name)-12s \
+               %(levelname)-8s %(message)s',
+               datefmt='%Y/%m/%d %H:%M:%S')
+logging = lg.getLogger(__name__)
 
 
 class Ertza(object):
@@ -94,7 +95,7 @@ class Ertza(object):
         level = self.machine.config.getint('system', 'loglevel')
         if level > 0:
             logging.info("Setting loglevel to %d" % level)
-            logging.getLogger().setLevel(level)
+            lg.getLogger().setLevel(level)
 
         drv = machine.init_driver()
         if drv:
@@ -336,13 +337,16 @@ class Ertza(object):
         p.execute(c)
 
 
-def main():
+def main(parent_args=None):
     import argparse
 
     parser = argparse.ArgumentParser(prog='ertza')
-    parser.add_argument('--config', nargs=1, help='Use CONFIG as custom config file')
+    parser.add_argument('--config', nargs=1, help='use CONFIG as custom config file')
 
-    args = parser.parse_args()
+    if parent_args:
+        args, args_remaining = parser.parse_known_args(parent_args)
+    else:
+        args, args_remaining = parser.parse_known_args()
 
     e = Ertza(**vars(args))
 

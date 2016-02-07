@@ -6,6 +6,8 @@ from threading import Thread
 
 from .Serial import SerialMessage, SerialCommandString
 
+logging = logging.getLogger(__name__)
+
 
 class SerialServer(sr.Serial):
 

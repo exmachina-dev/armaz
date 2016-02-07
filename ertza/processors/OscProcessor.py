@@ -6,6 +6,8 @@ from .Processor import Processor
 
 from ..commands.OscCommand import OscCommand
 
+logging = logging.getLogger(__name__)
+
 
 class OscProcessor(Processor):
 

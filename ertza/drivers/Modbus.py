@@ -30,10 +30,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
     parameter = namedtuple('parameter', ['netdata', 'start',
                                          'vtype', 'mode'])
     MFNdata = {
-        'status':               netdata(0,
-                                        'pad:24,bool,bool,bool,bool,bool,bool,bool,bool'),
-        'command':              netdata(1,
-                                        'pad:22,bool,bool,uint:1,uint:3,bool,bool,bool,bool'),
+        'status':               netdata(0, 'pad:24,bool,bool,bool,bool,'
+                                        'bool,bool,bool,bool'),
+        'command':              netdata(1, 'pad:21,bool,bool,bool,uint:1,uint:3,'
+                                        'bool,bool,bool,bool'),
         'error_code':           netdata(2, 'uint:32'),
         'jog':                  netdata(3, 'float:32'),
         'torque_ref':           netdata(4, 'float:32'),
@@ -74,14 +74,15 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         },
 
         'command': {
-            'enable':           p(MFNdata['command'], 7, bool, 'w'),
-            'cancel':           p(MFNdata['command'], 6, bool, 'w'),
-            'clear_errors':     p(MFNdata['command'], 5, bool, 'w'),
-            'reset':            p(MFNdata['command'], 4, bool, 'w'),
-            'control_mode':     p(MFNdata['command'], 3, int, 'w'),
-            'move_mode':        p(MFNdata['command'], 2, int, 'w'),
-            'go':               p(MFNdata['command'], 1, bool, 'w'),
-            'set_home':         p(MFNdata['command'], 0, bool, 'w'),
+            'enable':           p(MFNdata['command'], 8, bool, 'w'),
+            'cancel':           p(MFNdata['command'], 7, bool, 'w'),
+            'clear_errors':     p(MFNdata['command'], 6, bool, 'w'),
+            'reset':            p(MFNdata['command'], 5, bool, 'w'),
+            'control_mode':     p(MFNdata['command'], 4, int, 'w'),
+            'move_mode':        p(MFNdata['command'], 3, int, 'w'),
+            'go':               p(MFNdata['command'], 2, bool, 'w'),
+            'set_home':         p(MFNdata['command'], 1, bool, 'w'),
+            'stop':             p(MFNdata['command'], 0, bool, 'w'),
         },
 
         'error_code':           p(MFNdata['error_code'], 0, int, 'r'),
@@ -182,11 +183,12 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             seckey, subkey = key, None
 
         if seckey not in self.netdata_map:
-            raise KeyError(seckey)
+            raise KeyError('Unable to find {} in netdata map'.format(seckey))
 
         if type(self.netdata_map[seckey]) == dict and subkey:
             if subkey not in self.netdata_map[seckey]:
-                raise KeyError(subkey)
+                raise KeyError('Unable to find {0} in {1} '
+                               'netdata map'.format(subkey, seckey))
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
             if seckey not in self._prev_data.keys():

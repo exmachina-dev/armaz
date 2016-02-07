@@ -2,14 +2,43 @@
 # -*- coding: utf-8 -*-
 # vim: ft=python
 
-import daemon
-
+from ertza.Daemon import Daemon
 from ertza import Ertza
 
-daemon_context = daemon.DaemonContext()
-daemon_context.pidfile = '/var/run/ertza.pid'
-daemon_context.detach_process = True
 
-with daemon_context:
-    print('Starting ertza')
-    Ertza.main()
+class ErtzaDaemon(Daemon):
+    def run(self, parent_args=None):
+        if parent_args:
+            Ertza.main(parent_args=parent_args)
+        else:
+            Ertza.main()
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(prog='ertzad', description='Ertza daemon program',
+                                    argument_default=argparse.SUPPRESS)
+    parser.add_argument('action', help='action to execute',
+                        choices=['start', 'stop', 'restart'])
+    parser.add_argument('-p', '--pidfile', help='pid file', default='/var/run/ertza.pid')
+    parser.add_argument('-i', '--stdin', help='redirect standard input to FILE')
+    parser.add_argument('-o', '--stdout', help='redirect standard output to FILE')
+    parser.add_argument('-e', '--stderr', help='redirect standard error output to FILE')
+
+    args, args_remaining = parser.parse_known_args()
+
+    daemon = ErtzaDaemon(**vars(args))
+
+    if args.action == 'start':
+        print('Starting ertza...')
+        daemon.start(parent_args=args_remaining, done_msg=' done.')
+        print(' done.')
+    elif args.action == 'stop':
+        print('Stopping ertza...', end='')
+        daemon.stop()
+        print(' done.')
+    elif args.action == 'restart':
+        print('Restarting ertza...', end='')
+        daemon.restart()
+        print(' done.')

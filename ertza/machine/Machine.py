@@ -14,6 +14,8 @@ from ertza.drivers.AbstractDriver import AbstractDriverError
 
 from ertza.machine.Slave import Slave, SlaveMachine, SlaveMachineError
 
+logging = logging.getLogger(__name__)
+
 
 class MachineError(AbstractMachineError):
     pass
@@ -184,11 +186,11 @@ class Machine(AbstractMachine):
                                           'at {1} ({0} vs {4})'
                                           ''.format(*infos)))
 
-    def add_slave(self, driver, address, mode):
+    def add_slave(self, driver, address, mode, conf={}):
         self._check_operation_mode()
 
         try:
-            s = Slave(None, address, driver.title(), mode, {})
+            s = Slave(None, address, driver.title(), mode, conf)
             sm = SlaveMachine(s)
             self.init_slave(sm)
             sm.ping()
@@ -260,8 +262,8 @@ class Machine(AbstractMachine):
                 self.activate_mode(mode)
             elif mode == 'slave':
                 if self.slave_mode:
-                    raise MachineError('Operating mode {} already active. '
-                                       'You must disable {} before '
+                    raise MachineError('Operating mode {0} already active. '
+                                       'You must disable {0} mode before '
                                        'reactiving it'.format(mode))
                 if len(args) >= 2:
                     master = args[1]
@@ -343,34 +345,41 @@ class Machine(AbstractMachine):
 
     def _switch_cb(self, sw_state):
         if sw_state['function']:
-            s, f, h = sw_state, sw_state['function'], sw_state['hit']
-            logging.debug('Switch activated: {}'.format(repr(s)))
+            n, f, h = sw_state['name'], sw_state['function'], sw_state['hit']
+            logging.debug('Switch activated: {0}, {1}, {2}'.format(n, f, h))
             if 'drive_enable' == f:
                 self['machine:command:enable'] = True if h else False
-                self.switch_states[s['name']] = h
+                self.switch_states[n] = h
+                logging.info('Switch: {0} {1} with {2}'.format(
+                    f, 'enabled' if h else 'disabled', n))
             elif 'toggle_drive_enable' == f:
                 if h:
-                    sw_st = self.switch_states.get(s['name'], False)
+                    sw_st = self.switch_states.get(n, False)
 
                     self['machine:command:enable'] = not sw_st
-                    self.switch_states[s['name']] = not sw_st
+                    self.switch_states[n] = not sw_st
+                    logging.info('Switch: {0} toggled ({1}) with {2}'.format(
+                        f, 'on' if not sw_st else 'off', n))
 
     def __getitem__(self, key):
+        dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
+
+        if dst is not self:
+            return dst[key]
+
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
-        if type(value) == tuple and len(value) == 1:
+        if isinstance(value, (tuple, list)) and len(value) == 1:
             value, = value
 
         dst = self._get_destination(key)
+        key = key.split(':', maxsplit=1)[1]
 
         if dst is not self:
-            key = key.split(':', maxsplit=1)[1]
             dst[key] = value
             return dst[key]
-
-        if type(value) == tuple and len(value) == 1:
-            value, = value
 
         self.machine_keys[key] = value
 
@@ -383,30 +392,7 @@ class Machine(AbstractMachine):
         raise ValueError('Unable to find target %s' % key)
 
     def getitem(self, key):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            try:
-                return dst[key]
-            except AbstractDriverError as e:
-                logging.error(repr(e))
-            except Exception as e:
-                logging.error('Unknown exception: {}'.format(repr(e)))
-
         return getattr(self, key)
 
     def setitem(self, key, value):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            try:
-                dst[key] = value
-                return
-            except AbstractDriverError as e:
-                logging.error(repr(e))
-            except Exception as e:
-                logging.error('Unknown exception: {}'.format(repr(e)))
-
         setattr(self, key, value)

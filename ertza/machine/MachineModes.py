@@ -3,6 +3,8 @@
 import logging
 from collections import namedtuple
 
+logging = logging.getLogger(__name__)
+
 
 class ContinueException(BaseException):
     pass
@@ -12,23 +14,31 @@ class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
 
     MachineMap = {
-        'machine:operation_mode':   _param(str, 'rw'),
-        'machine:serialnumber':     _param(str, 'r'),
-        'machine:address':          _param(str, 'r'),
+        'operation_mode':   _param(str, 'rw'),
+        'serialnumber':     _param(str, 'r'),
+        'address':          _param(str, 'r'),
     }
 
     DirectAttributesGet = (
-        'machine:serialnumber',
-        'machine:operation_mode',
-        'machine:infos',
-        'machine:address',
+        'serialnumber',
+        'operation_mode',
+        'infos',
+        'address',
     )
 
     DirectAttributesSet = (
     )
 
+    StaticKeys = (
+        'machine:acceleration',
+        'machine:decceleration',
+        'machine:torque_rise_time',
+        'machine:torque_fall_time',
+    )
+
     def __init__(self, machine):
         self._machine = machine
+        self._last_values = {}
 
     def _check_read_access(self, key):
         self._check_key(key)
@@ -54,16 +64,15 @@ class AbstractMachineMode(object):
 
     def __setitem__(self, key, value):
         self._check_write_access(key)
-        self._machine.setitem(key, self.MachineMap[key].vtype(value))
 
-        if key in self.DirectAttributesSet:
-            return self._machine.getitem(key)
-
-        if key is 'machine:operation_mode':
+        if key == 'operation_mode':
             if isinstance(value, (list, tuple)):
                 return self._machine.set_operation_mode(*value)
             else:
                 return self._machine.set_operation_mode(value)
+
+        if key in self.DirectAttributesSet:
+            return self._machine.setitem(key)
 
         raise ContinueException()
 
@@ -80,31 +89,28 @@ class StandaloneMachineMode(AbstractMachineMode):
                          'to {0.__class__.__name__}'.format(self))
             for a, p in drv_attr_map.items():
                 StandaloneMachineMode.MachineMap.update({
-                    'machine:{}'.format(a): self._param(*p),
+                    '{}'.format(a): self._param(*p),
                 })
 
         except AttributeError:
             pass
 
+    def __getitem__(self, key):
+        try:
+            res = super().__getitem__(key)
+        except ContinueException:
+            res = self._machine.driver[key]
+
+        return res
+
     def __setitem__(self, key, value):
         try:
             super().__setitem__(key, value)
         except ContinueException:
-            try:
-                skey = key.split(':', maxsplit=1)[1]
-                self._machine.driver[skey] = value
-            except KeyError as e:
-                raise e
+            self._machine.driver[key] = value
 
-    def __getitem__(self, key):
-        try:
-            return super().__getitem__(key)
-        except ContinueException:
-            try:
-                skey = key.split(':', maxsplit=1)[1]
-                return self._machine.driver[skey]
-            except KeyError as e:
-                raise e
+        if key in self.StaticKeys:
+            self.StaticKeys[key] = value
 
 
 class MasterMachineMode(StandaloneMachineMode):
@@ -115,38 +121,38 @@ class MasterMachineMode(StandaloneMachineMode):
     })
 
     DefaultForwardKeys = (
-        'machine:command:enable',
-        'machine:command:cancel',
-        'machine:command:clear_errors',
-        'machine:command:reset',
+        'command:enable',
+        'command:cancel',
+        'command:clear_errors',
+        'command:reset',
     )
 
     ForwardKeys = {
         'torque': (
-            'machine:torque_ref',
-            'machine:torque_rise_time',
-            'machine:torque_fall_time',
+            'torque_ref',
+            'torque_rise_time',
+            'torque_fall_time',
         ),
         'enhanced_torque': (
-            'machine:torque_ref',
-            'machine:torque_rise_time',
-            'machine:torque_fall_time',
-            'machine:velocity_ref',
+            'torque_ref',
+            'torque_rise_time',
+            'torque_fall_time',
+            'velocity_ref',
         ),
         'speed': (
-            'machine:velocity_ref',
-            'machine:acceleration',
-            'machine:deceleration',
+            'velocity_ref',
+            'acceleration',
+            'deceleration',
         ),
         'position': (
-            'machine:command:move_mode',
-            'machine:command:go',
-            'machine:command:set_home',
-            'machine:command:go_home',
-            'machine:velocity_ref',
-            'machine:position_ref',
-            'machine:acceleration',
-            'machine:deceleration',
+            'command:move_mode',
+            'command:go',
+            'command:set_home',
+            'command:go_home',
+            'velocity_ref',
+            'position_ref',
+            'acceleration',
+            'deceleration',
         ),
     }
 
@@ -158,26 +164,6 @@ class MasterMachineMode(StandaloneMachineMode):
             s_cf = s.slave.config
             self._slv_config[s.slave.serialnumber] = s_cf
 
-    def __getitem__(self, key):
-        try:
-            return super().__getitem__(key)
-        except ContinueException:
-            g_list = []
-            g_list.append(super().__getitem__(key))
-
-            for s in self._machine.slaves:
-                g_list.append(s.get_from_remote(key, block=True))
-
-            return g_list
-
-    def __setitem__(self, key, value):
-        try:
-            return super().__setitem__(key, value)
-        except ContinueException:
-            for s in self._machine.slaves:
-                sm = s.slave.slave_mode
-                self._send_to_slave(s, sm, key, value)
-
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
             return
@@ -187,21 +173,26 @@ class MasterMachineMode(StandaloneMachineMode):
         if key in self.DefaultForwardKeys:
             slave.set_to_remote(key, value)
 
-    def get_value_for_slave(self, slave, key, value):
+    def get_value_for_slave(self, slave, key, value=None):
         if slave.slave.serialnumber not in self._slv_config.keys():
             logging.warn('No config registered for slave {!s}'.format(slave))
             return
 
         _cf = self._slv_config[slave.slave.serialnumber]
-        vl_mode = _cf.get('{}_mode'.format(key), None)
-        if vl_mode is None:
-            return
-        elif vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
+        vl_mode = _cf.get('{}_mode'.format(key), 'forward')
+
+        if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
             logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
             return
 
+        if not value:
+            if key in self.StaticKeys:
+                value = self._last_values.get(key, self._machine[key])
+            else:
+                value = self._machine[key]
+
         vl_value = _cf.get('{}_value'.format(key), None)
-        if vl_mode == 'foward':
+        if vl_mode == 'forward':
             return value
         elif vl_mode == 'multiply':
             return vl_value * value
@@ -224,6 +215,6 @@ class SlaveMachineMode(StandaloneMachineMode):
     })
 
     DirectAttributesGet = AbstractMachineMode.DirectAttributesGet + (
-        'machine:master',
-        'machine:master_port',
+        'master',
+        'master_port',
     )

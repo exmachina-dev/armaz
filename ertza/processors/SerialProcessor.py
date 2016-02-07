@@ -6,6 +6,8 @@ from .Processor import Processor
 
 from ..commands.SerialCommand import SerialCommand
 
+logging = logging.getLogger(__name__)
+
 
 class SerialProcessor(Processor):
 
