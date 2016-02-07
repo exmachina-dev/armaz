@@ -95,14 +95,14 @@ pin_usage['AIN4'] = _unused
 pin_usage['AIN5'] = _unused
 
 
-def check_dict(chick_dict, orig_dict):
+def check_dict(check_dict, orig_dict):
     for key, value in check_dict.items():
         try:
             if value == orig_dict[key]:
-                print('\t\t{:>16}: {:<32}\tOk'.format(key, value))
+                print('\t{:>16}: {!s:<32}\tOk'.format(key, value))
             else:
-                print('\t\t{:>16}: {:<32}\tError: '
-                      'original value {}'.format(key, value, orig_dict[key]))
+                print('\t{:>16}: {!s:<32}\tError: '
+                      'original value {!s}'.format(key, value, orig_dict[key]))
         except KeyError:
             print('\t\tUnrecognized key: {}'.format(key))
 
@@ -194,40 +194,40 @@ with open(eeprom, 'rb') as e:
     print(' Done.')
 
     print('Checking EEPROM data...')
-    edata = {
-        'eeprom_header': data[0:4],
-        'eeprom_rev': data[4:6].decode(),
-        'name': data[6:38].strip().decode(),
-        'revision': data[38:42].decode(),
-        'manufacturer': data[42:58].strip().decode(),
-        'partnumber': data[58:74].strip().decode(),
-        'nb_pins_used': struct.unpack('>h', data[74:76])[0],
-        'serialnumber': data[76:88].decode(),
+    pdata = {
+        'eeprom_header': edata[0:4],
+        'eeprom_rev': edata[4:6],
+        'name': edata[6:38],
+        'revision': edata[38:42],
+        'manufacturer': edata[42:58],
+        'partnumber': edata[58:74],
+        'nb_pins_used': edata[74:76],
+        'serialnumber': edata[76:88],
     }
 
     print('\tChecking cape data...')
-    check_dict(edata, data)
+    check_dict(pdata, data)
     print('\tDone.',)
 
-    edata = {
-        'pin_data': data[88:236],
+    pdata = {
+        'pin_data': edata[88:236],
     }
-    edata = {
-        'VDD_3V3B_current': struct.unpack('>h', data[236:238])[0],
-        'VDD_5V_current': struct.unpack('>h', data[238:240])[0],
-        'SYS_5V_current': struct.unpack('>h', data[240:242])[0],
-        'DC_supplied_current': struct.unpack('>h', data[242:244])[0],
+    pdata = {
+        'VDD_3V3B_current': edata[236:238],
+        'VDD_5V_current': edata[238:240],
+        'SYS_5V_current': edata[240:242],
+        'DC_supplied_current': edata[242:244],
     }
 
     print('\tChecking power data...')
-    check_dict(edata, powerdata)
+    check_dict(pdata, power_data)
     print('\tDone.',)
 
-    edata = {
-        'variant': data[244:260].strip().decode(),
+    pdata = {
+        'variant': edata[244:260],
     }
     print('\tChecking custom data...')
-    check_dict(edata, custom_data)
+    check_dict(pdata, custom_data)
     print('\tDone.',)
     print('EEPROM check done.')
 
