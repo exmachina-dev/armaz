@@ -56,10 +56,12 @@ class ModbusBackend(object):
 
         try:
             response = self.rhr(start)
+            if not response:
+                return
             res = bitstring.BitArray('0b%s' % ''.join(response)).unpack(fmt)
         except TypeError as e:
             logging.error('Unexpected error: {!s}'.format(e))
-            return
+            res = None
         return res
 
     def _read_holding_registers(self, address):

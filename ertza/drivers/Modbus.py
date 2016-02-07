@@ -228,6 +228,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             raise ReadOnlyError(key)
 
         res = self.back.read_netdata(nd.addr, nd.fmt)
+        if not res:
+            return
 
         return self._input_value(key, vt(res[st]))
 

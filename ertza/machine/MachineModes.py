@@ -189,7 +189,11 @@ class MasterMachineMode(StandaloneMachineMode):
             if key in self.StaticKeys:
                 value = self._last_values.get(key, self._machine[key])
             else:
-                value = self._machine[key]
+                try:
+                    value = self._machine[key]
+                except ContinueException:
+                    logging.warn('No value returned for {}'.format(key))
+                    return
 
         vl_value = _cf.get('{}_value'.format(key), None)
         if vl_mode == 'forward':
