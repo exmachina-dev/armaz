@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import time
 import logging
 from collections import namedtuple
 
@@ -156,8 +157,12 @@ class MasterMachineMode(StandaloneMachineMode):
         ),
     }
 
+    ValueGuard = {}
+
     def __init__(self, machine):
         super().__init__(machine)
+
+        self.guard_interval = 0.05
 
         self._slv_config = {}
         for s in self._machine.slaves:
@@ -190,7 +195,7 @@ class MasterMachineMode(StandaloneMachineMode):
                 value = self._last_values.get(key, self._machine[key])
             else:
                 try:
-                    value = self._machine[key]
+                    value = self.get_guarded_value(key)
                 except ContinueException:
                     logging.warn('No value returned for {}'.format(key))
                     return
@@ -208,6 +213,22 @@ class MasterMachineMode(StandaloneMachineMode):
             return vl_value - value
         elif vl_mode == 'default':
             return vl_value
+
+    def get_guarded_value(self, key):
+        gvalue, gtime = self.ValueGuard.get(key, (None, None,))
+        if gvalue is not None:
+            if time.time() - gtime > self.guard_interval:
+                nvalue = self._machine[key]
+                ntime = time.time()
+                self.ValueGuard[key] = (nvalue, ntime)
+                return nvalue
+            else:
+                return gvalue
+        else:
+            nvalue = self._machine[key]
+            ntime = time.time()
+            self.ValueGuard[key] = (nvalue, ntime)
+            return nvalue
 
 
 class SlaveMachineMode(StandaloneMachineMode):
