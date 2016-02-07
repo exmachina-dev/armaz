@@ -54,7 +54,12 @@ class ModbusBackend(object):
         self._check_netdata(netdata)
         start = netdata * self.register_nb_by_netdata
 
-        res = bitstring.BitArray('0b%s' % ''.join(self.rhr(start))).unpack(fmt)
+        try:
+            response = self.rhr(start)
+            res = bitstring.BitArray('0b%s' % ''.join(response)).unpack(fmt)
+        except TypeError as e:
+            logging.error('Unexpected error: {!s}'.format(e))
+            return
         return res
 
     def _read_holding_registers(self, address):
