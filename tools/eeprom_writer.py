@@ -94,6 +94,7 @@ pin_usage['AIN3'] = _unused
 pin_usage['AIN4'] = _unused
 pin_usage['AIN5'] = _unused
 
+check_errors = 0
 
 def check_dict(check_dict, orig_dict):
     for key, value in check_dict.items():
@@ -103,6 +104,7 @@ def check_dict(check_dict, orig_dict):
             else:
                 print('\t{:>16}: {!s:<32}\tError: '
                       'original value {!s}'.format(key, value, orig_dict[key]))
+                check_errors += 1
         except KeyError:
             print('\t\tUnrecognized key: {}'.format(key))
 
@@ -231,4 +233,13 @@ with open(eeprom, 'rb') as e:
     print('\tDone.',)
     print('EEPROM check done.')
 
+if check_errors != 0:
+    print('{} errors while checking EEPROM. Check EEPROM write-protect.'.format(check_errors))
+else:
+    if input('Clean commissioning packages (y/N): ') == 'y':
+        import subprocess
 
+        cmd = ['opkg', 'remove', 'armaz-commissioning-wizard', 'emmc-flasher', 'ertza-eeprom',]
+        subprocess.check_output(cmd, shell=True, universal_newlines=True)
+
+    print('\nAll done.')
