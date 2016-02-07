@@ -17,7 +17,7 @@ setup(
     version=__version__,
     packages = find_packages(),
     description="Firmware found in Eisla product range by ExMachina SAS.",
-    long_description=file_content('README.rst'),
+    long_description=file_content('README.md'),
     author="Benoit Rapidel, ExMachina SAS",
     author_email="benoit.rapidel+devs@exmachina.fr",
     url="http://github.org/exmachina-dev/ertza.git",
