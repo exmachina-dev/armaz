@@ -154,19 +154,19 @@ custom_data = OrderedDict()
 custom_data['variant'] = variant.ljust(16).encode()
 
 with open(eeprom, 'wb') as e:
-    print('Erasing existing data…', end='')
+    print('Erasing existing data...', end='')
     e.write(b'\x00'*260)
     print(' Done.')
 
     e.seek(0)
-    print('Writing cape data…', end='')
+    print('Writing cape data...', end='')
     for d in data.items():
         e.write(d[1])
     print(' Done.')
 
     pin_format = 'uint:1, uint:2, pad:6, uint:1, uint:1, uint:1, uint:1, uint:3'
     e.seek(88)
-    print('Writing pins data…', end='')
+    print('Writing pins data...', end='')
     for p in pin_usage.items():
         if len(p[1]) != 7:
             print('Invalid pin config: {0}, {1}'.format(*p))
@@ -177,23 +177,23 @@ with open(eeprom, 'wb') as e:
     print(' Done.')
 
     e.seek(236)
-    print('Writing power data…', end='')
+    print('Writing power data...', end='')
     for d in power_data.items():
         e.write(d[1])
     print(' Done.')
 
     e.seek(244)
-    print('Writing custom data…', end='')
+    print('Writing custom data...', end='')
     for d in custom_data.items():
         e.write(d[1])
     print(' Done.')
 
 with open(eeprom, 'rb') as e:
-    print('Reading EEPROM…', end='')
+    print('Reading EEPROM...', end='')
     edata = e.read(260)
     print(' Done.')
 
-    print('Checking EEPROM data…')
+    print('Checking EEPROM data...')
     edata = {
         'eeprom_header': data[0:4],
         'eeprom_rev': data[4:6].decode(),
@@ -205,7 +205,7 @@ with open(eeprom, 'rb') as e:
         'serialnumber': data[76:88].decode(),
     }
 
-    print('\tChecking cape data…')
+    print('\tChecking cape data...')
     check_dict(edata, data)
     print('\tDone.',)
 
@@ -219,14 +219,14 @@ with open(eeprom, 'rb') as e:
         'DC_supplied_current': struct.unpack('>h', data[242:244])[0],
     }
 
-    print('\tChecking power data…')
+    print('\tChecking power data...')
     check_dict(edata, powerdata)
     print('\tDone.',)
 
     edata = {
         'variant': data[244:260].strip().decode(),
     }
-    print('\tChecking custom data…')
+    print('\tChecking custom data...')
     check_dict(edata, custom_data)
     print('\tDone.',)
     print('EEPROM check done.')
