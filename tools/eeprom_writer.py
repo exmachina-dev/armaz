@@ -102,9 +102,9 @@ def check_dict(check_dict, orig_dict):
     for key, value in check_dict.items():
         try:
             if value == orig_dict[key]:
-                print('    {:>16}: {!s:>36}    Ok'.format(key, value))
+                print('    {:<20}: {!s:<36}    Ok'.format(key, value))
             else:
-                print('    {:>16}: {!s:>36}    Error: '
+                print('    {:<20}: {!s:<36}    Error: '
                       'original value {!s}'.format(key, value, orig_dict[key]))
                 check_errors += 1
         except KeyError:
