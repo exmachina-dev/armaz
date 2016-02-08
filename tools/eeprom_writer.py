@@ -112,6 +112,8 @@ def check_dict(check_dict, orig_dict):
 
     return check_errors
 
+    return check_errors
+
 
 def serial_gen():
     isodate = datetime.date.today().isocalendar()
