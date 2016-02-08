@@ -97,6 +97,8 @@ pin_usage['AIN5'] = _unused
 check_errors = 0
 
 def check_dict(check_dict, orig_dict):
+    check_errors = 0
+
     for key, value in check_dict.items():
         try:
             if value == orig_dict[key]:
@@ -107,6 +109,8 @@ def check_dict(check_dict, orig_dict):
                 check_errors += 1
         except KeyError:
             print('\t\tUnrecognized key: {}'.format(key))
+
+    return check_errors
 
 
 def serial_gen():
@@ -208,7 +212,7 @@ with open(eeprom, 'rb') as e:
     }
 
     print('\tChecking cape data...')
-    check_dict(pdata, data)
+    check_errors += check_dict(pdata, data)
     print('\tDone.',)
 
     pdata = {
@@ -222,14 +226,14 @@ with open(eeprom, 'rb') as e:
     }
 
     print('\tChecking power data...')
-    check_dict(pdata, power_data)
+    check_errors += check_dict(pdata, power_data)
     print('\tDone.',)
 
     pdata = {
         'variant': edata[244:260],
     }
     print('\tChecking custom data...')
-    check_dict(pdata, custom_data)
+    check_errors += check_dict(pdata, custom_data)
     print('\tDone.',)
     print('EEPROM check done.')
 
@@ -239,7 +243,8 @@ else:
     if input('Clean commissioning packages (y/N): ') == 'y':
         import subprocess
 
-        cmd = ['opkg', 'remove', 'armaz-commissioning-wizard', 'emmc-flasher', 'ertza-eeprom',]
-        subprocess.check_output(cmd, shell=True, universal_newlines=True)
+        cmd = ['opkg', 'remove',]
+        for pkg in ['armaz-commissioning-wizard', 'emmc-flasher', 'ertza-eeprom',]:
+            subprocess.check_output(cmd + [pkg,], shell=True, universal_newlines=True)
 
     print('\nAll done.')
