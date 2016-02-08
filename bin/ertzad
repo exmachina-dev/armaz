@@ -8,10 +8,7 @@ from ertza import Ertza
 
 class ErtzaDaemon(Daemon):
     def run(self, parent_args=None):
-        if parent_args:
-            Ertza.main(parent_args=parent_args)
-        else:
-            Ertza.main()
+        Ertza.main(parent_args=parent_args)
 
 
 if __name__ == '__main__':
@@ -22,17 +19,18 @@ if __name__ == '__main__':
     parser.add_argument('action', help='action to execute',
                         choices=['start', 'stop', 'restart'])
     parser.add_argument('-p', '--pidfile', help='pid file', default='/var/run/ertza.pid')
-    parser.add_argument('-i', '--stdin', help='redirect standard input to FILE')
-    parser.add_argument('-o', '--stdout', help='redirect standard output to FILE')
-    parser.add_argument('-e', '--stderr', help='redirect standard error output to FILE')
+    parser.add_argument('-i', '--stdin', help='redirect standard input to STDIN')
+    parser.add_argument('-o', '--stdout', help='redirect standard output to STDOUT')
+    parser.add_argument('-e', '--stderr', help='redirect standard error output to STDERR')
+    parser.add_argument('-f', '--foreground', help='don\'t detach process', action='store_true')
 
     args, args_remaining = parser.parse_known_args()
 
     daemon = ErtzaDaemon(**vars(args))
 
     if args.action == 'start':
-        print('Starting ertza...')
-        daemon.start(parent_args=args_remaining, done_msg=' done.')
+        print('Starting ertza...', end='')
+        daemon.start(parent_args=args_remaining, foreground=args.foreground, done_msg=' done.')
         print(' done.')
     elif args.action == 'stop':
         print('Stopping ertza...', end='')

@@ -86,9 +86,8 @@ class Daemon(object):
         # Check for a pidfile to see if the daemon already runs
         try:
             with open(self.pidfile, 'r') as pf:
-
                 pid = int(pf.read().strip())
-        except IOError:
+        except (IOError, ValueError):
             pid = None
 
         if pid:
@@ -98,8 +97,10 @@ class Daemon(object):
             sys.exit(1)
 
         msg = kwargs.pop('done_msg', None)
+        foreground = kwargs.pop('foreground', None)
         # Start the daemon
-        self.daemonize()
+        if not foreground:
+            self.daemonize()
         self.run(*args, **kwargs)
         if msg:
             print(msg)
