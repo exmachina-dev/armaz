@@ -10,6 +10,9 @@ logging = logging.getLogger(__name__)
 class ContinueException(BaseException):
     pass
 
+class MachineModeException(Exception):
+    pass
+
 
 class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
@@ -197,8 +200,9 @@ class MasterMachineMode(StandaloneMachineMode):
                 try:
                     value = self.get_guarded_value(key)
                 except ContinueException:
-                    logging.warn('No value returned for {}'.format(key))
-                    return
+                    raise MachineModeException('No value returned for '
+                                               '{0.slave.serialnumber} '
+                                               '({1} asked)'.format(slave, key))
 
         vl_value = _cf.get('{}_value'.format(key), None)
         if vl_mode == 'forward':
