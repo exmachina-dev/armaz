@@ -272,11 +272,15 @@ class SlaveMachine(AbstractMachine):
             logging.warn('Machine keys not found')
             return
 
-        value = self.machine.machine_keys.get_value_for_slave(self, source)
+        try:
+            value = self.machine.machine_keys.get_value_for_slave(self, source)
 
-        if value is None:
-            logging.warn('Unable to get {0} for {1!s}'.format(source, self))
-            return
+            if value is None:
+                raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
+        except SlaveMachineError as e:
+            logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
+        except Exception as e:
+            logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
 
         if lvalue:
             if value != lvalue:
