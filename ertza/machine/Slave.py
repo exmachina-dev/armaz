@@ -26,8 +26,18 @@ CONTROL_MODES = {
 }
 
 
+FatalEvent = Event()
+
+
 class SlaveMachineError(AbstractMachineError):
     pass
+
+
+class FatalSlaveMachineError(SlaveMachineError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        FatalEvent.set()
+        logging.error('Fatal error, disabling all slaves')
 
 
 class SlaveMachine(AbstractMachine):
@@ -182,6 +192,11 @@ class SlaveMachine(AbstractMachine):
         self.last_values = {}
         self.set_control_mode(smode)
         while not self.running_ev.is_set():
+            if FatalEvent.is_set():
+                self.set_to_remote('machine:command:enable', False)
+                self.running_ev.wait(self.refresh_interval)
+                continue
+
             try:
                 if smode == 'torque':
                     self._send_if_latest('machine:torque_ref', source='machine:torque')
