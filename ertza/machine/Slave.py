@@ -159,8 +159,8 @@ class SlaveMachine(AbstractMachine):
         self.driver.exit()
 
     def loop(self):
-        try:
-            while not self.running_ev.is_set():
+        while not self.running_ev.is_set():
+            try:
                 recv_item = self.bridge.get(block=True, timeout=2)
                 if not isinstance(recv_item, self._Request):
                     logging.error('Unsupported object in queue: %s' % repr(recv_item))
@@ -184,8 +184,8 @@ class SlaveMachine(AbstractMachine):
                     logging.error('Uncatched exception in {n} loop: {e}'.format(
                         n=self.__class__.__name__, e=e))
                 self.bridge.task_done()
-        except Empty:
-            pass
+            except Empty:
+                pass
 
     def watcher_loop(self):
         smode = self.slave.slave_mode
