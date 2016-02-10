@@ -2,7 +2,6 @@
 
 import liblo as lo
 import logging
-from datetime import datetime
 from threading import Thread
 from threading import Event
 from queue import Queue, Empty

@@ -10,6 +10,7 @@ logging = logging.getLogger(__name__)
 class ContinueException(BaseException):
     pass
 
+
 class MachineModeException(Exception):
     pass
 
