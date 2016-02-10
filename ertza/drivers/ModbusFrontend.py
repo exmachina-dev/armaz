@@ -25,6 +25,8 @@ class ModbusDriverFrontend(object):
         self.acceleration = self._safe_config_get("acceleration", float, 1)
         self.deceleration = self._safe_config_get("deceleration", float, 1)
 
+        self.control_mode = self._safe_config_get("control_mode", int, 2)
+
         self.torque_rise_time = self._safe_config_get("torque_rise_time", float, 5000)
         self.torque_fall_time = self._safe_config_get("torque_fall_time", float, 5000)
 
@@ -132,6 +134,7 @@ class ModbusDriverFrontend(object):
         return acc, dec
 
     def send_default_values(self):
+        self['command:control_mode'] = self.control_mode
         self['acceleration'] = self.acceleration
         self['deceleration'] = self.deceleration
         self['torque_rise_time'] = self.torque_rise_time
