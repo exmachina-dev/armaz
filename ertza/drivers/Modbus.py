@@ -238,8 +238,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             raise ReadOnlyError(key)
 
         res = self.back.read_netdata(nd.addr, nd.fmt)
-        if not res:
-            return
+        if res is None:
+            raise ModbusDriverError('No data returned from backend for {}'.format(key))
 
         return self._input_value(key, vt(res[st]))
 

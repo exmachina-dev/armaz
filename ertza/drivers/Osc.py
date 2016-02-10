@@ -156,6 +156,7 @@ class OscDriver(AbstractDriver):
             return ret
         except OscDriverTimeout as e:
             logging.error(e)
+            raise e
         except OscDriverError as e:
             logging.error(e)
 
