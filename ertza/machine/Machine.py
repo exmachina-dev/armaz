@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import time
 import logging
+
+from threading import Event, Thread
 
 from ertza.machine.AbstractMachine import AbstractMachine
 from ertza.machine.AbstractMachine import AbstractMachineError
@@ -43,6 +46,9 @@ class Machine(AbstractMachine):
         self.master = None
         self.operation_mode = None
         self.machine_keys = None
+
+        self._slave_timeout = 1.0
+        self._last_command_time = time.time()
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -326,6 +332,10 @@ class Machine(AbstractMachine):
             self.machine_keys = SlaveMachineMode(self)
             self.operation_mode = mode
 
+            self._timeout_thread = Thread(target=self._timeout_watcher)
+            self._timeout_thread.daemon = True
+            self._timeout_thread.start()
+
     @property
     def slave_mode(self):
         return self._check_operation_mode('slave', raise_exception=False)
@@ -372,6 +382,9 @@ class Machine(AbstractMachine):
         if dst is not self:
             return dst[key]
 
+        if self.slave_mode:
+            self._last_command_time = time.time()
+
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
@@ -384,6 +397,9 @@ class Machine(AbstractMachine):
         if dst is not self:
             dst[key] = value
             return dst[key]
+
+        if self.slave_mode:
+            self._last_command_time = time.time()
 
         self.machine_keys[key] = value
 
@@ -400,3 +416,12 @@ class Machine(AbstractMachine):
 
     def setitem(self, key, value):
         setattr(self, key, value)
+
+    def _timeout_watcher(self):
+        _running_event = Event()
+        while not _running_event.is_set():
+            if time.time() - self._last_command_time > self._slave_timeout:
+                self['machine:command:enable'] = False
+                logging.error('Timeout detected, disabling drive')
+
+            _running_event.wait(self._slave_timeout)
