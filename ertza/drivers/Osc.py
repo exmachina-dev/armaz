@@ -60,8 +60,8 @@ class OscDriver(AbstractDriver):
             logging.exception('Error while registering: %s' % str(e))
 
     def exit(self):
-        self['command:stop'] = True
-        self['command:enable'] = False
+        self['machine:command:stop'] = True
+        self['machine:command:enable'] = False
 
         self.send_to_slave('free', self.machine.serialnumber)
         self.running.set()
