@@ -162,7 +162,7 @@ class MasterMachineMode(StandaloneMachineMode):
     def __init__(self, machine):
         super().__init__(machine)
 
-        self.guard_interval = 0.05
+        self.guard_interval = 0.25
 
         self._slv_config = {}
         for s in self._machine.slaves:
