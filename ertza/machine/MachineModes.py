@@ -194,6 +194,13 @@ class MasterMachineMode(StandaloneMachineMode):
             logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
             return
 
+        vl_value = _cf.get('{}_value'.format(key), None)
+        if vl_mode in ('multiply', 'divide', 'add', 'substract', 'default',) and vl_value is None:
+            raise MachineModeException('No value configured for '
+                                       '{0} in {1!s}'.format(key, slave))
+        if vl_mode == 'default':
+            return vl_value
+
         if not value:
             if key in self.StaticKeys:
                 value = self._last_values.get(key, self._machine[key])
@@ -205,7 +212,6 @@ class MasterMachineMode(StandaloneMachineMode):
                                                '{0.slave.serialnumber} '
                                                '({1} asked)'.format(slave, key))
 
-        vl_value = _cf.get('{}_value'.format(key), None)
         if vl_mode == 'forward':
             return value
         elif vl_mode == 'multiply':
@@ -216,8 +222,6 @@ class MasterMachineMode(StandaloneMachineMode):
             return vl_value + value
         elif vl_mode == 'substract':
             return vl_value - value
-        elif vl_mode == 'default':
-            return vl_value
 
     def get_guarded_value(self, key):
         gvalue, gtime = self.ValueGuard.get(key, (None, None,))
