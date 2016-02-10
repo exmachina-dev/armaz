@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from collections import namedtuple
 
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
@@ -11,7 +12,12 @@ from ertza.drivers.Utils import retry
 
 
 class ModbusDriverError(AbstractDriverError):
-    pass
+    def __init__(self, exception=None):
+        self._parent_exception = exception
+
+    def __repr__(self):
+        if self._parent_exception:
+            return '{0.__class__.__name__}: {0._parent_exception!r}'.format(self)
 
 
 class ReadOnlyError(ModbusDriverError, IOError):
@@ -155,26 +161,30 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         return attr_map
 
     def __getitem__(self, key):
-        if len(key.split(':')) == 2:
-            seckey, subkey = key.split(':')
-        else:
-            seckey, subkey = key, None
-
-        if seckey not in self.netdata_map:
-            raise KeyError(seckey)
-
-        if type(self.netdata_map[seckey]) == dict:
-            if subkey:
-                if subkey not in self.netdata_map:
-                    raise KeyError(subkey)
-                ndk = self.netdata_map[seckey][subkey]
+        try:
+            if len(key.split(':')) == 2:
+                seckey, subkey = key.split(':')
             else:
-                return [(sk, self._get_value(self.netdata_map[seckey][sk], key),)
-                        for sk in self.netdata_map[seckey].keys()]
-        else:
-            ndk = self.netdata_map[seckey]
+                seckey, subkey = key, None
 
-        return self._get_value(ndk, seckey)
+            if seckey not in self.netdata_map:
+                raise KeyError(seckey)
+
+            if type(self.netdata_map[seckey]) == dict:
+                if subkey:
+                    if subkey not in self.netdata_map:
+                        raise KeyError(subkey)
+                    ndk = self.netdata_map[seckey][subkey]
+                else:
+                    return [(sk, self._get_value(self.netdata_map[seckey][sk], key),)
+                            for sk in self.netdata_map[seckey].keys()]
+            else:
+                ndk = self.netdata_map[seckey]
+
+            return self._get_value(ndk, seckey)
+        except Exception as e:
+            logging.error('Got exception in {!r}: {!r}'.format(self, e))
+            raise ModbusDriverError(e)
 
     def __setitem__(self, key, value):
         if len(key.split(':')) == 2:
@@ -232,6 +242,9 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             return
 
         return self._input_value(key, vt(res[st]))
+
+    def __repr__(self):
+        return '{0.__class__.__name__}'.format(self)
 
 if __name__ == "__main__":
     c = {

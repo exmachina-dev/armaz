@@ -170,6 +170,9 @@ class SlaveMachine(AbstractMachine):
                 except SlaveMachineError as e:
                     logging.error('Exception in {n} loop: {e}'.format(
                         n=self.__class__.__name__, e=e))
+                except Exception as e:
+                    logging.error('Uncatched exception in {n} loop: {e}'.format(
+                        n=self.__class__.__name__, e=e))
                 self.bridge.task_done()
         except Empty:
             pass
