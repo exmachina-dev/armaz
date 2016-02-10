@@ -218,6 +218,8 @@ class ModbusDriverFrontend(object):
     def _safe_config_get(self, key, vtype=None, fallback=None):
         try:
             if vtype:
+                if vtype == bool:
+                    return True if self.frontend_config[key] == 'True' else False
                 return vtype(self.frontend_config[key])
             else:
                 return self.frontend_config[key]
