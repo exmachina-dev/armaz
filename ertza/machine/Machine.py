@@ -80,6 +80,10 @@ class Machine(AbstractMachine):
     def exit(self):
         self.driver.exit()
 
+        if self.master_mode:
+            for s in self.slaves:
+                s.exit()
+
         for n, c in self.comms.items():
             c.exit()
 
