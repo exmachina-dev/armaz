@@ -57,9 +57,9 @@ class ModbusBackend(object):
         try:
             response = self.rhr(start)
             if not response:
-                return
+                raise ModbusBackendError('No data in response.')
             res = bitstring.BitArray('0b%s' % ''.join(response)).unpack(fmt)
-        except TypeError as e:
+        except Exception as e:
             logging.error('Unexpected error: {!s}'.format(e))
             raise ModbusBackendError('Unexpected error: {!s}'.format(e))
         return res
