@@ -115,6 +115,7 @@ class ModbusBackend(object):
                 return ''.join(regs)
             else:
                 logging.warn('Unhandled modbus response: {!s} ({})'.format(response, rpt))
+                self.connected = False
                 raise ModbusBackendError('Unexcepted response from drive: {!s}'.format(response))
         except pmde.ConnectionException:
             self.connected = False
