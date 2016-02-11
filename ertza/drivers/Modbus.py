@@ -239,11 +239,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
         try:
             res = self.back.read_netdata(nd.addr, nd.fmt)
+            return self._input_value(key, vt(res[st]))
         except ModbusBackendError as e:
             raise ModbusDriverError('No data returned from backend '
                                     'for {}: {!s}'.format(key, e))
-
-        return self._input_value(key, vt(res[st]))
 
     def __repr__(self):
         return '{0.__class__.__name__}'.format(self)
