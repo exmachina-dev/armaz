@@ -219,9 +219,15 @@ class MasterMachineMode(StandaloneMachineMode):
         elif vl_mode == 'divide':
             return vl_value / value
         elif vl_mode == 'add':
-            return vl_value + value
+            if value >= 0:
+                return vl_value + value
+            else:
+                return vl_value - value
         elif vl_mode == 'substract':
-            return vl_value - value
+            if value >= 0:
+                return vl_value - value
+            else:
+                return vl_value + value
 
     def get_guarded_value(self, key):
         gvalue, gtime = self.ValueGuard.get(key, (None, None,))
