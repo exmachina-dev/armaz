@@ -18,6 +18,8 @@ from ertza.drivers.AbstractDriver import AbstractDriverError
 from ertza.machine.Slave import Slave, SlaveMachine
 from ertza.machine.Slave import SlaveMachineError, SlaveRequest
 
+from ertza.drivers.Utils import retry
+
 logging = logging.getLogger(__name__)
 
 
