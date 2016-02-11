@@ -5,7 +5,7 @@ from collections import namedtuple
 
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 
-from ertza.drivers.ModbusBackend import ModbusBackend
+from ertza.drivers.ModbusBackend import ModbusBackend, ModbusBackendError
 from ertza.drivers.ModbusFrontend import ModbusDriverFrontend
 
 from ertza.drivers.Utils import retry
@@ -237,9 +237,11 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         if 'r' not in md:
             raise ReadOnlyError(key)
 
-        res = self.back.read_netdata(nd.addr, nd.fmt)
-        if res is None:
-            raise ModbusDriverError('No data returned from backend for {}'.format(key))
+        try:
+            res = self.back.read_netdata(nd.addr, nd.fmt)
+        except ModbusBackendError as e:
+            raise ModbusDriverError('No data returned from backend '
+                                    'for {}: {!s}'.format(key, e))
 
         return self._input_value(key, vt(res[st]))
 
