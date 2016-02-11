@@ -40,59 +40,60 @@ class FatalSlaveMachineError(SlaveMachineError):
         logging.error('Fatal error, disabling all slaves')
 
 
+class SlaveRequest(object):
+    def __init__(self, attr, *args, **kwargs):
+        self._args = ()
+        self._attr = None
+        if 'getitem' in kwargs and kwargs['getitem']:
+            self._item = attr
+        elif 'setitem' in kwargs and kwargs['setitem']:
+            self._item = attr
+            self._args = args
+        else:
+            self._attr = attr
+            self._args = args
+
+        self._kwargs = {
+            'getitem': False,
+            'setitem': False,
+        }
+        self._kwargs.update(kwargs)
+        self._callback = None
+
+    def set_callback(self, cb):
+        self._callback = cb
+
+    @property
+    def attribute(self):
+        return self._attr
+
+    @property
+    def item(self):
+        return self._item
+
+    @property
+    def args(self):
+        return self._args
+
+    @property
+    def kwargs(self):
+        return self._kwargs
+
+    @property
+    def callback(self):
+        return self._callback
+
+    def __getattr__(self, name):
+        return self._kwargs[name]
+
+    def __repr__(self):
+        return '{} {} {} {}'.format('RQ', self.attribute,
+                                    ' '.join(self.args), self.callback)
+
+
 class SlaveMachine(AbstractMachine):
 
     machine = None
-
-    class _Request(object):
-        def __init__(self, attr, *args, **kwargs):
-            self._args = ()
-            self._attr = None
-            if 'getitem' in kwargs and kwargs['getitem']:
-                self._item = attr
-            elif 'setitem' in kwargs and kwargs['setitem']:
-                self._item = attr
-                self._args = args
-            else:
-                self._attr = attr
-                self._args = args
-
-            self._kwargs = {
-                'getitem': False,
-                'setitem': False,
-            }
-            self._kwargs.update(kwargs)
-            self._callback = None
-
-        def set_callback(self, cb):
-            self._callback = cb
-
-        @property
-        def attribute(self):
-            return self._attr
-
-        @property
-        def item(self):
-            return self._item
-
-        @property
-        def args(self):
-            return self._args
-
-        @property
-        def kwargs(self):
-            return self._kwargs
-
-        @property
-        def callback(self):
-            return self._callback
-
-        def __getattr__(self, name):
-            return self._kwargs[name]
-
-        def __repr__(self):
-            return '{} {} {} {}'.format('RQ', self.attribute,
-                                        ' '.join(self.args), self.callback)
 
     def __init__(self, slave):
 
@@ -162,7 +163,7 @@ class SlaveMachine(AbstractMachine):
         while not self.running_ev.is_set():
             try:
                 recv_item = self.bridge.get(block=True, timeout=2)
-                if not isinstance(recv_item, self._Request):
+                if not isinstance(recv_item, SlaveRequest):
                     logging.error('Unsupported object in queue: %s' % repr(recv_item))
                     continue
 
@@ -220,7 +221,7 @@ class SlaveMachine(AbstractMachine):
 
     def request_from_remote(self, callback, attribute, *args, **kwargs):
         event = kwargs.pop('event', None)
-        rq = self._Request(attribute, *args, **kwargs)
+        rq = SlaveRequest(attribute, *args, **kwargs)
         if event:
             callback = functools.partial(callback, event=event)
 

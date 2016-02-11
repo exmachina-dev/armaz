@@ -15,7 +15,8 @@ from ertza.machine.MachineModes import SlaveMachineMode
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
-from ertza.machine.Slave import Slave, SlaveMachine, SlaveMachineError
+from ertza.machine.Slave import Slave, SlaveMachine
+from ertza.machine.Slave import SlaveMachineError, SlaveRequest
 
 logging = logging.getLogger(__name__)
 
@@ -172,6 +173,19 @@ class Machine(AbstractMachine):
         self.slaves = tuple(self.slaves)
         return self.slaves
 
+    @retry(SlaveMachineError, 5, 5, 2)
+    def slave_block_ping(self, slave):
+        p = slave.ping()
+        if isinstance(p, SlaveRequest):
+            raise SlaveMachineError('Unable to ping slave {!r} !'.format(slave))
+
+        if isinstance(p, float):
+            return p
+        else:
+            raise MachineError('Unexpected result while pinging {!s}'.format(slave))
+
+
+    @retry(MachineError, 5, 5, 2)
     def load_slaves(self):
         if not self.slaves:
             if not self.search_slaves():
@@ -182,8 +196,10 @@ class Machine(AbstractMachine):
             logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
             self.init_slave(s)
             try:
-                logging.info('Slave at {2} took {0}ms to respond'.format(
-                    s.ping(), *s.slave))
+                ping_time = self.slave_block_ping(s)
+
+                logging.info('Slave at {2} took {0:.2} ms to respond'.format(
+                    ping_time, *s.slave))
             except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *s.slave))
