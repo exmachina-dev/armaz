@@ -113,6 +113,9 @@ class ModbusBackend(object):
                 for i in range(self.register_nb_by_netdata):
                     regs.append(fmt.format(response.getRegister(i)))
                 return ''.join(regs)
+            else:
+                logging.warn('Unhandled modbus response: {!s} ({})'.format(response, rpt))
+                raise ModbusBackendError('Unexcepted response from drive: {!s}'.format(response))
         except pmde.ConnectionException:
             self.connected = False
             raise IOError('Unable to connect to slave')
