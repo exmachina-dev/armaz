@@ -38,6 +38,11 @@ class ModbusBackend(object):
 
     def close(self):
         self._end.close()
+        self.connected = False
+
+    def reconnect(self):
+        self.close()
+        self.connect()
 
     def write_netdata(self, netdata, data, data_format=None):
         self._check_netdata(netdata)
@@ -115,7 +120,7 @@ class ModbusBackend(object):
                 return ''.join(regs)
             else:
                 logging.warn('Unhandled modbus response: {!s} ({})'.format(response, rpt))
-                self.connected = False
+                self.reconnect()
                 raise ModbusBackendError('Unexcepted response from drive: {!s}'.format(response))
         except pmde.ConnectionException:
             self.connected = False
