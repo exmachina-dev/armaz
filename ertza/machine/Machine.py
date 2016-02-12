@@ -48,7 +48,7 @@ class Machine(AbstractMachine):
         self.slaves = []
         self.master = None
         self.operation_mode = None
-        self.machine_keys = None
+        self._machine_keys = None
 
         self._slave_timeout = 1.0
         self._last_command_time = time.time()
@@ -114,6 +114,13 @@ class Machine(AbstractMachine):
 
     def send_message(self, msg):
         self.comms[msg.protocol].send_message(msg)
+
+    @property
+    def machine_keys(self):
+        if not self._machine_keys:
+            raise MachineError('No machine keys yet')
+
+        return self._machine_keys
 
     @property
     def infos(self):
@@ -329,7 +336,7 @@ class Machine(AbstractMachine):
             raise MachineError('Unexpected mode: {}'.format(mode))
 
         if mode == 'standalone':
-            self.machine_keys = StandaloneMachineMode(self)
+            self._machine_keys = StandaloneMachineMode(self)
             self.operation_mode = mode
         elif mode == 'master':
             if not self.slaves:
@@ -338,7 +345,7 @@ class Machine(AbstractMachine):
             for s in self.slaves:
                 s.enslave()
 
-            self.machine_keys = MasterMachineMode(self)
+            self._machine_keys = MasterMachineMode(self)
             self.operation_mode = mode
         elif mode == 'slave':
             if not self.master:
@@ -347,7 +354,7 @@ class Machine(AbstractMachine):
             if not self.master_port:
                 raise MachineError('No port specified for master')
 
-            self.machine_keys = SlaveMachineMode(self)
+            self._machine_keys = SlaveMachineMode(self)
             self.operation_mode = mode
 
             self._timeout_thread = Thread(target=self._timeout_watcher)
