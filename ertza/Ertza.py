@@ -3,7 +3,7 @@
 
 # Main class for ertza
 
-import logger as lg
+import logging as lg
 import os
 import os.path
 import sys
