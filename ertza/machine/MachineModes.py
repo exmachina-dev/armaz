@@ -224,7 +224,7 @@ class MasterMachineMode(StandaloneMachineMode):
         elif vl_mode == 'divide':
             return vl_value / value
         elif vl_mode == 'add':
-            logging.debug('added {}'.format(value))
+            logging.debug('added {} to {}'.format(vl_value, value))
             if value >= 0:
                 return vl_value + value
             else:
