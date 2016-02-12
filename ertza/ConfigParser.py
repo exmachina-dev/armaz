@@ -5,7 +5,7 @@ import os
 import struct
 import configparser
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger('ertza.config')
 
 _VARIANT_PATH = "/etc/ertza/variants"
 
@@ -28,10 +28,10 @@ class ConfigParser(configparser.ConfigParser):
 
         for cfg in self.config_files:
             if os.path.isfile(cfg):
-                logging.info("Found " + cfg)
+                logger.info("Found " + cfg)
                 self.read_file(open(cfg))
             else:
-                logging.warn("Config file %s not found" % cfg)
+                logger.warn("Config file %s not found" % cfg)
 
     def load_variant(self, variant=None):
         """
@@ -41,7 +41,7 @@ class ConfigParser(configparser.ConfigParser):
         """
 
         if self.variant_loaded:
-            logging.warn("Variant already loaded: %s" % self.variant)
+            logger.warn("Variant already loaded: %s" % self.variant)
             return False
         if not variant:
             cape_infos = self.find_cape()
@@ -49,25 +49,25 @@ class ConfigParser(configparser.ConfigParser):
                 try:
                     variant = cape_infos['variant'].lower()
                 except Exception as e:
-                    logging.warn('Got exception while decoding eeprom: {!s}'.format(e))
+                    logger.warn('Got exception while decoding eeprom: {!s}'.format(e))
             if not variant:
-                logging.warn("Couldn't get variant from eeprom")
+                logger.warn("Couldn't get variant from eeprom")
                 variant = self.get('machine', 'variant', fallback=False)
 
             if not variant:
-                logging.warn("Couldn't get variant from eeprom or config")
+                logger.warn("Couldn't get variant from eeprom or config")
                 return False
 
         variant_cfg = os.path.join(_VARIANT_PATH, variant + ".conf")
         if os.path.isfile(variant_cfg):
-            logging.info("Loading variant config file: %s" % variant)
+            logger.info("Loading variant config file: %s" % variant)
             variant_cfg = os.path.realpath(variant_cfg)
             self.config_files.append(variant_cfg)
             self.read_file(open(variant_cfg))
             self.variant_loaded = True
             self.variant = variant
         else:
-            logging.warn("Couldn't find variant config file " + variant_cfg)
+            logger.warn("Couldn't find variant config file " + variant_cfg)
 
     def save(self):
         """
@@ -139,8 +139,8 @@ class ConfigParser(configparser.ConfigParser):
                     }
                     return infos
                 except UnicodeDecodeError as e:
-                    logging.error('Error while decoding eeprom: {!s}'.format(e))
+                    logger.error('Error while decoding eeprom: {!s}'.format(e))
                     return False
         except IOError as e:
-            logging.error('Error while reading eeprom: {!s}'.format(e))
+            logger.error('Error while reading eeprom: {!s}'.format(e))
             return False

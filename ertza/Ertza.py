@@ -39,13 +39,13 @@ _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
 console_logger = lg.StreamHandler()
-console_formatter = lg.Formatter('%(asctime)s %(name)-12s '
+console_formatter = lg.Formatter('%(asctime)s %(name)-36s '
                                  '%(levelname)-8s %(message)s',
                                  datefmt='%Y%m%d %H:%M:%S')
 
-console_logger.setFormatter(console_formatter)
-logger = lg.getLogger(__name__)
+logger = lg.getLogger('ertza')
 logger.addHandler(console_logger)
+console_logger.setFormatter(console_formatter)
 
 
 class Ertza(object):
@@ -95,11 +95,11 @@ class Ertza(object):
                 l.set_blink(500)
 
         # Get loglevel from config file
-        level = self.machine.config.getint('system', 'loglevel')
+        level = self.machine.config.getint('system', 'loglevel', fallback=10)
         if level > 0:
             logger.info("Setting loglevel to %d" % level)
             lg.getLogger('').setLevel(level)
-            lg.getLogger(__name__).setLevel(level)
+            logger.setLevel(level)
 
         drv = machine.init_driver()
         if drv:
