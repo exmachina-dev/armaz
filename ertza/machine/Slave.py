@@ -291,9 +291,6 @@ class SlaveMachine(AbstractMachine):
 
         try:
             value = self.machine.machine_keys.get_value_for_slave(self, source)
-
-            if value is None:
-                raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
         except SlaveMachineError as e:
             logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
         except AbstractMachineError:
@@ -301,6 +298,9 @@ class SlaveMachine(AbstractMachine):
         except Exception as e:
             logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
             raise SlaveMachineError('{!s}'.format(e))
+
+        if value is None:
+            raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
 
         if lvalue:
             if value != lvalue:
