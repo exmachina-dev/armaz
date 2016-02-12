@@ -232,7 +232,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
     def get_guarded_value(self, key):
         gvalue, gtime = self.ValueGuard.get(key, (None, None,))
-        if gvalue is not None:
+        if gtime is not None:
             if time.time() - gtime > self.guard_interval:
                 nvalue = self[key]
                 ntime = time.time()
