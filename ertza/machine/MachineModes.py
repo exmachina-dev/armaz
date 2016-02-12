@@ -172,7 +172,7 @@ class MasterMachineMode(StandaloneMachineMode):
         for s in self._machine.slaves:
             s_cf = {}
             for k, v in s.slave.config.items():
-                if v.endswith('_mode'):
+                if k.endswith('_mode'):
                     s_cf[k.replace('.', ':')] = v
                 else:
                     s_cf[k.replace('.', ':')] = float(v)
