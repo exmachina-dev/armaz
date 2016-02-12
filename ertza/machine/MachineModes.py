@@ -234,14 +234,14 @@ class MasterMachineMode(StandaloneMachineMode):
         gvalue, gtime = self.ValueGuard.get(key, (None, None,))
         if gvalue is not None:
             if time.time() - gtime > self.guard_interval:
-                nvalue = self._machine[key]
+                nvalue = self[key]
                 ntime = time.time()
                 self.ValueGuard[key] = (nvalue, ntime)
                 return nvalue
             else:
                 return gvalue
         else:
-            nvalue = self._machine[key]
+            nvalue = self[key]
             ntime = time.time()
             self.ValueGuard[key] = (nvalue, ntime)
             return nvalue
