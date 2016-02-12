@@ -445,7 +445,7 @@ class Machine(AbstractMachine):
     def _timeout_watcher(self):
         _running_event = Event()
         while not _running_event.is_set():
-            if self['machine:command:enable'] == False:
+            if self['machine:status:enable'] == False:
                 _running_event.wait(self._slave_timeout)
                 continue
 
