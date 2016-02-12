@@ -38,11 +38,14 @@ _DEFAULT_CONF = "/etc/ertza/default.conf"
 _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
-lg.basicConfig(level=lg.DEBUG,
-               format='%(asctime)s %(name)-12s \
-               %(levelname)-8s %(message)s',
-               datefmt='%Y/%m/%d %H:%M:%S')
+console_logger = lg.StreamHandler()
+console_formatter = lg.Formatter('%(asctime)s %(name)-12s '
+                                 '%(levelname)-8s %(message)s',
+                                 datefmt='%Y%m%d %H:%M:%S')
+
+console_logger.setFormatter(console_formatter)
 logger = lg.getLogger(__name__)
+logger.addHandler(console_logger)
 
 
 class Ertza(object):
@@ -96,6 +99,7 @@ class Ertza(object):
         if level > 0:
             logger.info("Setting loglevel to %d" % level)
             lg.getLogger('').setLevel(level)
+            lg.getLogger(__name__).setLevel(level)
 
         drv = machine.init_driver()
         if drv:
@@ -232,7 +236,7 @@ class Ertza(object):
                 therm = Thermistor(adc_channel, 'TH{}'.format(th_p))
                 self.machine.thermistors.append(therm)
                 logger.debug('Found thermistor TH{} '
-                              'at ADC channel {}'.format(th_p, adc_channel))
+                             'at ADC channel {}'.format(th_p, adc_channel))
                 th_p += 1
 
     def _config_fans(self):
