@@ -445,6 +445,10 @@ class Machine(AbstractMachine):
     def _timeout_watcher(self):
         _running_event = Event()
         while not _running_event.is_set():
+            if self['machine:command:enable'] == False:
+                _running_event.wait(self._slave_timeout)
+                continue
+
             if time.time() - self._last_command_time > self._slave_timeout:
                 self['machine:command:enable'] = False
                 logging.error('Timeout detected, disabling drive')
