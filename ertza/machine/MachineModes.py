@@ -170,7 +170,12 @@ class MasterMachineMode(StandaloneMachineMode):
 
         self._slv_config = {}
         for s in self._machine.slaves:
-            s_cf = s.slave.config
+            s_cf = {}
+            for k, v in s.slave.config.items():
+                if v.endswith('_mode'):
+                    s_cf[k.replace('.', ':')] = v
+                else:
+                    s_cf[k.replace('.', ':')] = float(v)
             self._slv_config[s.slave.serialnumber] = s_cf
 
     def _send_to_slave(self, slave, mode=None, key='', value=None):
