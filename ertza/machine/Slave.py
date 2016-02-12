@@ -300,6 +300,8 @@ class SlaveMachine(AbstractMachine):
                 raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
         except SlaveMachineError as e:
             logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
+        except AbstractMachineError:
+            logging.warn('Machine is not ready')
         except Exception as e:
             logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
             raise SlaveMachineError('{!s}'.format(e))
