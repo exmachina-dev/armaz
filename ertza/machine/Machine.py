@@ -50,7 +50,6 @@ class Machine(AbstractMachine):
         self.operation_mode = None
         self._machine_keys = None
 
-        self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
         self._last_command_time = time.time()
 
         self.switch_callback = self._switch_cb
@@ -357,6 +356,7 @@ class Machine(AbstractMachine):
             self._machine_keys = SlaveMachineMode(self)
             self.operation_mode = mode
 
+            self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
             self._timeout_thread = Thread(target=self._timeout_watcher)
             self._timeout_thread.daemon = True
             self._timeout_thread.start()
