@@ -50,6 +50,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'torque_fall_time':     netdata(11, 'float:32'),
         'acceleration':         netdata(12, 'float:32'),
         'deceleration':         netdata(13, 'float:32'),
+        'entq_kp':              netdata(14, 'float:32'),
+        'entq_kp_vel':          netdata(15, 'float:32'),
+        'entq_ki':              netdata(16, 'float:32'),
+        'entq_kd':              netdata(17, 'float:32'),
 
         'velocity':             netdata(21, 'float:32'),
         'position':             netdata(22, 'float:32'),
