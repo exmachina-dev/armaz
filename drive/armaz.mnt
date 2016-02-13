@@ -75,7 +75,7 @@ Run(UpdateNetdataValuesTask)
 Run(UpdateStatusSlowTask)
 Loop
     If enTqMode And DRIVEENABLE(_axis) Then
-        If enTqVelRef = 0.0 Then
+        If -0.01 < enTqVelRef > 0.01 Then
             TORQUEREF(_axis) = 0
             Wait(_enTqEnableRefreshRate)
             Continue Loop
