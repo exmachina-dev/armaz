@@ -26,18 +26,18 @@ CONTROL_MODES = {
 }
 
 
-FatalEvent = Event()
-
-
 class SlaveMachineError(AbstractMachineError):
     pass
 
 
 class FatalSlaveMachineError(SlaveMachineError):
+    fatal_event = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        FatalEvent.set()
-        logging.error('Fatal error, disabling all slaves')
+        if FatalSlaveMachineError:
+            FatalSlaveMachineError.fatal_event.set()
+            logging.error('Fatal error, disabling all slaves')
 
 
 class SlaveRequest(object):
@@ -121,6 +121,10 @@ class SlaveMachine(AbstractMachine):
 
         self.last_values = {}
 
+        self.errors = 0
+        self.max_errors = 10
+        self.fatal_event = None
+
     def init_driver(self):
         drv = self.slave.driver
         logging.info("Loading %s driver" % drv)
@@ -193,7 +197,7 @@ class SlaveMachine(AbstractMachine):
         self.last_values = {}
         self.set_control_mode(smode)
         while not self.running_ev.is_set():
-            if FatalEvent.is_set():
+            if SlaveMachine.fatal_event.is_set():
                 self.set_to_remote('machine:command:enable', False)
                 self.running_ev.wait(self.refresh_interval)
                 continue
@@ -212,10 +216,17 @@ class SlaveMachine(AbstractMachine):
                     self._send_if_latest('machine:velocity_ref', source='machine:velocity')
                     self._send_if_latest('machine:acceleration')
                     self._send_if_latest('machine:deceleration')
+                self.errors = 0
             except Exception as e:
-                self.set_to_remote('machine:command:enable', False)
+                if self.errors > self.max_errors:
+                    self.set_to_remote('machine:command:enable', False)
+                    if SlaveMachine.fatal_event:
+                        self.fatal_event.set()
+                    logging.error('Slave machine disabled')
+                else:
+                    self.errors += 1
+
                 logging.error('Exception in {0} loop: {1}'.format(self.__class__.__name__, e))
-                logging.error('Slave machine disabled')
 
             self.running_ev.wait(self.refresh_interval)
 
