@@ -51,6 +51,7 @@ class Machine(AbstractMachine):
         self._machine_keys = None
 
         self._last_command_time = time.time()
+        self._timeout_event = Event()
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -423,6 +424,9 @@ class Machine(AbstractMachine):
             return dst[key]
 
         if self.slave_mode:
+            if self._timeout_event.is_set() and not self['machine:status:drive_enable']:
+                self.machine_keys['machine:command:enable'] = True
+                self._timeout_event.clear()
             self._last_command_time = time.time()
 
         self.machine_keys[key] = value
@@ -449,6 +453,7 @@ class Machine(AbstractMachine):
                 continue
 
             if time.time() - self._last_command_time > self._slave_timeout:
+                self._timeout_event.set()
                 self['machine:command:enable'] = False
                 logging.error('Timeout detected, disabling drive')
 
