@@ -16,7 +16,7 @@ from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
 from ertza.machine.Slave import Slave, SlaveMachine
-from ertza.machine.Slave import SlaveMachineError, SlaveRequest
+from ertza.machine.Slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
 from ertza.drivers.Utils import retry
 
@@ -31,6 +31,9 @@ class Machine(AbstractMachine):
     def __init__(self):
 
         SlaveMachine.machine = self
+        self.fatal_event = Event()
+        SlaveMachine.fatal_event = self.fatal_event
+        FatalSlaveMachineError.fatal_event = self.fatal_event
 
         self.version = None
 
