@@ -104,6 +104,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'torque_fall_time':     p(MFNdata['torque_fall_time'], 0, float, 'rw'),
         'acceleration':         p(MFNdata['acceleration'], 0, float, 'rw'),
         'deceleration':         p(MFNdata['deceleration'], 0, float, 'rw'),
+        'entq_kp':              p(MFNdata['entq_kp'], 0, float, 'rw'),
+        'entq_kp_vel':          p(MFNdata['entq_kp_vel'], 0, float, 'rw'),
+        'entq_ki':              p(MFNdata['entq_ki'], 0, float, 'rw'),
+        'entq_kd':              p(MFNdata['entq_kd'], 0, float, 'rw'),
 
         'velocity':             p(MFNdata['velocity'], 0, float, 'r'),
         'position':             p(MFNdata['position'], 0, float, 'r'),
