@@ -63,14 +63,17 @@ Dim enTqKP As Float = 1.25
 Dim enTqKPVel As Float = 1
 Dim enTqLimitKP As Float = 1.15
 Dim enTqKI As Float = 0.1
+Dim enTqKD As Float = 0.0
 
 Dim enTqVelLimitKP As Float = 1.025
 Dim enTqVelErrorSum As Float
 Dim enTqVelErrorSumLimit As Float = 200
+Dim enTqVelErrorPrev As Float
 Dim enTqVelErrorKP As Float = 1.25
 Dim enTqVelErrorKPLimitLow As Float = 0.25
 Dim enTqVelErrorKPLimitHigh As Float = 2
 Dim enTqVelErrorKI As Float = 0.08
+Dim enTqVelErrorKD As Float = 0
 
 TaskPriority(UpdateStatusSlowTask, 1)
 TaskPriority(UpdateNetdataValuesTask, 10)
@@ -111,6 +114,10 @@ Loop
             enTqVelErrorKI = enTqKI
         End If
         
+        ' dTerm KD
+        enTqVelErrorKD = enTqKD
+        
+        
         ' iTerm VelErrorSum clamp
         If enTqVelErrorSum > enTqVelErrorSumLimit Then
             enTqVelErrorSum = enTqVelErrorSumLimit
@@ -120,8 +127,10 @@ Loop
 
         Dim pTerm As Float
         Dim iTerm As Float
+        Dim dTerm As Float
         pTerm = enTqVelError * enTqVelErrorKP
         iTerm = enTqVelErrorSum * enTqVelErrorKI
+        dTerm = (enTqVelError - enTqVelErrorPrev) * enTqVelErrorKD
         
         If iTerm > enTqLimit Then
             iTerm = enTqLimit
@@ -129,7 +138,7 @@ Loop
             iTerm = -enTqLimit
         End If
             
-        enTq =  pTerm + iTerm
+        enTq =  pTerm + iTerm + dTerm
  
         If enTq > enTqLimit Then
             enTq = enTqLimit
@@ -138,6 +147,8 @@ Loop
         End If
             
         TORQUEREF(_axis) = enTq
+        
+        enTqVelErrorPrev = enTqVelError
             
         'Wait(_enTqEnableRefreshRate)
     Else
@@ -197,6 +208,7 @@ Sub Status()
     NETFLOAT(14) = enTqKP
     NETFLOAT(15) = enTqKPVel
     NETFLOAT(16) = enTqKI
+    NETFLOAT(17) = enTqKD
 End Sub
 
 Sub StatusSlow()
@@ -468,6 +480,16 @@ Event NETDATA16
     
     If cmdEnTqKI > 0 Then
         enTqKI = cmdEnTqKI
+    End If
+    ResetCommandTimeout
+End Event
+
+Event NETDATA17
+    Dim cmdEnTqKD As Float
+    cmdEnTqKD = NETFLOAT(17)
+    
+    If cmdEnTqKD > 0 Then
+        enTqKD = cmdEnTqKD
     End If
     ResetCommandTimeout
 End Event
