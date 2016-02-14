@@ -211,6 +211,7 @@ class Machine(AbstractMachine):
         for s in self.slaves:
             logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
             try:
+                self.init_slave(s)
                 ping_time = self.slave_block_ping(s)
                 logging.info('Slave at {2} took {0:.2} ms to respond'.format(
                     ping_time, *s.slave))
@@ -226,7 +227,7 @@ class Machine(AbstractMachine):
                                    'at {1} ({0} vs {4})'.format(*infos))
 
             else:
-                self.init_slave(s)
+                s.start()
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operation_mode()
@@ -285,7 +286,6 @@ class Machine(AbstractMachine):
     def init_slave(self, slave_machine):
         try:
             slave_machine.init_driver()
-            slave_machine.start()
         except SlaveMachineError as e:
             raise FatalMachineError('Couldn\'t initialize {2} slave at {1} '
                                     'with S/N {0}: {exc}'
