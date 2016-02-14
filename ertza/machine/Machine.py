@@ -227,7 +227,7 @@ class Machine(AbstractMachine):
                                    'at {1} ({0} vs {4})'.format(*infos))
 
             else:
-                s.start()
+                s.start(loop=True)
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operation_mode()
@@ -286,6 +286,7 @@ class Machine(AbstractMachine):
     def init_slave(self, slave_machine):
         try:
             slave_machine.init_driver()
+            slave_machine.start()
         except SlaveMachineError as e:
             raise FatalMachineError('Couldn\'t initialize {2} slave at {1} '
                                     'with S/N {0}: {exc}'

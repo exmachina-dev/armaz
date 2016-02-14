@@ -146,17 +146,22 @@ class SlaveMachine(AbstractMachine):
         logging.debug("%s driver loaded" % drv)
         return drv
 
-    def start(self):
-        self._thread = Thread(target=self.loop)
-        self._thread.daemon = True
+    def start(self, loop=False):
+        if not loop:
+            self._thread = Thread(target=self.loop)
+            self._thread.daemon = True
 
-        self._watcher_thread = Thread(target=self.watcher_loop)
-        self._watcher_thread.daemon = True
+            self._watcher_thread = Thread(target=self.watcher_loop)
+            self._watcher_thread.daemon = True
 
-        self.running_ev.clear()
-        self.driver.connect()
-        self._thread.start()
-        self._watcher_thread.start()
+            self.running_ev.clear()
+            self.driver.connect()
+            self._thread.start()
+        else:
+            if not self._watcher_thread:
+                self.start()
+
+            self._watcher_thread.start()
 
     def exit(self):
         self.running_ev.set()
