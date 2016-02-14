@@ -5,6 +5,10 @@ class AbstractMachineError(Exception):
     pass
 
 
+class AbstractFatalMachineError(AbstractMachineError):
+    pass
+
+
 class AbstractMachine(object):
 
     def __init__(self):

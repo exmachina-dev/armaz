@@ -8,7 +8,8 @@ from datetime import datetime
 import logging
 import functools
 
-from ertza.machine.AbstractMachine import AbstractMachine, AbstractMachineError
+from ertza.machine.AbstractMachine import AbstractMachine
+from ertza.machine.AbstractMachine import AbstractMachineError, AbstractFatalMachineError
 
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
@@ -30,7 +31,7 @@ class SlaveMachineError(AbstractMachineError):
     pass
 
 
-class FatalSlaveMachineError(SlaveMachineError):
+class FatalSlaveMachineError(AbstractFatalMachineError):
     fatal_event = None
 
     def __init__(self, *args, **kwargs):
@@ -94,6 +95,7 @@ class SlaveRequest(object):
 class SlaveMachine(AbstractMachine):
 
     machine = None
+    fatal_event = None
 
     def __init__(self, slave):
 
@@ -123,7 +125,6 @@ class SlaveMachine(AbstractMachine):
 
         self.errors = 0
         self.max_errors = 10
-        self.fatal_event = None
 
     def init_driver(self):
         drv = self.slave.driver
@@ -217,15 +218,21 @@ class SlaveMachine(AbstractMachine):
                     self._send_if_latest('machine:acceleration')
                     self._send_if_latest('machine:deceleration')
                 self.errors = 0
-            except Exception as e:
+            except AbstractFatalMachineError as e:
                 if self.errors > self.max_errors:
                     self.set_to_remote('machine:command:enable', False)
                     if SlaveMachine.fatal_event:
-                        self.fatal_event.set()
+                        SlaveMachine.fatal_event.set()
                     logging.error('Slave machine disabled')
+                    continue
                 else:
                     self.errors += 1
-
+                logging.error('Fatal exception occured in slave watcher loop '
+                              'for {!s}: {!r}'.format(self, e))
+            except AbstractMachineError as e:
+                logging.error('Exception occured in slave watcher loop '
+                              'for {!s}: {!r}'.format(self, e))
+            except Exception as e:
                 logging.error('Exception in {0} loop: {1}'.format(self.__class__.__name__, e))
 
             self.running_ev.wait(self.refresh_interval)

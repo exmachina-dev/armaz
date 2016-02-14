@@ -8,6 +8,7 @@ from threading import Event, Thread
 
 from ertza.machine.AbstractMachine import AbstractMachine
 from ertza.machine.AbstractMachine import AbstractMachineError
+from ertza.machine.AbstractMachine import AbstractFatalMachineError
 from ertza.machine.MachineModes import StandaloneMachineMode
 from ertza.machine.MachineModes import MasterMachineMode
 from ertza.machine.MachineModes import SlaveMachineMode
@@ -24,6 +25,10 @@ logging = logging.getLogger(__name__)
 
 
 class MachineError(AbstractMachineError):
+    pass
+
+
+class FatalMachineError(AbstractFatalMachineError):
     pass
 
 
