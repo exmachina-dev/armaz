@@ -210,10 +210,8 @@ class Machine(AbstractMachine):
 
         for s in self.slaves:
             logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
-            self.init_slave(s)
             try:
                 ping_time = self.slave_block_ping(s)
-
                 logging.info('Slave at {2} took {0:.2} ms to respond'.format(
                     ping_time, *s.slave))
             except AbstractMachineError as e:
@@ -224,9 +222,11 @@ class Machine(AbstractMachine):
             sn = s.get_from_remote('machine:serialnumber', block=True)
             if type(sn) == str and s.serialnumber != sn:
                 infos = s.slave + (s.get_serialnumber(),)
-                logging.warn(MachineError('S/N don\'t match for {2} slave '
-                                          'at {1} ({0} vs {4})'
-                                          ''.format(*infos)))
+                raise MachineError('S/N don\'t match for {2} slave '
+                                   'at {1} ({0} vs {4})'.format(*infos))
+
+            else:
+                self.init_slave(s)
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operation_mode()
