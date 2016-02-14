@@ -287,9 +287,9 @@ class Machine(AbstractMachine):
             slave_machine.init_driver()
             slave_machine.start()
         except SlaveMachineError as e:
-            raise MachineError('Couldn\'t initialize {2} slave at {1} '
-                               'with S/N {0}: {exc}'.format(*slave_machine.slave,
-                                                            exc=e))
+            raise FatalMachineError('Couldn\'t initialize {2} slave at {1} '
+                                    'with S/N {0}: {exc}'
+                                    .format(*slave_machine.slave, exc=e))
 
     def set_operation_mode(self, *args):
         if len(args) >= 1:
