@@ -68,9 +68,9 @@ Dim enTqVelLimitKP As Float = 1.025
 Dim enTqVelErrorSum As Float
 Dim enTqVelErrorSumLimit As Float = 200
 Dim enTqVelErrorKP As Float = 1.25
-Dim enTqVelErrorKI As Float = 0.1
 Dim enTqVelErrorKPLimitLow As Float = 0.25
 Dim enTqVelErrorKPLimitHigh As Float = 2
+Dim enTqVelErrorKI As Float = 0.08
 
 TaskPriority(UpdateStatusSlowTask, 1)
 TaskPriority(UpdateNetdataValuesTask, 10)
@@ -79,18 +79,17 @@ Run(UpdateNetdataValuesTask)
 Run(UpdateStatusSlowTask)
 Loop
     If enTqMode And DRIVEENABLE(_axis) Then
-        If -0.01 < enTqVelRef > 0.01 Then
+        If enTqVelRef = 0 Then
             TORQUEREF(_axis) = 0
             Wait(_enTqEnableRefreshRate)
             Continue Loop
         End If
-            
-        Dim entqMaxVel As Float
-        enTqMaxVel = enTqVelRef * enTqVelLimitKP
         
+        ' Set torque limit
         Dim enTqLimit As Float
         enTqLimit = enTqRef * enTqLimitKP
         
+        ' VelError mapping to torque values
         Dim enTqVelError As Float
         enTqVelError = (enTqVelRef - VEL(_axis)) / 100
         enTqVelErrorSum = enTqVelErrorSum + enTqVelError
@@ -455,7 +454,7 @@ End Event
 
 Event NETDATA15
     Dim cmdEnTqKPVel As Float
-    cmdEnTqKPVel = NETFLOAT(14)
+    cmdEnTqKPVel = NETFLOAT(15)
     
     If cmdEnTqKPVel > 0 Then
         enTqKPVel = cmdEnTqKPVel
