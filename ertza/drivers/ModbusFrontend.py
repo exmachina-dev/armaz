@@ -230,7 +230,7 @@ class ModbusDriverFrontend(object):
         try:
             if vtype:
                 if vtype == bool:
-                    return True if self.frontend_config[key] == 'True' else False
+                    return True if self.frontend_config[key] in ('True', 'true', 'y', '1') else False
                 return vtype(self.frontend_config[key])
             else:
                 return self.frontend_config[key]
