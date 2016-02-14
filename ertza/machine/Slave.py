@@ -30,59 +30,70 @@ class SlaveMachineError(AbstractMachineError):
     pass
 
 
+class FatalSlaveMachineError(SlaveMachineError):
+    fatal_event = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if FatalSlaveMachineError:
+            FatalSlaveMachineError.fatal_event.set()
+            logging.error('Fatal error, disabling all slaves')
+
+
+class SlaveRequest(object):
+    def __init__(self, attr, *args, **kwargs):
+        self._args = ()
+        self._attr = None
+        if 'getitem' in kwargs and kwargs['getitem']:
+            self._item = attr
+        elif 'setitem' in kwargs and kwargs['setitem']:
+            self._item = attr
+            self._args = args
+        else:
+            self._attr = attr
+            self._args = args
+
+        self._kwargs = {
+            'getitem': False,
+            'setitem': False,
+        }
+        self._kwargs.update(kwargs)
+        self._callback = None
+
+    def set_callback(self, cb):
+        self._callback = cb
+
+    @property
+    def attribute(self):
+        return self._attr
+
+    @property
+    def item(self):
+        return self._item
+
+    @property
+    def args(self):
+        return self._args
+
+    @property
+    def kwargs(self):
+        return self._kwargs
+
+    @property
+    def callback(self):
+        return self._callback
+
+    def __getattr__(self, name):
+        return self._kwargs[name]
+
+    def __repr__(self):
+        return '{} {} {} {}'.format('RQ', self.attribute,
+                                    ' '.join(self.args), self.callback)
+
+
 class SlaveMachine(AbstractMachine):
 
     machine = None
-
-    class _Request(object):
-        def __init__(self, attr, *args, **kwargs):
-            self._args = ()
-            self._attr = None
-            if 'getitem' in kwargs and kwargs['getitem']:
-                self._item = attr
-            elif 'setitem' in kwargs and kwargs['setitem']:
-                self._item = attr
-                self._args = args
-            else:
-                self._attr = attr
-                self._args = args
-
-            self._kwargs = {
-                'getitem': False,
-                'setitem': False,
-            }
-            self._kwargs.update(kwargs)
-            self._callback = None
-
-        def set_callback(self, cb):
-            self._callback = cb
-
-        @property
-        def attribute(self):
-            return self._attr
-
-        @property
-        def item(self):
-            return self._item
-
-        @property
-        def args(self):
-            return self._args
-
-        @property
-        def kwargs(self):
-            return self._kwargs
-
-        @property
-        def callback(self):
-            return self._callback
-
-        def __getattr__(self, name):
-            return self._kwargs[name]
-
-        def __repr__(self):
-            return '{} {} {} {}'.format('RQ', self.attribute,
-                                        ' '.join(self.args), self.callback)
 
     def __init__(self, slave):
 
@@ -99,8 +110,8 @@ class SlaveMachine(AbstractMachine):
         self.running_ev = Event()
         self.newdata_ev = Event()
 
-        self.timeout = 2.0
-        self.refresh_interval = 0.075
+        self.timeout = float(self.config.get('slave_timeout', 2.0))
+        self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
 
         self.bridge = Queue()
 
@@ -109,6 +120,10 @@ class SlaveMachine(AbstractMachine):
         self._latency = None
 
         self.last_values = {}
+
+        self.errors = 0
+        self.max_errors = 10
+        self.fatal_event = None
 
     def init_driver(self):
         drv = self.slave.driver
@@ -149,10 +164,10 @@ class SlaveMachine(AbstractMachine):
         self.driver.exit()
 
     def loop(self):
-        try:
-            while not self.running_ev.is_set():
+        while not self.running_ev.is_set():
+            try:
                 recv_item = self.bridge.get(block=True, timeout=2)
-                if not isinstance(recv_item, self._Request):
+                if not isinstance(recv_item, SlaveRequest):
                     logging.error('Unsupported object in queue: %s' % repr(recv_item))
                     continue
 
@@ -170,34 +185,54 @@ class SlaveMachine(AbstractMachine):
                 except SlaveMachineError as e:
                     logging.error('Exception in {n} loop: {e}'.format(
                         n=self.__class__.__name__, e=e))
+                except Exception as e:
+                    logging.error('Uncatched exception in {n} loop: {e}'.format(
+                        n=self.__class__.__name__, e=e))
                 self.bridge.task_done()
-        except Empty:
-            pass
+            except Empty:
+                pass
 
     def watcher_loop(self):
         smode = self.slave.slave_mode
         self.last_values = {}
         self.set_control_mode(smode)
         while not self.running_ev.is_set():
-            if smode == 'torque':
-                self._send_if_latest('machine:torque_ref', source='machine:torque')
-                self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
-                self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
-            elif smode == 'enhanced_torque':
-                self._send_if_latest('machine:torque_ref', source='machine:current_ratio')
-                self._send_if_latest('machine:velocity_ref', source='machine:velocity')
-                self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
-                self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
-            elif smode == 'velocity':
-                self._send_if_latest('machine:velocity_ref', source='machine:velocity')
-                self._send_if_latest('machine:acceleration')
-                self._send_if_latest('machine:deceleration')
+            if SlaveMachine.fatal_event.is_set():
+                self.set_to_remote('machine:command:enable', False)
+                self.running_ev.wait(self.refresh_interval)
+                continue
+
+            try:
+                if smode == 'torque':
+                    self._send_if_latest('machine:torque_ref', source='machine:torque')
+                    self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
+                    self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
+                elif smode == 'enhanced_torque':
+                    self._send_if_latest('machine:torque_ref', source='machine:current_ratio')
+                    self._send_if_latest('machine:velocity_ref', source='machine:velocity')
+                    self._send_if_latest('machine:torque_rise_time')
+                    self._send_if_latest('machine:torque_fall_time')
+                elif smode == 'velocity':
+                    self._send_if_latest('machine:velocity_ref', source='machine:velocity')
+                    self._send_if_latest('machine:acceleration')
+                    self._send_if_latest('machine:deceleration')
+                self.errors = 0
+            except Exception as e:
+                if self.errors > self.max_errors:
+                    self.set_to_remote('machine:command:enable', False)
+                    if SlaveMachine.fatal_event:
+                        self.fatal_event.set()
+                    logging.error('Slave machine disabled')
+                else:
+                    self.errors += 1
+
+                logging.error('Exception in {0} loop: {1}'.format(self.__class__.__name__, e))
 
             self.running_ev.wait(self.refresh_interval)
 
     def request_from_remote(self, callback, attribute, *args, **kwargs):
         event = kwargs.pop('event', None)
-        rq = self._Request(attribute, *args, **kwargs)
+        rq = SlaveRequest(attribute, *args, **kwargs)
         if event:
             callback = functools.partial(callback, event=event)
 
@@ -265,15 +300,18 @@ class SlaveMachine(AbstractMachine):
         source = source or dest
         lvalue = self.last_values.get(dest, None)
 
-        if not self.machine.machine_keys:
-            logging.warn('Machine keys not found')
-            return
-
-        value = self.machine.machine_keys.get_value_for_slave(self, source)
+        try:
+            value = self.machine.machine_keys.get_value_for_slave(self, source)
+        except SlaveMachineError as e:
+            logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
+        except AbstractMachineError:
+            logging.warn('Machine is not ready')
+        except Exception as e:
+            logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
+            raise SlaveMachineError('{!s}'.format(e))
 
         if value is None:
-            logging.warn('Unable to get {0} for {1!s}'.format(source, self))
-            return
+            raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
 
         if lvalue:
             if value != lvalue:

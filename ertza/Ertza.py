@@ -38,11 +38,14 @@ _DEFAULT_CONF = "/etc/ertza/default.conf"
 _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
-lg.basicConfig(level=lg.DEBUG,
-               format='%(asctime)s %(name)-12s \
-               %(levelname)-8s %(message)s',
-               datefmt='%Y/%m/%d %H:%M:%S')
-logging = lg.getLogger(__name__)
+console_logger = lg.StreamHandler()
+console_formatter = lg.Formatter('%(asctime)s %(name)-36s '
+                                 '%(levelname)-8s %(message)s',
+                                 datefmt='%Y%m%d %H:%M:%S')
+
+logger = lg.getLogger('ertza')
+logger.addHandler(console_logger)
+console_logger.setFormatter(console_formatter)
 
 
 class Ertza(object):
@@ -55,14 +58,14 @@ class Ertza(object):
 
     def __init__(self, *agrs, **kwargs):
         """ Init """
-        logging.info("Ertza initializing. Version: " + version)
+        logger.info("Ertza initializing. Version: " + version)
 
         machine = Machine()
         self.machine = machine
         machine.version = version
 
         if not os.path.isfile(_DEFAULT_CONF):
-            logging.error(_DEFAULT_CONF + " does not exist, exiting.")
+            logger.error(_DEFAULT_CONF + " does not exist, exiting.")
             sys.exit(1)
 
         c = None
@@ -70,7 +73,7 @@ class Ertza(object):
             c = kwargs['config']
         custom_conf = c[0] if c else _CUSTOM_CONF
 
-        logging.debug('Custom file: %s' % custom_conf)
+        logger.info('Custom file: %s' % custom_conf)
 
         machine.config = ConfigParser(_DEFAULT_CONF,
                                       _MACHINE_CONF,
@@ -81,7 +84,7 @@ class Ertza(object):
         machine.cape_infos = machine.config.find_cape('ARMAZCAPE')
         if machine.cape_infos:
             name = machine.cape_infos['name']
-            logging.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
+            logger.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
             SerialCommandString.SerialNumber = machine.serialnumber
 
         machine.ip_address = IpAddress(machine.config.get('machine', 'interface', fallback=None)).ips[0].split('/')[0]
@@ -92,16 +95,17 @@ class Ertza(object):
                 l.set_blink(500)
 
         # Get loglevel from config file
-        level = self.machine.config.getint('system', 'loglevel')
+        level = self.machine.config.getint('system', 'loglevel', fallback=10)
         if level > 0:
-            logging.info("Setting loglevel to %d" % level)
-            lg.getLogger().setLevel(level)
+            logger.info("Setting loglevel to %d" % level)
+            lg.getLogger('').setLevel(level)
+            logger.setLevel(level)
 
         drv = machine.init_driver()
         if drv:
-            logging.info("Loaded %s driver for machine" % drv)
+            logger.info("Loaded %s driver for machine" % drv)
         else:
-            logging.error("Unable to find driver, exiting.")
+            logger.error("Unable to find driver, exiting.")
             sys.exit(1)
 
         self._config_thermistors()
@@ -144,18 +148,18 @@ class Ertza(object):
 
         for name, comm in self.machine.comms.items():
             comm.start()
-            logging.info("%s communication module started" % name)
+            logger.info("%s communication module started" % name)
 
         try:
             self.machine.load_startup_mode()
         except MachineError as e:
-            logging.error(str(e))
+            logger.error(str(e))
 
         for l in self.machine.leds:
             if l.function == 'status':
                 l.set_blink(50)
 
-        logging.info("Ertza ready")
+        logger.info("Ertza ready")
 
     def loop(self, machine_queue, name):
         """ When a new command comes in, execute it """
@@ -167,7 +171,7 @@ class Ertza(object):
                 except queue.Empty:
                     continue
 
-                logging.debug("Executing %s from %s" % (message.command, name))
+                logger.debug("Executing %s from %s" % (message.command, name))
 
                 try:
                     p = self.machine.processors[message.protocol]
@@ -180,7 +184,7 @@ class Ertza(object):
 
                 machine_queue.task_done()
         except Exception as e:
-            logging.exception("Exception in %s loop: %s" % (name, e))
+            logger.exception("Exception in %s loop: %s" % (name, e))
 
     def eventloop(self, machine_queue, name):
         """ When a new event comes in, execute the pending gcode """
@@ -202,11 +206,11 @@ class Ertza(object):
 
                     self._synchronize(message, p)
 
-                    logging.info("Event handled for %s from %s %s" % (
+                    logger.info("Event handled for %s from %s %s" % (
                         message.target, name, message))
                     machine_queue.task_done()
         except Exception:
-            logging.exception("Exception in {} eventloop: ".format(name))
+            logger.exception("Exception in {} eventloop: ".format(name))
 
     def exit(self):
         self.running = False
@@ -231,8 +235,8 @@ class Ertza(object):
                                                          "port_TH%d" % th_p)
                 therm = Thermistor(adc_channel, 'TH{}'.format(th_p))
                 self.machine.thermistors.append(therm)
-                logging.debug('Found thermistor TH{} '
-                              'at ADC channel {}'.format(th_p, adc_channel))
+                logger.debug('Found thermistor TH{} '
+                             'at ADC channel {}'.format(th_p, adc_channel))
                 th_p += 1
 
     def _config_fans(self):
@@ -249,7 +253,7 @@ class Ertza(object):
                 fan = Fan(fan_channel)
                 fan.min_speed = self.machine.config.getfloat("fans", 'min_speed_F{}'.format(f_p), fallback=0.0)
                 self.machine.fans.append(fan)
-                logging.debug(
+                logger.debug(
                     "Found fan F%d at channel %d" % (f_p, fan_channel))
                 f_p += 1
 
@@ -307,7 +311,7 @@ class Ertza(object):
             esw.function = self.machine.config.get("switches",
                                                    "function_%s" % esw_n)
             self.machine.switches.append(esw)
-            logging.debug("Found switch %s at keycode %d" % (name, esw_kc))
+            logger.debug("Found switch %s at keycode %d" % (name, esw_kc))
             esw_p += 1
 
     def _config_leds(self):
@@ -330,7 +334,7 @@ class Ertza(object):
                                                           "blink_%s" % led_n,
                                                           fallback='500'))
                 self.machine.leds.append(led)
-                logging.debug("Found led %s, trigger: %s" % (led_n, led_t))
+                logger.debug("Found led %s, trigger: %s" % (led_n, led_t))
                 led_i += 1
 
     def _execute(self, c, p):

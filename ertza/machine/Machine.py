@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import time
 import logging
+
+from threading import Event, Thread
 
 from ertza.machine.AbstractMachine import AbstractMachine
 from ertza.machine.AbstractMachine import AbstractMachineError
@@ -12,7 +15,10 @@ from ertza.machine.MachineModes import SlaveMachineMode
 from ertza.drivers.Drivers import Driver
 from ertza.drivers.AbstractDriver import AbstractDriverError
 
-from ertza.machine.Slave import Slave, SlaveMachine, SlaveMachineError
+from ertza.machine.Slave import Slave, SlaveMachine
+from ertza.machine.Slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+
+from ertza.drivers.Utils import retry
 
 logging = logging.getLogger(__name__)
 
@@ -25,6 +31,9 @@ class Machine(AbstractMachine):
     def __init__(self):
 
         SlaveMachine.machine = self
+        self.fatal_event = Event()
+        SlaveMachine.fatal_event = self.fatal_event
+        FatalSlaveMachineError.fatal_event = self.fatal_event
 
         self.version = None
 
@@ -42,7 +51,10 @@ class Machine(AbstractMachine):
         self.slaves = []
         self.master = None
         self.operation_mode = None
-        self.machine_keys = None
+        self._machine_keys = None
+
+        self._last_command_time = time.time()
+        self._timeout_event = Event()
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -80,6 +92,10 @@ class Machine(AbstractMachine):
     def exit(self):
         self.driver.exit()
 
+        if self.master_mode:
+            for s in self.slaves:
+                s.exit()
+
         for n, c in self.comms.items():
             c.exit()
 
@@ -101,6 +117,13 @@ class Machine(AbstractMachine):
 
     def send_message(self, msg):
         self.comms[msg.protocol].send_message(msg)
+
+    @property
+    def machine_keys(self):
+        if not self._machine_keys:
+            raise MachineError('No machine keys yet')
+
+        return self._machine_keys
 
     @property
     def infos(self):
@@ -162,6 +185,18 @@ class Machine(AbstractMachine):
         self.slaves = tuple(self.slaves)
         return self.slaves
 
+    @retry(SlaveMachineError, 5, 5, 2)
+    def slave_block_ping(self, slave):
+        p = slave.ping()
+        if isinstance(p, SlaveRequest):
+            raise SlaveMachineError('Unable to ping slave {!r} !'.format(slave))
+
+        if isinstance(p, float):
+            return p
+        else:
+            raise MachineError('Unexpected result while pinging {!s}'.format(slave))
+
+    @retry(MachineError, 5, 5, 2)
     def load_slaves(self):
         if not self.slaves:
             if not self.search_slaves():
@@ -172,8 +207,10 @@ class Machine(AbstractMachine):
             logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
             self.init_slave(s)
             try:
-                logging.info('Slave at {2} took {0}ms to respond'.format(
-                    s.ping(), *s.slave))
+                ping_time = self.slave_block_ping(s)
+
+                logging.info('Slave at {2} took {0:.2} ms to respond'.format(
+                    ping_time, *s.slave))
             except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *s.slave))
@@ -301,7 +338,7 @@ class Machine(AbstractMachine):
             raise MachineError('Unexpected mode: {}'.format(mode))
 
         if mode == 'standalone':
-            self.machine_keys = StandaloneMachineMode(self)
+            self._machine_keys = StandaloneMachineMode(self)
             self.operation_mode = mode
         elif mode == 'master':
             if not self.slaves:
@@ -310,7 +347,7 @@ class Machine(AbstractMachine):
             for s in self.slaves:
                 s.enslave()
 
-            self.machine_keys = MasterMachineMode(self)
+            self._machine_keys = MasterMachineMode(self)
             self.operation_mode = mode
         elif mode == 'slave':
             if not self.master:
@@ -319,8 +356,13 @@ class Machine(AbstractMachine):
             if not self.master_port:
                 raise MachineError('No port specified for master')
 
-            self.machine_keys = SlaveMachineMode(self)
+            self._machine_keys = SlaveMachineMode(self)
             self.operation_mode = mode
+
+            self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
+            self._timeout_thread = Thread(target=self._timeout_watcher)
+            self._timeout_thread.daemon = True
+            self._timeout_thread.start()
 
     @property
     def slave_mode(self):
@@ -368,6 +410,9 @@ class Machine(AbstractMachine):
         if dst is not self:
             return dst[key]
 
+        if self.slave_mode:
+            self._last_command_time = time.time()
+
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
@@ -380,6 +425,12 @@ class Machine(AbstractMachine):
         if dst is not self:
             dst[key] = value
             return dst[key]
+
+        if self.slave_mode:
+            if self._timeout_event.is_set() and not self['machine:status:drive_enable']:
+                self.machine_keys['machine:command:enable'] = True
+                self._timeout_event.clear()
+            self._last_command_time = time.time()
 
         self.machine_keys[key] = value
 
@@ -396,3 +447,17 @@ class Machine(AbstractMachine):
 
     def setitem(self, key, value):
         setattr(self, key, value)
+
+    def _timeout_watcher(self):
+        _running_event = Event()
+        while not _running_event.is_set():
+            if self['machine:status:drive_enable'] is False:
+                _running_event.wait(self._slave_timeout)
+                continue
+
+            if time.time() - self._last_command_time > self._slave_timeout:
+                self._timeout_event.set()
+                self['machine:command:enable'] = False
+                logging.error('Timeout detected, disabling drive')
+
+            _running_event.wait(self._slave_timeout)

@@ -3,15 +3,8 @@
 import logging
 import bitstring
 
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from pymodbus.register_read_message import (ReadHoldingRegistersRequest,
-                                            ReadHoldingRegistersResponse,
-                                            ReadWriteMultipleRegistersRequest,
-                                            ReadWriteMultipleRegistersResponse)
-from pymodbus.register_write_message import (WriteMultipleRegistersRequest,
-                                             WriteMultipleRegistersResponse)
-from pymodbus.pdu import ExceptionResponse
-import pymodbus.exceptions as pmde
+from pylibmodbus import ModbusTcp as ModbusClient
+from pylibmodbus import ModbusException
 
 
 class ModbusBackendError(Exception):
@@ -30,14 +23,28 @@ class ModbusBackend(object):
 
         self.connected = False
 
-        self._end = ModbusClient(host=self.address, port=self.port)
+        self._end = ModbusClient(self.address, self.port)
+        self._end.set_response_timeout(1)
 
     def connect(self):
-        self.connected = self._end.connect()
-        return self.connected
+        try:
+            res = self._end.connect()
+            if res is None:
+                self.connected = True
+                return self.connected
+        except Exception as e:
+            logging.error('Unable to connect: {}'.format(e.message.decode()))
+            raise ModbusBackendError(e)
+        return False
 
     def close(self):
         self._end.close()
+        self.connected = False
+
+    def reconnect(self):
+        self.close()
+        self._end.set_response_timeout(1)
+        self.connect()
 
     def write_netdata(self, netdata, data, data_format=None):
         self._check_netdata(netdata)
@@ -56,29 +63,30 @@ class ModbusBackend(object):
 
         try:
             response = self.rhr(start)
-            if not response:
-                return
-            res = bitstring.BitArray('0b%s' % ''.join(response)).unpack(fmt)
-        except TypeError as e:
+            if response is None:
+                raise ModbusBackendError('No data in response.')
+            res = bitstring.pack('uintbe:16, uintbe:16', *response).unpack(fmt)
+        except Exception as e:
             logging.error('Unexpected error: {!s}'.format(e))
-            res = None
+            raise ModbusBackendError('Unexpected error: {!s}'.format(e))
         return res
 
     def _read_holding_registers(self, address):
-        count = self.register_nb_by_netdata
-        rq = ReadHoldingRegistersRequest(address, count,
-                                         unit_id=self.nodeid)
-        return self._rq(rq)
+        nb = self.register_nb_by_netdata
+        rpt = self._analyze_response(self._end.read_registers, address, nb)
+        return rpt
 
     def _write_multiple_registers(self, address, value):
-        rq = WriteMultipleRegistersRequest(address, value)
+        rpt = self._analyze_response(self._end.write_registers,
+                                     address, value)
 
-        return self._rq(rq)
+        return rpt
 
-    def _read_write_multiple_registers(self, address, value):
-        rq = ReadWriteMultipleRegistersRequest(address, value,
-                                               unit_id=self.nodeid)
-        return self._rq(rq)
+    def _read_write_multiple_registers(self, waddress, value, raddress):
+        nb = self.register_nb_by_netdata
+        rpt = self._analyze_response(self._end.write_and_read_registers,
+                                     waddress, value, raddress, nb)
+        return rpt
 
     def _check_netdata(self, netdata_address):
         if not (self.min_netdata <= netdata_address <= self.max_netdata):
@@ -89,9 +97,9 @@ class ModbusBackend(object):
     wmr = _write_multiple_registers
     rwmr = _read_write_multiple_registers
 
-    def _rq(self, rq, **kwargs):
+    def _analyze_response(self, rq_func, *args, **kwargs):
         """
-        Executes a Modbus request and return the response.
+        Except an response and return the response or raise exceptions.
         """
 
         try:
@@ -100,19 +108,7 @@ class ModbusBackend(object):
                 if not self.connect():
                     raise ModbusBackendError('Unable to connect.')
 
-            response = self._end.execute(rq)
-            rpt = type(response)
-            if rpt == ExceptionResponse:
-                raise IOError('Exception received during execution.')
-            elif rpt == WriteMultipleRegistersResponse:
-                return True
-            elif rpt == ReadHoldingRegistersResponse or \
-                    rpt == ReadWriteMultipleRegistersResponse:
-                regs = list()
-                fmt = "{:0>16b}"
-                for i in range(self.register_nb_by_netdata):
-                    regs.append(fmt.format(response.getRegister(i)))
-                return ''.join(regs)
-        except pmde.ConnectionException:
-            self.connected = False
-            raise IOError('Unable to connect to slave')
+            rpt = rq_func(*args)
+            return rpt
+        except ModbusException as e:
+            raise ModbusBackendError('Error while executing {}: {!s}'.format(rq_func, e))

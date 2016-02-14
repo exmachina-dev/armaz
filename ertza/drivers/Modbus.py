@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from collections import namedtuple
 
 from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
 
-from ertza.drivers.ModbusBackend import ModbusBackend
+from ertza.drivers.ModbusBackend import ModbusBackend, ModbusBackendError
 from ertza.drivers.ModbusFrontend import ModbusDriverFrontend
 
 from ertza.drivers.Utils import retry
 
 
 class ModbusDriverError(AbstractDriverError):
-    pass
+    def __init__(self, exception=None):
+        self._parent_exception = exception
+
+    def __repr__(self):
+        if self._parent_exception:
+            return '{0.__class__.__name__}: {0._parent_exception!r}'.format(self)
 
 
 class ReadOnlyError(ModbusDriverError, IOError):
@@ -44,6 +50,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'torque_fall_time':     netdata(11, 'float:32'),
         'acceleration':         netdata(12, 'float:32'),
         'deceleration':         netdata(13, 'float:32'),
+        'entq_kp':              netdata(14, 'float:32'),
+        'entq_kp_vel':          netdata(15, 'float:32'),
+        'entq_ki':              netdata(16, 'float:32'),
+        'entq_kd':              netdata(17, 'float:32'),
 
         'velocity':             netdata(21, 'float:32'),
         'position':             netdata(22, 'float:32'),
@@ -94,6 +104,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         'torque_fall_time':     p(MFNdata['torque_fall_time'], 0, float, 'rw'),
         'acceleration':         p(MFNdata['acceleration'], 0, float, 'rw'),
         'deceleration':         p(MFNdata['deceleration'], 0, float, 'rw'),
+        'entq_kp':              p(MFNdata['entq_kp'], 0, float, 'rw'),
+        'entq_kp_vel':          p(MFNdata['entq_kp_vel'], 0, float, 'rw'),
+        'entq_ki':              p(MFNdata['entq_ki'], 0, float, 'rw'),
+        'entq_kd':              p(MFNdata['entq_kd'], 0, float, 'rw'),
 
         'velocity':             p(MFNdata['velocity'], 0, float, 'r'),
         'position':             p(MFNdata['position'], 0, float, 'r'),
@@ -155,26 +169,30 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         return attr_map
 
     def __getitem__(self, key):
-        if len(key.split(':')) == 2:
-            seckey, subkey = key.split(':')
-        else:
-            seckey, subkey = key, None
-
-        if seckey not in self.netdata_map:
-            raise KeyError(seckey)
-
-        if type(self.netdata_map[seckey]) == dict:
-            if subkey:
-                if subkey not in self.netdata_map:
-                    raise KeyError(subkey)
-                ndk = self.netdata_map[seckey][subkey]
+        try:
+            if len(key.split(':')) == 2:
+                seckey, subkey = key.split(':')
             else:
-                return [(sk, self._get_value(self.netdata_map[seckey][sk], key),)
-                        for sk in self.netdata_map[seckey].keys()]
-        else:
-            ndk = self.netdata_map[seckey]
+                seckey, subkey = key, None
 
-        return self._get_value(ndk, seckey)
+            if seckey not in self.netdata_map:
+                raise KeyError(seckey)
+
+            if type(self.netdata_map[seckey]) == dict:
+                if subkey:
+                    if subkey not in self.netdata_map[seckey]:
+                        raise KeyError(subkey)
+                    ndk = self.netdata_map[seckey][subkey]
+                else:
+                    return [(sk, self._get_value(self.netdata_map[seckey][sk], key),)
+                            for sk in self.netdata_map[seckey].keys()]
+            else:
+                ndk = self.netdata_map[seckey]
+
+            return self._get_value(ndk, seckey)
+        except Exception as e:
+            logging.error('Got exception in {!r}: {!r}'.format(self, e))
+            raise ModbusDriverError(e)
 
     def __setitem__(self, key, value):
         if len(key.split(':')) == 2:
@@ -227,11 +245,15 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         if 'r' not in md:
             raise ReadOnlyError(key)
 
-        res = self.back.read_netdata(nd.addr, nd.fmt)
-        if not res:
-            return
+        try:
+            res = self.back.read_netdata(nd.addr, nd.fmt)
+            return self._input_value(key, vt(res[st]))
+        except ModbusBackendError as e:
+            raise ModbusDriverError('No data returned from backend '
+                                    'for {}: {!s}'.format(key, e))
 
-        return self._input_value(key, vt(res[st]))
+    def __repr__(self):
+        return '{0.__class__.__name__}'.format(self)
 
 if __name__ == "__main__":
     c = {

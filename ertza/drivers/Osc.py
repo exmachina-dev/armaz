@@ -2,7 +2,6 @@
 
 import liblo as lo
 import logging
-from datetime import datetime
 from threading import Thread
 from threading import Event
 from queue import Queue, Empty
@@ -61,8 +60,8 @@ class OscDriver(AbstractDriver):
             logging.exception('Error while registering: %s' % str(e))
 
     def exit(self):
-        self['command:stop'] = True
-        self['command:enable'] = False
+        self['machine:command:stop'] = True
+        self['machine:command:enable'] = False
 
         self.send_to_slave('free', self.machine.serialnumber)
         self.running.set()
@@ -156,6 +155,7 @@ class OscDriver(AbstractDriver):
             return ret
         except OscDriverTimeout as e:
             logging.error(e)
+            raise e
         except OscDriverError as e:
             logging.error(e)
 

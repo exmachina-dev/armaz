@@ -25,6 +25,14 @@ class ModbusDriverFrontend(object):
         self.acceleration = self._safe_config_get("acceleration", float, 1)
         self.deceleration = self._safe_config_get("deceleration", float, 1)
 
+        self.control_mode = self._safe_config_get("control_mode", int, 2)
+
+        self.entq = {}
+        self.entq['kp'] = self._safe_config_get("entq_kp", float, 1.15)
+        self.entq['kp_vel'] = self._safe_config_get("entq_kp_vel", float, 1)
+        self.entq['ki'] = self._safe_config_get("entq_ki", float, 0.1)
+        self.entq['kd'] = self._safe_config_get("entq_kd", float, 5)
+
         self.torque_rise_time = self._safe_config_get("torque_rise_time", float, 5000)
         self.torque_fall_time = self._safe_config_get("torque_fall_time", float, 5000)
 
@@ -132,10 +140,13 @@ class ModbusDriverFrontend(object):
         return acc, dec
 
     def send_default_values(self):
+        self['command:control_mode'] = self.control_mode
         self['acceleration'] = self.acceleration
         self['deceleration'] = self.deceleration
         self['torque_rise_time'] = self.torque_rise_time
         self['torque_fall_time'] = self.torque_fall_time
+        for k, v in self.entq.items():
+            self['entq_{}'.format(k)] = v
 
     def _output_value_limit(self, key, value):
         if 'acceleration' == key:
@@ -218,6 +229,8 @@ class ModbusDriverFrontend(object):
     def _safe_config_get(self, key, vtype=None, fallback=None):
         try:
             if vtype:
+                if vtype == bool:
+                    return True if self.frontend_config[key] == 'True' else False
                 return vtype(self.frontend_config[key])
             else:
                 return self.frontend_config[key]
