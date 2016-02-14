@@ -62,14 +62,15 @@ Dim enTqVelRef As Float = 0
 Dim enTqKP As Float = 1.25
 Dim enTqKPVel As Float = 1
 Dim enTqLimitKP As Float = 1.15
+Dim enTqKI As Float = 0.1
 
 Dim enTqVelLimitKP As Float = 1.025
 Dim enTqVelErrorSum As Float
 Dim enTqVelErrorSumLimit As Float = 200
 Dim enTqVelErrorKP As Float = 1.25
-Dim enTqVelErrorKPLimitLow As Float = 0.75
-Dim enTqVelErrorKPLimitHigh As Float = 1.35
 Dim enTqVelErrorKI As Float = 0.1
+Dim enTqVelErrorKPLimitLow As Float = 0.25
+Dim enTqVelErrorKPLimitHigh As Float = 2
 
 TaskPriority(UpdateStatusSlowTask, 1)
 TaskPriority(UpdateNetdataValuesTask, 10)
@@ -96,7 +97,7 @@ Loop
         
         ' pTerm KP = f(VelRef)
         If enTqKPVel <> 1 Then
-            enTqVelErrorKP = enTqKP * enTqKPVel
+            enTqVelErrorKP = enTqKP * ((Abs(enTqVelRef) * enTqKPVel) / 100)
             If enTqVelErrorKP < enTqVelErrorKPLimitLow Then
                 enTqVelErrorKP = enTqVelErrorKPLimitLow
             ElseIf enTqVelErrorKP > enTqVelErrorKPLimitHigh Then
@@ -104,6 +105,11 @@ Loop
             End If
         Else
             enTqVelErrorKP = enTqKP
+        End If
+        
+        ' iTerm KI
+        If enTqKI <> 0 Then
+            enTqVelErrorKI = enTqKI
         End If
         
         ' iTerm VelErrorSum clamp
@@ -191,7 +197,7 @@ Sub Status()
     NETFLOAT(13) = DECEL(_axis)
     NETFLOAT(14) = enTqKP
     NETFLOAT(15) = enTqKPVel
-    
+    NETFLOAT(16) = enTqKI
 End Sub
 
 Sub StatusSlow()
@@ -453,6 +459,16 @@ Event NETDATA15
     
     If cmdEnTqKPVel > 0 Then
         enTqKPVel = cmdEnTqKPVel
+    End If
+    ResetCommandTimeout
+End Event
+
+Event NETDATA16
+    Dim cmdEnTqKI As Float
+    cmdEnTqKI = NETFLOAT(16)
+    
+    If cmdEnTqKI > 0 Then
+        enTqKI = cmdEnTqKI
     End If
     ResetCommandTimeout
 End Event
