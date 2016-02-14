@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--stdin', help='redirect standard input to STDIN')
     parser.add_argument('-o', '--stdout', help='redirect standard output to STDOUT')
     parser.add_argument('-e', '--stderr', help='redirect standard error output to STDERR')
-    parser.add_argument('-f', '--foreground', help='don\'t detach process', action='store_true')
+    parser.add_argument('-f', '--foreground', help='don\'t detach process', default=False, action='store_true')
 
     args, args_remaining = parser.parse_known_args()
 
