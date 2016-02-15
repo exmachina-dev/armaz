@@ -145,12 +145,15 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
-        if not self.back.connect():
-            self.connected = False
-            raise ModbusDriverError(
-                "Failed to connect %s:%i" % (self.target_address,
-                                             self.target_port))
-        self.connected = True
+        try:
+            if not self.back.connect():
+                self.connected = False
+                raise ModbusDriverError('Failed to connect {0}:{1}'.format(
+                    self.target_address, self.target_port))
+            self.connected = True
+        except ModbusBackendError as e:
+            raise ModbusDriverError('Failed to connect {0}:{1}: {2}'.format(
+                self.target_address, self.target_port, e))
 
     def exit(self):
         self['command:enable'] = False

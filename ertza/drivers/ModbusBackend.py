@@ -32,10 +32,10 @@ class ModbusBackend(object):
             if res is None:
                 self.connected = True
                 return self.connected
-        except Exception as e:
-            logging.error('Unable to connect: {}'.format(e.message.decode()))
+        except ModbusException as e:
+            logging.error('Unable to connect: {!r}'.format(e))
             raise ModbusBackendError(e)
-        return False
+            return False
 
     def close(self):
         self._end.close()
