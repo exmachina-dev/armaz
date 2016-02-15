@@ -59,6 +59,7 @@ class Machine(AbstractMachine):
         self._machine_keys = None
 
         self._last_command_time = time.time()
+        self._running_event = Event()
         self._timeout_event = Event()
 
         self.switch_callback = self._switch_cb
@@ -96,6 +97,7 @@ class Machine(AbstractMachine):
 
     def exit(self):
         self.driver.exit()
+        self._running_event.set()
 
         if self.master_mode:
             for s in self.slaves:
@@ -455,10 +457,10 @@ class Machine(AbstractMachine):
         setattr(self, key, value)
 
     def _timeout_watcher(self):
-        _running_event = Event()
-        while not _running_event.is_set():
+        self._running_event.clear()
+        while not self._running_event.is_set():
             if self['machine:status:drive_enable'] is False:
-                _running_event.wait(self._slave_timeout)
+                self._running_event.wait(self._slave_timeout)
                 continue
 
             if time.time() - self._last_command_time > self._slave_timeout:
@@ -466,4 +468,4 @@ class Machine(AbstractMachine):
                 self['machine:command:enable'] = False
                 logging.error('Timeout detected, disabling drive')
 
-            _running_event.wait(self._slave_timeout)
+            self._running_event.wait(self._slave_timeout)
