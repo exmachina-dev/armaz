@@ -192,7 +192,7 @@ class Machine(AbstractMachine):
         self.slaves = tuple(self.slaves)
         return self.slaves
 
-    @retry(SlaveMachineError, 5, 5, 2)
+    @retry(SlaveMachineError, 20, 10, 1.5)
     def slave_block_ping(self, slave):
         p = slave.ping()
         if isinstance(p, SlaveRequest):
