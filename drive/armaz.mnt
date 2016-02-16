@@ -458,7 +458,7 @@ Event NETDATA14
     Dim cmdEnTqKP As Float
     cmdEnTqKP = NETFLOAT(14)
     
-    If cmdEnTqKP > 0 Then
+    If cmdEnTqKP >= 0 Then
         enTqKP = cmdEnTqKP
     End If
     ResetCommandTimeout
@@ -468,7 +468,7 @@ Event NETDATA15
     Dim cmdEnTqKPVel As Float
     cmdEnTqKPVel = NETFLOAT(15)
     
-    If cmdEnTqKPVel > 0 Then
+    If cmdEnTqKPVel >= 0 Then
         enTqKPVel = cmdEnTqKPVel
     End If
     ResetCommandTimeout
@@ -478,7 +478,7 @@ Event NETDATA16
     Dim cmdEnTqKI As Float
     cmdEnTqKI = NETFLOAT(16)
     
-    If cmdEnTqKI > 0 Then
+    If cmdEnTqKI >= 0 Then
         enTqKI = cmdEnTqKI
     End If
     ResetCommandTimeout
@@ -488,7 +488,7 @@ Event NETDATA17
     Dim cmdEnTqKD As Float
     cmdEnTqKD = NETFLOAT(17)
     
-    If cmdEnTqKD > 0 Then
+    If cmdEnTqKD >= 0 Then
         enTqKD = cmdEnTqKD
     End If
     ResetCommandTimeout
