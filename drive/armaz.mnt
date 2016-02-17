@@ -338,7 +338,7 @@ Event NETDATA1
 
     If command.stop_command <> 0 Then
         STOP(_axis)
-        command.go_home = 0
+        command.stop_home = 0
     End If
 
     NETINTEGER(1) = command.all
