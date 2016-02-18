@@ -231,9 +231,9 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                             return
                     elif ndk.start != cndk.start:
                         if k in forget_values:
-                            data[k] = cndk.vtype(0)
+                            data[cndk.start] = cndk.vtype(0)
                         else:
-                            data[k] = pdata.get(seckey, cndk.vtype(0))
+                            data[cndk.start] = pdata.get(seckey, cndk.vtype(0))
 
             for nd, ndk in pndk.items():
                 self._prev_data[seckey][nd] = data[ndk.start]
