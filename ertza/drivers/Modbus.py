@@ -236,7 +236,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                             data[cndk.start] = pdata.get(seckey, cndk.vtype(0))
 
             for nd, ndk in pndk.items():
-                self._prev_data[seckey][nd] = data[ndk.start]
+                if data[ndk.start] != 0:
+                    self._prev_data[seckey][nd] = data[ndk.start]
 
         else:
             ndk = self.netdata_map[seckey]
