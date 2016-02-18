@@ -214,29 +214,29 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             pndk = self.netdata_map[seckey]
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
-            if seckey not in self._prev_data.keys():
+
+            try:
+                pdata = self._prev_data.[seckey]
+            except KeyError:
                 self._prev_data[seckey] = {}
-                data = list((0,) * seclen)
-                data[ndk.start] = ndk.vtype(value)
-            else:
-                pdata = self._prev_data.get(seckey, {})
+                pdata = self._prev_data.[seckey]
 
-                forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
-                unique_values = ('control_mode',)
-                data = list((-1,) * seclen)
-                data[ndk.start] = ndk.vtype(value)
-                for k, cndk in pndk.items():
-                    if k == subkey:
-                        self._prev_data[seckey][subkey] = ndk.vtype(value)
+            forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
+            unique_values = ('control_mode',)
+            data = list((-1,) * seclen)
+            data[ndk.start] = ndk.vtype(value)
+            for k, cndk in pndk.items():
+                if k == subkey:
+                    self._prev_data[seckey][subkey] = ndk.vtype(value)
 
-                    if k == subkey and subkey in unique_values:
-                        if data[cndk.start] == pdata.get(subkey, 0):
-                            return
-                    elif ndk.start != cndk.start:
-                        if k in forget_values:
-                            data[cndk.start] = cndk.vtype(0)
-                        else:
-                            data[cndk.start] = pdata.get(subkey, cndk.vtype(0))
+                if k == subkey and subkey in unique_values:
+                    if data[cndk.start] == pdata.get(subkey, 0):
+                        return
+                elif ndk.start != cndk.start:
+                    if k in forget_values:
+                        data[cndk.start] = cndk.vtype(0)
+                    else:
+                        data[cndk.start] = pdata.get(subkey, cndk.vtype(0))
 
         else:
             ndk = self.netdata_map[seckey]
