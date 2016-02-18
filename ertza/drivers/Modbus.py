@@ -239,6 +239,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                         data[cndk.start] = cndk.vtype(0)
                         self._prev_data[seckey][subkey] = cndk.vtype(0)
 
+            self._prev_data[seckey][subkey] = ndk.vtype(value)
+
             print(data)
             print(self._prev_data)
 
