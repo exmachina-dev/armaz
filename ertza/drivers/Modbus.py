@@ -226,18 +226,17 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                 data = list((-1,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
                 for k, cndk in pndk.items():
-                    if k == seckey and seckey in unique_values:
-                        if data[ndk.start] == pdata[ndk.start]:
+                    if k == subkey:
+                        self._prev_data[seckey][subkey] = ndk.vtype(value)
+
+                    if k == subkey and subkey in unique_values:
+                        if data[cndk.start] == pdata.get(subkey, 0):
                             return
                     elif ndk.start != cndk.start:
                         if k in forget_values:
                             data[cndk.start] = cndk.vtype(0)
                         else:
-                            data[cndk.start] = pdata.get(seckey, cndk.vtype(0))
-
-            for nd, ndk in pndk.items():
-                if data[ndk.start] != 0:
-                    self._prev_data[seckey][nd] = data[ndk.start]
+                            data[cndk.start] = pdata.get(subkey, cndk.vtype(0))
 
         else:
             ndk = self.netdata_map[seckey]
