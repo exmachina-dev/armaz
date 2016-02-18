@@ -215,7 +215,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
 
-            if not self._prev_data.has_key(seckey):
+            if seckey not in self._prev_data.keys():
                 self._prev_data[seckey] = {}
 
             forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
