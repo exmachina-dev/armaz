@@ -38,7 +38,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
     MFNdata = {
         'status':               netdata(0, 'pad:24,bool,bool,bool,bool,'
                                         'bool,bool,bool,bool'),
-        'command':              netdata(1, 'pad:21,bool,bool,bool,uint:1,uint:3,'
+        'command':              netdata(1, 'pad:20,bool,bool,bool,bool,uint:1,uint:3,'
                                         'bool,bool,bool,bool'),
         'error_code':           netdata(2, 'uint:32'),
         'jog':                  netdata(3, 'float:32'),
@@ -84,14 +84,15 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         },
 
         'command': {
-            'enable':           p(MFNdata['command'], 8, bool, 'w'),
-            'cancel':           p(MFNdata['command'], 7, bool, 'w'),
-            'clear_errors':     p(MFNdata['command'], 6, bool, 'w'),
-            'reset':            p(MFNdata['command'], 5, bool, 'w'),
-            'control_mode':     p(MFNdata['command'], 4, int, 'w'),
-            'move_mode':        p(MFNdata['command'], 3, int, 'w'),
-            'go':               p(MFNdata['command'], 2, bool, 'w'),
-            'set_home':         p(MFNdata['command'], 1, bool, 'w'),
+            'enable':           p(MFNdata['command'], 9, bool, 'w'),
+            'cancel':           p(MFNdata['command'], 8, bool, 'w'),
+            'clear_errors':     p(MFNdata['command'], 7, bool, 'w'),
+            'reset':            p(MFNdata['command'], 6, bool, 'w'),
+            'control_mode':     p(MFNdata['command'], 5, int, 'w'),
+            'move_mode':        p(MFNdata['command'], 4, int, 'w'),
+            'go':               p(MFNdata['command'], 3, bool, 'w'),
+            'set_home':         p(MFNdata['command'], 2, bool, 'w'),
+            'go_home':          p(MFNdata['command'], 1, bool, 'w'),
             'stop':             p(MFNdata['command'], 0, bool, 'w'),
         },
 
@@ -210,27 +211,28 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             if subkey not in self.netdata_map[seckey]:
                 raise KeyError('Unable to find {0} in {1} '
                                'netdata map'.format(subkey, seckey))
+            pndk = self.netdata_map[seckey]
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
             if seckey not in self._prev_data.keys():
                 data = list((0,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
             else:
-                pdata = list(self._prev_data[seckey])
+                pdata = self._prev_data.get(seckey, {})
 
-                forget_values = (0, 1, 4, 6,)
-                unique_values = (3,)
+                forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
+                unique_values = ('control_mode',)
                 data = list((-1,) * seclen)
                 data[ndk.start] = ndk.vtype(value)
-                for i, pvalue in enumerate(pdata):
-                    if ndk.start == i and ndk.start in unique_values:
-                        if data[ndk.start] == pvalue:
+                for k, cndk in pndk.items():
+                    if k == seckey and seckey in unique_values:
+                        if data[ndk.start] == pdata[ndk.start]:
                             return
-                    elif ndk.start != i:
-                        if i in forget_values:
-                            data[i] = 0
+                    elif ndk.start != cndk.start:
+                        if k in forget_values:
+                            data[k] = cndk.vtype(0)
                         else:
-                            data[i] = pvalue
+                            data[k] = pdata.get(seckey, cndk.vtype(0))
 
             self._prev_data[seckey] = data
         else:
