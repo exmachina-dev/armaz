@@ -237,7 +237,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                 elif ndk.start != cndk.start:
                     if k in forget_values:
                         data[cndk.start] = cndk.vtype(0)
-                        self._prev_data[seckey][subkey] = cndk.vtype(0)
+                        self._prev_data[seckey][k] = cndk.vtype(0)
 
             self._prev_data[seckey][subkey] = ndk.vtype(value)
 
