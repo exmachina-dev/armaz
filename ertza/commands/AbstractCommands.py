@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import operator
+
 
 class AbstractCommand(object):
 
@@ -19,6 +21,15 @@ class AbstractCommand(object):
         via the subclass.
         """
         raise NotImplementedError
+
+    def check_args(self, c, comp_op='eq', v=1):
+        op = getattr(operator, comp_op)
+        comp = op(len(c.args), v)
+        if not comp:
+            self.error(c, 'Invalid number of arguments for %s (%d %s %d: %s)' % (
+                self.alias, len(c.args), comp_op, v, ' '.join(c.args)))
+
+        return comp
 
     @property
     def alias(self):
