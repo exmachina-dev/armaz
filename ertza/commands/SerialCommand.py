@@ -23,5 +23,8 @@ class SerialCommand(AbstractCommand):
     def ok(self, command, *args, **kwargs):
         self.send(self.alias + '.ok', *args, **kwargs)
 
+    def reply(self, command, *args, **kwargs):
+        self.send(self.alias + '.reply', *args, **kwargs)
+
     def error(self, command, *args, **kwargs):
         self.send(self.alias + '.error', *args, **kwargs)
