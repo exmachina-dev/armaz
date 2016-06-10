@@ -31,8 +31,13 @@ class Processor(object):
     def load_classes_in_module(self, module):
         for module_name, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, self.abstract_class):
-                cmd = obj(self.machine)
-                self.commands[cmd.alias] = cmd
+                try:
+                    cmd = obj(self.machine)
+                    cmd.alias
+                    self.commands[cmd.alias] = cmd
+                except NotImplementedError:
+                    # This is an abstract class, skip it
+                    pass
 
     @property
     def available_commands(self):

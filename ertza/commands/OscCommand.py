@@ -5,11 +5,6 @@ from .AbstractCommands import AbstractCommand
 
 
 class OscCommand(AbstractCommand):
-
-    @property
-    def alias(self):
-        return '/'
-
     def send(self, target, path, *args, **kwargs):
         if args and isinstance(args[0], (list, tuple)):
             args = args[0]
