@@ -106,9 +106,9 @@ class ConfigProfileDump(SerialCommand):
                 profile = None
 
             dump = self.machine.config.profile_dump(profile)
-            for sec, opts in enumerate(dump):
-                for opt, val in enumerate(opts):
-                    self.reply(c, sec, opt, val)
+            for options, val in dump.items():
+                sec, opt = options
+                self.reply(c, sec, opt, val)
 
             self.ok(c, 'done')
         except Exception as e:
