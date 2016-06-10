@@ -2,36 +2,161 @@
 
 import logging
 import os
+from glob import glob
 import struct
 import configparser
 
 logger = logging.getLogger('ertza.config')
 
 _VARIANT_PATH = "/etc/ertza/variants"
+_PROFILE_PATH = "/etc/ertza/profiles"
 
 
-class ConfigParser(configparser.ConfigParser):
+class ConfigParserError(Exception):
+    pass
+
+
+class FileNotFoundError(ConfigParserError):
+    pass
+
+
+class VariantError(ConfigParserError):
+    pass
+
+
+class ProfileError(ConfigParserError):
+    pass
+
+
+class AbstractConfigParser(configparser.ConfigParser):
+    def __init__(self, *args, **kwargs):
+        super().__init__(interpolation=configparser.ExtendedInterpolation(), **kwargs)
+
+        self.config_files = []
+        if args and not isinstance(args, tuple):
+            args = (args,)
+
+        for cfg in args:
+            if os.path.isfile(cfg):
+                self.config_files.append(os.path.realpath(cfg))
+                logger.debug("Found " + cfg)
+                try:
+                    self.read_file(open(cfg))
+                    logger.info("Parsed " + cfg)
+                except configparser.ParseError:
+                    logger.warn("Unable to parse config file %s" % cfg)
+            else:
+                logger.warn("Config file %s not found" % cfg)
+
+        self._config_proxies = []
+
+    def save(self, nfile=None):
+        """
+        Save config into a config file.
+        """
+
+        save_to = nfile or self.config_files[-1]
+
+        if not os.path.isfile(save_to):
+            raise FileNotFoundError
+
+        if len(self.config_files) > 1:
+            tmp_config = self - AbstractConfigParser(self.config_files[0:-1])
+        else:
+            tmp_config = self
+
+        with open(save_to, 'w') as sfile:
+            tmp_config.write(sfile)
+
+    def get(self, section, option, fallback=configparser._UNSET):
+        if self._config_proxies:
+            for p in self._config_proxies:
+                if section not in p:
+                    continue
+
+                if option not in p[section]:
+                    continue
+
+                return p[section][option]
+
+        return super().get(section, option, fallback=fallback)
+
+    def __getitem__(self, key):
+        if self._config_proxies:
+            for p in self._config_proxies:
+                if key not in p:
+                    continue
+
+                return p[key]
+        else:
+            return super().__getitem__(key)
+
+    def __contains__(self, key):
+        """ Don't check DEFAULT section. """
+        return self.has_section(key)
+
+    def __len__(self):
+        """ Don't count DEFAULT section. """
+        return self._sections
+
+    def __iter__(self):
+        """ Don't fetch DEFAULT section. """
+
+        return self._sections.keys()
+
+    def __sub__(self, other):
+        tmp_conf = AbstractConfigParser()
+        for sec, opts in self.items():
+            if other.has_section(sec):
+                for opt, value in opts.items():
+                    if opt not in other[sec]:
+                        if sec not in tmp_conf:
+                            tmp_conf.add_section(sec)
+                        tmp_conf[sec][opt] = value
+            else:
+                tmp_conf[sec] = opts
+
+        return tmp_conf
+
+
+class ProxyConfigParser(AbstractConfigParser):
+    def __init__(self, path, name):
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string')
+
+        self._name = name
+        super().__init__(path)
+
+    def dump(self):
+        dump = {}
+        for sec, opts in self.items():
+            for opt, val in opts.items():
+                dump.update((opt, sec), val)
+
+        return dump
+
+    @property
+    def name(self):
+        return self._name
+
+
+class ConfigParser(AbstractConfigParser):
     """
     ConfigParser provides config interface. Its handle cascading config files.
     """
 
-    def __init__(self, *args):
-        self.variant_loaded = False
-        self.variant = None
+    VARIANT_PRIORITY = 0
+    PROFILE_PRIORITY = 1
 
-        super(ConfigParser, self).__init__(
-            interpolation=configparser.ExtendedInterpolation())
+    def load_config(self, config_file):
+        if not os.path.isfile(config_file):
+            raise FileNotFoundError
 
-        self.config_files = []
-        for cfg in args:
-            self.config_files.append(os.path.realpath(cfg))
-
-        for cfg in self.config_files:
-            if os.path.isfile(cfg):
-                logger.info("Found " + cfg)
-                self.read_file(open(cfg))
-            else:
-                logger.warn("Config file %s not found" % cfg)
+        logger.info("Loading config file: %s" % config_file)
+        config_file = os.path.realpath(config_file)
+        self.config_files.append(config_file)
+        self.read_file(open(config_file))
+        return True
 
     def load_variant(self, variant=None):
         """
@@ -40,9 +165,10 @@ class ConfigParser(configparser.ConfigParser):
         If variant is not specified, load variant value defined in config file.
         """
 
-        if self.variant_loaded:
-            logger.warn("Variant already loaded: %s" % self.variant)
-            return False
+        if self.variant:
+            logger.warn("Variant already loaded: %s" % self.variant.name)
+            raise VariantError('Variant already loaded')
+
         if not variant:
             cape_infos = self.find_cape()
             if cape_infos:
@@ -58,49 +184,56 @@ class ConfigParser(configparser.ConfigParser):
                 logger.warn("Couldn't get variant from eeprom or config")
                 return False
 
-        variant_cfg = os.path.join(_VARIANT_PATH, variant + ".conf")
-        if os.path.isfile(variant_cfg):
-            logger.info("Loading variant config file: %s" % variant)
-            variant_cfg = os.path.realpath(variant_cfg)
-            self.config_files.append(variant_cfg)
-            self.read_file(open(variant_cfg))
-            self.variant_loaded = True
-            self.variant = variant
+        variant_config_file = os.path.join(_VARIANT_PATH, variant + ".conf")
+        try:
+            self._config_proxies[self.VARIANT_PRIORITY] = ProxyConfigParser(variant_config_file, variant)
+
+            logger.info("Loaded variant config file: %s" % variant)
+        except configparser.ParsingError as e:
+            logger.warn("Couldn't parse variant file {0} : {1!s}" % (variant_config_file, e))
+
+    def load_profile(self, profile):
+        try:
+            profile_config_path = os.path.join(_PROFILE_PATH, profile + ".conf")
+            self._config_proxies[self.PROFILE_PRIORITY] = ProxyConfigParser(profile_config_path, profile)
+            self['machine']['profile'] = profile
+        except configparser.ParsingError as e:
+            logger.warn("Couldn't load profile file {0}: {1!s}" % (self.profile_config_path, e))
+
+    def unload_profile(self):
+        try:
+            del self['machine']['profile']
+            del self._config_proxies[self.PROFILE_PRIORITY]
+        except (IndexError, configparser.NoSectionError, configparser.NoOptionError):
+            pass
+
+    def dump_profile(self, profile=None):
+        if not self.get('machine', 'profile', fallback=profile):
+            raise ProfileError('No profile loaded or provided')
+
+        if profile:
+            profile_path = '{}/{}.conf' % (_PROFILE_PATH, profile)
+            profile_config = configparser.ConfigParser(profile_path)
+            return profile_config.dump()
         else:
-            logger.warn("Couldn't find variant config file " + variant_cfg)
+            return self.profile_config.dump()
 
-    def save(self):
-        """
-        Save only modified values in custom config.
-        This is like (current_config - default_config) - variant_config
-        """
+    def save_profile(self, profile=None):
+        if not self.profile:
+            raise ProfileError('No profile loaded')
 
-        stop_index = -2 if self.variant_loaded else -1
-        def_configfiles = self.config_files[0:stop_index]
-        custom_configfile = self.config_files[stop_index]
+        if profile:
+            self.profile.save('{}/{}.conf' % (_PROFILE_PATH, profile))
+        else:
+            self.profile.save()
 
-        def_config = ConfigParser(*def_configfiles)
-        save_config = ConfigParser()
-        for sec in self.sections():
-            if def_config.has_section(sec):
-                save_config.add_section(sec)
-                for opt in self[sec]:
-                    if opt in def_config[sec]:
-                        if self[sec][opt] != def_config[sec][opt]:
-                            save_config[sec][opt] = self[sec][opt]
+    def get_profiles_list(self):
+        files = glob('{}/*.conf' % (_PROFILE_PATH))
+        profiles = []
+        for f in files:
+            profiles.append(f.replace(_PROFILE_PATH, '')[0:len('.conf') * -1])
 
-                if not len(save_config[sec]):
-                    save_config.remove_section(sec)
-
-        if self.variant_loaded:
-            var_config = ConfigParser(self.config_files[-1])
-            for sec in var_config.sections():
-                if save_config.has_section(sec):
-                    for opt in var_config[sec]:
-                        save_config.remove_option(sec, opt)
-
-        with open(custom_configfile, 'w') as cf:
-            save_config.write(cf)
+        return profiles
 
     def find_cape(self, partnumber='ARMAZCAPE'):
         capes = self.get_cape_infos()
@@ -144,3 +277,17 @@ class ConfigParser(configparser.ConfigParser):
         except IOError as e:
             logger.error('Error while reading eeprom: {!s}'.format(e))
             return False
+
+    @property
+    def variant(self):
+        try:
+            return self._config_proxies[self.VARIANT_PRIORITY]
+        except IndexError:
+            return None
+
+    @property
+    def profile(self):
+        try:
+            return self._config_proxies[self.PROFILE_PRIORITY]
+        except IndexError:
+            return None
