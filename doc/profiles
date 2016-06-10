@@ -13,6 +13,15 @@ config.profile.set:SECTION:OPTION:VALUE
 Set value in profile (not in config)
 
 
+config.profile.list_options
+
+Return a list of assignable options:
+ExmEislaLLSSSSSSSSSSSSconfig.profile.list_options.reply:SECTION:OPTION\r\n
+
+The command always send a ok reply at the end of the dump:
+ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+
+
 config.profile.dump
 
 Dump profile content:

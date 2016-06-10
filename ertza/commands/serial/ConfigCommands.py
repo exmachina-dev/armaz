@@ -4,6 +4,10 @@ from ertza.commands.SerialCommand import SerialCommand
 
 
 class ConfigLoadProfile(SerialCommand):
+    """
+    Load existing profile found in _PROFILE_PATH (usually /etc/ertza/profiles)
+    """
+
     def execute(self, c):
         if self.check_args(c, 'ne', 1):
             self.error(c, 'Invalid number of arguments for %s' % self.alias)
@@ -21,6 +25,10 @@ class ConfigLoadProfile(SerialCommand):
 
 
 class ConfigUnloadProfile(SerialCommand):
+    """
+    Unload loaded profile (if any)
+    """
+
     def execute(self, c):
         try:
             self.machine.config.unload_profile()
@@ -34,6 +42,10 @@ class ConfigUnloadProfile(SerialCommand):
 
 
 class ConfigProfileSet(SerialCommand):
+    """
+    Set value in profile (not in config)
+    """
+
     def execute(self, c):
         if not self.check_args(c, 'ne', 3):
             return
@@ -50,7 +62,39 @@ class ConfigProfileSet(SerialCommand):
         return 'config.profile.set'
 
 
+class ConfigProfileListOptions(SerialCommand):
+    """
+    Return a list of assignable options:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.list_options.reply:SECTION:OPTION\r\n
+
+    The command always send a ok reply at the end of the dump:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    """
+    def execute(self, c):
+
+        try:
+            opts = self.machine.config.profile_list_options()
+            for sec, opts in enumerate(list):
+                for opt, vtype in enumerate(opts):
+                    self.reply(c, sec, opt)
+
+            self.ok(c, 'done')
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return 'config.profile.list_options'
+
+
 class ConfigProfileDump(SerialCommand):
+    """
+    Dump profile content:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION:OPTION:VALUE\r\n
+
+    The command always send a ok reply at the end of the dump:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    """
     def execute(self, c):
         if not self.check_args(c, 'le', 1):
             return
@@ -76,6 +120,11 @@ class ConfigProfileDump(SerialCommand):
 
 
 class ConfigProfileSave(SerialCommand):
+    """
+    Save profile to a file in _PROFILE_PATH.
+    If PROFILE is empty, overwrites the loaded profile
+    """
+
     def execute(self, c):
         if not self.check_args(c, 'le', 1):
             return
@@ -97,6 +146,9 @@ class ConfigProfileSave(SerialCommand):
 
 
 class ConfigSave(SerialCommand):
+    """
+    Save config to custom.conf including the loaded profile name
+    """
 
     def execute(self, c):
         try:
@@ -111,6 +163,12 @@ class ConfigSave(SerialCommand):
 
 
 class ConfigGet(SerialCommand):
+    """
+    config.get:SECTION:OPTION
+
+    Returns the value of SECTION:OPTION. This allow to verify the behaviour of the config.
+    This behaviour can be changed by variant config or profile.
+    """
 
     def execute(self, c):
         if len(c.args) != 1:
