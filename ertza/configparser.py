@@ -6,6 +6,7 @@ from glob import glob
 import struct
 import itertools
 import configparser
+from configparser import NoSectionError, NoOptionError, ParsingError
 
 logger = logging.getLogger('ertza.config')
 
@@ -44,7 +45,7 @@ class AbstractConfigParser(configparser.ConfigParser):
                 try:
                     self.read_file(open(cfg))
                     logger.info("Parsed " + cfg)
-                except configparser.ParseError:
+                except ParsingError:
                     logger.warn("Unable to parse config file %s" % cfg)
             else:
                 logger.warn("Config file %s not found" % cfg)
@@ -198,7 +199,7 @@ class ConfigParser(AbstractConfigParser):
             self._config_proxies[self.VARIANT_PRIORITY] = ProxyConfigParser(variant_config_file, variant)
 
             logger.info("Loaded variant config file: %s" % variant)
-        except configparser.ParsingError as e:
+        except ParsingError as e:
             logger.warn("Couldn't parse variant file {0} : {1!s}" % (variant_config_file, e))
 
     def load_profile(self, profile, **kwargs):
@@ -212,14 +213,14 @@ class ConfigParser(AbstractConfigParser):
 
             self._config_proxies[self.PROFILE_PRIORITY] = ProxyConfigParser(profile_config_path, profile)
             self['machine']['profile'] = profile
-        except configparser.ParsingError as e:
+        except ParsingError as e:
             logger.warn("Couldn't load profile file {0}: {1!s}" % (self.profile_config_path, e))
 
     def unload_profile(self):
         try:
             del self['machine']['profile']
             del self._config_proxies[self.PROFILE_PRIORITY]
-        except (IndexError, configparser.NoSectionError, configparser.NoOptionError):
+        except (IndexError, NoSectionError, NoOptionError):
             pass
 
     def dump_profile(self, profile=None):
