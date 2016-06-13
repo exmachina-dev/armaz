@@ -90,8 +90,8 @@ class StandaloneMachineMode(AbstractMachineMode):
 
         try:
             drv_attr_map = self._machine.driver.get_attribute_map()
-            logging.info('Appending driver attribute map '
-                         'to {0.__class__.__name__}'.format(self))
+            logging.debug('Appending driver attribute map '
+                          'to {0.__class__.__name__}'.format(self))
             for a, p in drv_attr_map.items():
                 StandaloneMachineMode.MachineMap.update({
                     '{}'.format(a): self._param(*p),
