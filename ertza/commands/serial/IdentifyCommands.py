@@ -2,8 +2,8 @@
 
 import logging
 
-from ertza.commands.AbstractCommands import BufferedCommand
-from ertza.commands.SerialCommand import SerialCommand
+from ertza.commands import BufferedCommand
+from ertza.commands import SerialCommand
 
 
 class Identify(SerialCommand, BufferedCommand):

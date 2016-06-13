@@ -2,7 +2,7 @@
 
 import struct
 
-from ertza.commands.SerialCommand import SerialCommand
+from ertza.commands import SerialCommand
 
 
 class MachineSet(SerialCommand):

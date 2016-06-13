@@ -3,7 +3,7 @@
 import logging
 
 from ertza.commands.AbstractCommands import UnbufferedCommand
-from ertza.commands.OscCommand import OscCommand
+from ertza.commands import OscCommand
 
 
 class ConfigSet(OscCommand, UnbufferedCommand):

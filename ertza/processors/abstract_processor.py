@@ -8,15 +8,15 @@ import logging
 from threading import Event
 from queue import PriorityQueue
 
-from ..commands.AbstractCommands import BufferedCommand
-from ..commands.AbstractCommands import SyncedCommand
+from ..commands.abstract_commands import BufferedCommand
+from ..commands.abstract_commands import SyncedCommand
 
 
 class PrioritizedSyncQueue(PriorityQueue):
     pass
 
 
-class Processor(object):
+class AbstractProcessor(object):
     def __init__(self, base_module, abstract_class, machine):
         self.base_module = base_module
         self.abstract_class = abstract_class

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from ertza.commands.AbstractCommands import UnbufferedCommand
-from ertza.commands.OscCommand import OscCommand
+from ertza.commands import UnbufferedCommand
+from ertza.commands import OscCommand
 
 
 class ListSlaves(OscCommand, UnbufferedCommand):

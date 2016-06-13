@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ertza.processors.serial.Serial import SerialMessage
+from ..processors.serial import SerialMessage
 from .AbstractCommands import AbstractCommand
 
 

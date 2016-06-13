@@ -12,25 +12,24 @@ from threading import Thread
 from multiprocessing import JoinableQueue
 import queue
 
-from ertza.ConfigParser import ConfigParser
-from ertza.machine.Machine import Machine, MachineError
+from ertza.configparser import ConfigParser
+from ertza.machine import Machine, MachineError
 
-from ertza.processors.OscProcessor import OscProcessor
-from ertza.processors.SerialProcessor import SerialProcessor
+from ertza.processors import OscProcessor, SerialProcessor
 
 from ertza.processors.osc.OscServer import OscServer
 from ertza.processors.serial.SerialServer import SerialServer
 from ertza.processors.serial.Serial import SerialCommandString
 
-from ertza.PWM import PWM
-from ertza.Thermistor import Thermistor
+from ertza.pwm import PWM
+from ertza.thermistor import Thermistor
 
-from ertza.Fan import Fan
-from ertza.Switch import Switch
-from ertza.TempWatcher import TempWatcher
-from ertza.Led import Led
+from ertza.fan import Fan
+from ertza.switch import Switch
+from ertza.tempwatcher import TempWatcher
+from ertza.led import Led
 
-from ertza.NetworkUtils import IpAddress
+from ertza.network_utils import IpAddress
 
 version = "0.0.2~Firstimer"
 

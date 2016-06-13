@@ -2,10 +2,10 @@
 
 import logging
 
-from ertza.commands.AbstractCommands import UnbufferedCommand
-from ertza.commands.OscCommand import OscCommand
+from ertza.commands import UnbufferedCommand
+from ertza.commands import OscCommand
 
-from ertza.processors.osc.Osc import OscMessage, OscAddress
+from ertza.processors.osc import OscAddress
 
 
 class OscLogHandler(logging.Handler):

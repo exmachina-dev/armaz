@@ -5,7 +5,7 @@ import logging
 import bitstring as bs
 from collections import namedtuple
 
-from ertza.processors.Message import Message
+from ..abstract_message import AbstractMessage
 
 
 SerialCommandStruct = namedtuple('SerialCommandStruct', ('protocol', 'length', 'serial_number', 'data', 'end'))
@@ -97,7 +97,7 @@ class SerialTarget(object):
         return "%s" % self.unitid
 
 
-class SerialMessage(Message):
+class SerialMessage(AbstractMessage):
 
     def __init__(self, **kwargs):
         self.cmd_bytes = SerialCommandString(kwargs['cmd_bytes']) \

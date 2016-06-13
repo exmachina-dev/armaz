@@ -3,7 +3,7 @@
 from copy import copy
 from liblo import Message as OMessage
 
-from ertza.processors.Message import Message
+from ..abstract_message import AbstractMessage
 
 
 class OscPath(str):
@@ -39,7 +39,7 @@ class OscAddress(object):
         return "%s:%d" % (self.hostname, self.port)
 
 
-class OscMessage(Message):
+class OscMessage(AbstractMessage):
 
     def __init__(self, path, *args, **kwargs):
         self.path, self._args = OscPath(path), args

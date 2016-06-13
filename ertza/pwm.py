@@ -16,7 +16,7 @@ Code modified by Benoit Rapidel:
 import time
 import subprocess
 
-from .Adafruit_I2C import Adafruit_I2C
+from .adafruit_i2c import Adafruit_I2C
 
 
 class PWM(object):

@@ -15,7 +15,7 @@ Code modified by Benoit Rapidel:
 
 import time
 
-from .PWM import PWM
+from .pwm import PWM
 
 
 class Fan(PWM):

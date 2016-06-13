@@ -2,8 +2,8 @@
 
 import logging
 
-from ertza.commands.AbstractCommands import UnbufferedCommand
-from ertza.commands.OscCommand import OscCommand
+from ertza.commands import UnbufferedCommand
+from ertza.commands import OscCommand
 
 logging = logging.getLogger(__name__)
 

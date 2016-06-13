@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-class Message(object):
+class AbstractMessage(object):
 
     @property
     def command(self):

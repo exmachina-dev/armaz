@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ertza.commands.SerialCommand import SerialCommand
+from ertza.commands import SerialCommand
 
 
 class ConfigLoadProfile(SerialCommand):

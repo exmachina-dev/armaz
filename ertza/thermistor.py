@@ -3,7 +3,7 @@
 from threading import Lock
 import logging
 
-from ertza.temp_chart import temp_chart
+from .temp_chart import temp_chart
 
 _ADC_PATH = "/sys/bus/iio/devices/iio:device0"
 

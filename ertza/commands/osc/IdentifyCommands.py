@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from ertza.commands.AbstractCommands import BufferedCommand
-from ertza.commands.OscCommand import OscCommand
+from ertza.commands import BufferedCommand
+from ertza.commands import OscCommand
 
 
 class Identify(OscCommand, BufferedCommand):
