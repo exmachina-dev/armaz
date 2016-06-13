@@ -4,6 +4,7 @@ import logging
 import os
 from glob import glob
 import struct
+import itertools
 import configparser
 
 logger = logging.getLogger('ertza.config')
@@ -48,7 +49,7 @@ class AbstractConfigParser(configparser.ConfigParser):
             else:
                 logger.warn("Config file %s not found" % cfg)
 
-        self._config_proxies = []
+        self._config_proxies = [None, None]
 
     def save(self, nfile=None):
         """
@@ -68,26 +69,36 @@ class AbstractConfigParser(configparser.ConfigParser):
         with open(save_to, 'w') as sfile:
             tmp_config.write(sfile)
 
-    def get(self, section, option, fallback=configparser._UNSET):
+    def dump(self):
+        dump = {}
+        for sec, opts in self.items():
+            for opt, val in opts.items():
+                dump.update({(sec, opt): val,})
+
+        return dump
+
+    def get(self, section, option, **kwargs):
         if self._config_proxies:
             for p in self._config_proxies:
-                if section not in p:
-                    continue
-
-                if option not in p[section]:
+                if p is None or section not in p or option not in p[section]:
                     continue
 
                 return p[section][option]
 
-        return super().get(section, option, fallback=fallback)
+        return super().get(section, option, **kwargs)
 
     def __getitem__(self, key):
         if self._config_proxies:
             for p in self._config_proxies:
-                if key not in p:
+                if p is None or key not in p:
+                    continue
+
+                if p[key] is None:
                     continue
 
                 return p[key]
+
+            return super().__getitem__(key)
         else:
             return super().__getitem__(key)
 
@@ -102,7 +113,7 @@ class AbstractConfigParser(configparser.ConfigParser):
     def __iter__(self):
         """ Don't fetch DEFAULT section. """
 
-        return self._sections.keys()
+        return iter(self._sections)
 
     def __sub__(self, other):
         tmp_conf = AbstractConfigParser()
@@ -127,14 +138,6 @@ class ProxyConfigParser(AbstractConfigParser):
         self._name = name
         super().__init__(path)
 
-    def dump(self):
-        dump = {}
-        for sec, opts in self.items():
-            for opt, val in opts.items():
-                dump.update((opt, sec), val)
-
-        return dump
-
     @property
     def name(self):
         return self._name
@@ -158,7 +161,7 @@ class ConfigParser(AbstractConfigParser):
         self.read_file(open(config_file))
         return True
 
-    def load_variant(self, variant=None):
+    def load_variant(self, variant=None, **kwargs):
         """
         Load variant config file.
 
@@ -184,17 +187,29 @@ class ConfigParser(AbstractConfigParser):
                 logger.warn("Couldn't get variant from eeprom or config")
                 return False
 
-        variant_config_file = os.path.join(_VARIANT_PATH, variant + ".conf")
         try:
+            variant_path = kwargs.get('variant_path', None)
+
+            if variant_path:
+                variant_config_file = os.path.join(variant_path, variant + ".conf")
+            else:
+                variant_config_file = os.path.join(_VARIANT_PATH, variant + ".conf")
+
             self._config_proxies[self.VARIANT_PRIORITY] = ProxyConfigParser(variant_config_file, variant)
 
             logger.info("Loaded variant config file: %s" % variant)
         except configparser.ParsingError as e:
             logger.warn("Couldn't parse variant file {0} : {1!s}" % (variant_config_file, e))
 
-    def load_profile(self, profile):
+    def load_profile(self, profile, **kwargs):
         try:
-            profile_config_path = os.path.join(_PROFILE_PATH, profile + ".conf")
+            profile_path = kwargs.get('profile_path', None)
+
+            if profile_path:
+                profile_config_path = os.path.join(profile_path, profile + ".conf")
+            else:
+                profile_config_path = os.path.join(_PROFILE_PATH, profile + ".conf")
+
             self._config_proxies[self.PROFILE_PRIORITY] = ProxyConfigParser(profile_config_path, profile)
             self['machine']['profile'] = profile
         except configparser.ParsingError as e:
