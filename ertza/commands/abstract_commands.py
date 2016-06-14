@@ -61,7 +61,7 @@ class AbstractCommand(object):
         """
         raise AttributeError
 
-    def __str__(self):
+    def __repr__(self):
         if hasattr(self, 'args'):
             return '{0.alias} {0.args}'.format(self)
         else:

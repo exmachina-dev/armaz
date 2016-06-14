@@ -41,7 +41,7 @@ class AbstractProcessor(object):
 
     @property
     def available_commands(self):
-        return sorted(self.commands.keys())
+        return self.commands
 
     def is_buffered(self, command):
         if isinstance(command, BufferedCommand):

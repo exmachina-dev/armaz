@@ -8,13 +8,13 @@ class ListCommands(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
         cmds = self.machine.processors['OSC'].available_commands
-        for cmd in cmds:
-            if hasattr(cmd, 'help_text'):
-                self.reply(c, cmd, cmd.help_text)
-            else:
-                self.reply(c, cmd)
+        for alias, cmd in cmds.items():
+            try:
+                self.reply(c, repr(cmd), cmd.help_text)
+            except AttributeError:
+                self.reply(c, repr(cmd))
 
-        self.reply(c, 'done')
+        self.ok(c, 'done')
 
     @property
     def alias(self):
