@@ -2,7 +2,7 @@
 
 import logging
 
-from ertza.commands.AbstractCommands import UnbufferedCommand
+from ertza.commands import UnbufferedCommand
 from ertza.commands import OscCommand
 
 

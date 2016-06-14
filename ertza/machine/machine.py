@@ -17,10 +17,10 @@ from .machinemodes import SlaveMachineMode
 from ..drivers import Driver
 from ..drivers import AbstractDriverError
 
-from ertza.machine.slave import Slave, SlaveMachine
-from ertza.machine.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+from .slave import Slave, SlaveMachine
+from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
-from ertza.drivers.Utils import retry
+from ..drivers.utils import retry
 
 logging = logging.getLogger(__name__)
 

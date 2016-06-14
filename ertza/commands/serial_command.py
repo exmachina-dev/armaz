@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ..processors.serial import SerialMessage
-from .AbstractCommands import AbstractCommand
+from .abstract_commands import AbstractCommand
 
 
 class SerialCommand(AbstractCommand):
