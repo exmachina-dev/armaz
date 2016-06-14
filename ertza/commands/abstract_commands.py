@@ -54,6 +54,19 @@ class AbstractCommand(object):
         """
         return False
 
+    @property
+    def help_text(self):
+        """
+        This method should be overrided to provide a help text.
+        """
+        raise AttributeError
+
+    def __str__(self):
+        if hasattr(self, 'args'):
+            return '{0.alias} {0.args}'.format(self)
+        else:
+            return self.alias
+
 
 class UnbufferedCommand(AbstractCommand):
     pass

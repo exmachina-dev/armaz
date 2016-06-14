@@ -7,10 +7,14 @@ from ertza.commands import OscCommand
 class ListCommands(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
-        cmds = self.machine.osc_processor.available_commands
-        reply_path = '/help/implemented_osc_commands'
+        cmds = self.machine.processors['OSC'].available_commands
         for cmd in cmds:
-            self.send(c.sender, reply_path, cmd)
+            if hasattr(cmd, 'help_text'):
+                self.reply(c, cmd, cmd.help_text)
+            else:
+                self.reply(c, cmd)
+
+        self.reply(c, 'done')
 
     @property
     def alias(self):
