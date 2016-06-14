@@ -4,17 +4,19 @@ import logging
 import os
 from glob import glob
 import struct
-import itertools
 import configparser
-from configparser import NoSectionError, NoOptionError, ParsingError
+from configparser import Error, NoSectionError, NoOptionError, ParsingError
 
 logger = logging.getLogger('ertza.config')
 
 _VARIANT_PATH = "/etc/ertza/variants"
 _PROFILE_PATH = "/etc/ertza/profiles"
 
+__all__ = ['NoSectionError', 'NoOptionError', 'ParsingError', 'ConfigParserError',
+           'FileNotFoundError', 'VariantError', 'ProfileError', 'ConfigParser']
 
-class ConfigParserError(Exception):
+
+class ConfigParserError(Error):
     pass
 
 
@@ -39,16 +41,17 @@ class AbstractConfigParser(configparser.ConfigParser):
             args = (args,)
 
         for cfg in args:
-            if os.path.isfile(cfg):
-                self.config_files.append(os.path.realpath(cfg))
+            real_path_cfg = os.path.realpath(cfg)
+            if os.path.isfile(real_path_cfg):
+                self.config_files.append(real_path_cfg)
                 logger.debug("Found " + cfg)
                 try:
-                    self.read_file(open(cfg))
+                    self.read_file(open(real_path_cfg))
                     logger.info("Parsed " + cfg)
                 except ParsingError:
-                    logger.warn("Unable to parse config file %s" % cfg)
+                    logger.warn("Unable to parse config file %s" % real_path_cfg)
             else:
-                logger.warn("Config file %s not found" % cfg)
+                logger.warn("Config file %s not found" % real_path_cfg)
 
         self._config_proxies = [None, None]
 
@@ -74,7 +77,7 @@ class AbstractConfigParser(configparser.ConfigParser):
         dump = {}
         for sec, opts in self.items():
             for opt, val in opts.items():
-                dump.update({(sec, opt): val,})
+                dump.update({(sec, opt): val})
 
         return dump
 
