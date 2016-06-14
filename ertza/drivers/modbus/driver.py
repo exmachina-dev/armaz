@@ -166,9 +166,9 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
         for a, p in self.netdata_map.items():
             if isinstance(p, dict):
                 for sa, sp in p.items():
-                    attr_map.update({'{}:{}'.format(a, sa): (sp.vtype, sp.mode,),})
+                    attr_map.update({'{}:{}'.format(a, sa): (sp.vtype, sp.mode,)})
             else:
-                attr_map.update({a: (p.vtype, p.mode,),})
+                attr_map.update({a: (p.vtype, p.mode,)})
 
         return attr_map
 
@@ -221,11 +221,10 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
             forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
             unique_values = ('control_mode',)
             data = list((-1,) * seclen)
-            print(self._prev_data)
+
             for k, cndk in pndk.items():
                 data[cndk.start] = self._prev_data[seckey].get(k, cndk.vtype(0))
             data[ndk.start] = ndk.vtype(value)
-            print(data)
 
             for k, cndk in pndk.items():
                 if k == subkey and subkey in unique_values:
@@ -242,9 +241,6 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
                         data[cndk.start] = cndk.vtype(0)
 
             self._prev_data[seckey][subkey] = ndk.vtype(value)
-
-            print(data)
-            print(self._prev_data)
 
         else:
             ndk = self.netdata_map[seckey]
