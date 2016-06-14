@@ -1,64 +1,189 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 from ertza.commands import UnbufferedCommand
 from ertza.commands import OscCommand
 
 
-class ConfigSet(OscCommand, UnbufferedCommand):
+class ConfigLoadProfile(UnbufferedCommand, OscCommand):
+    """
+    Load existing profile found in _PROFILE_PATH (usually /etc/ertza/profiles)
+    """
 
     def execute(self, c):
-        if len(c.args) < 3:
-            self.send(c.sender, '/config/error',
-                      'Missing arguments for %s (%d)' % (self.alias, len(c.args)))
-            return
-        sec, opt, val, = c.args
-        self.send(c.sender, '/config/info',
-                  'Setting [%s] %s to %s' % (sec, opt, val))
+        if self.check_args(c, 'ne', 1):
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
 
         try:
-            self.machine.config.set(sec, opt, val)
-            logging.info('[%s] %s set to %s by %s' % (sec, opt, val, c.sender))
-        except:
-            self.send(c.sender, '/config/error',
-                      'Unable to set [%s] %s to %s' % (sec, opt, val))
+            profile = c.args
+            self.machine.config.load_profile(profile)
+            self.ok(c)
+        except Exception as e:
+            self.error(c, str(e))
 
     @property
     def alias(self):
-        return '/config/set'
+        return '/config/profile/load'
 
 
-class ConfigGet(OscCommand, UnbufferedCommand):
+class ConfigUnloadProfile(UnbufferedCommand, OscCommand):
+    """
+    Unload loaded profile (if any)
+    """
 
     def execute(self, c):
-        if len(c.args) != 2:
-            self.send(c.sender, '/config/error',
-                      'Invalid number of arguments for %s' % self.alias,)
-            return
-        sec, opt = c.args
-
         try:
-            val = self.machine.config.get(sec, opt)
-            self.send(c.sender, '/config/get/%s/%s' % (sec, opt), val)
-        except:
-            self.send(c.sender, '/config/error',
-                      'Unable to get [%s] %s' % (sec, opt))
+            self.machine.config.unload_profile()
+            self.ok(c)
+        except Exception as e:
+            self.error(c, str(e))
 
     @property
     def alias(self):
-        return '/config/get'
+        return '/config/profile/unload'
 
 
-class ConfigSave(OscCommand, UnbufferedCommand):
+class ConfigProfileSet(UnbufferedCommand, OscCommand):
+    """
+    Set value in profile (not in config)
+    """
+
+    def execute(self, c):
+        if not self.check_args(c, 'ne', 3):
+            return
+
+        try:
+            sec, opt, value = c.args
+            self.machine.config.profile_set(sec, opt, value)
+            self.ok(c)
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return '/config/profile/set'
+
+
+class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
+    """
+    Return a list of assignable options:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.list_options.reply:SECTION:OPTION\r\n
+
+    The command always send a ok reply at the end of the dump:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    """
+    def execute(self, c):
+
+        try:
+            opts = self.machine.config.profile_list_options()
+            for sec, opts in enumerate(list):
+                for opt, vtype in enumerate(opts):
+                    self.reply(c, sec, opt)
+
+            self.ok(c, 'done')
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return '/config/profile/list_options'
+
+
+class ConfigProfileDump(UnbufferedCommand, OscCommand):
+    """
+    Dump profile content:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION:OPTION:VALUE\r\n
+
+    The command always send a ok reply at the end of the dump:
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    """
+    def execute(self, c):
+        if not self.check_args(c, 'le', 1):
+            return
+
+        try:
+            if c.args:
+                profile = c.args
+            else:
+                profile = None
+
+            dump = self.machine.config.profile_dump(profile)
+            for options, val in dump.items():
+                sec, opt = options
+                self.reply(c, sec, opt, val)
+
+            self.ok(c, 'done')
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return '/config/profile/dump'
+
+
+class ConfigProfileSave(UnbufferedCommand, OscCommand):
+    """
+    Save profile to a file in _PROFILE_PATH.
+    If PROFILE is empty, overwrites the loaded profile
+    """
+
+    def execute(self, c):
+        if not self.check_args(c, 'le', 1):
+            return
+
+        try:
+            if c.args:
+                profile = c.args
+            else:
+                profile = None
+
+            self.machine.config.profile_save(profile)
+            self.ok(c)
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return '/config/profile/save'
+
+
+class ConfigSave(UnbufferedCommand, OscCommand):
+    """
+    Save config to custom.conf including the loaded profile name
+    """
 
     def execute(self, c):
         try:
             self.machine.config.save()
             self.ok(c)
         except Exception as e:
-            self.error(c, repr(e))
+            self.error(c, str(e))
 
     @property
     def alias(self):
         return '/config/save'
+
+
+class ConfigGet(UnbufferedCommand, OscCommand):
+    """
+    config.get:SECTION:OPTION
+
+    Returns the value of SECTION:OPTION. This allow to verify the behaviour of the config.
+    This behaviour can be changed by variant config or profile.
+    """
+
+    def execute(self, c):
+        if len(c.args) != 1:
+            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+            return
+
+        try:
+            k, = c.args
+            nk = k.decode().replace('.', ':')
+            v = self.machine[nk]
+            self.ok(c, k, v)
+        except Exception as e:
+            self.error(c, k, str(e))
+
+    @property
+    def alias(self):
+        return '/config/get'
