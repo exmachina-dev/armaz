@@ -31,7 +31,7 @@ from .led import Led
 
 from .network_utils import IpAddress
 
-version = "0.0.2~Firstimer"
+version = "0.1.0~Siderunner"
 
 _DEFAULT_CONF = "/etc/ertza/default.conf"
 _MACHINE_CONF = "/etc/ertza/machine.conf"
