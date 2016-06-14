@@ -199,6 +199,10 @@ class ConfigSave(UnbufferedCommand, OscCommand):
     def alias(self):
         return '/config/save'
 
+    @property
+    def help_text(self):
+        return 'Save the current config into the custom config file'
+
 
 class ConfigGet(UnbufferedCommand, OscCommand):
     """
