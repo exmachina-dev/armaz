@@ -3,7 +3,7 @@
 import logging
 from collections import namedtuple
 
-from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
+from .abstract_driver import AbstractDriver, AbstractDriverError
 
 
 class FakeDriverError(AbstractDriverError):
@@ -338,7 +338,6 @@ class FakeDriver(AbstractDriver, FakeDriverFrontend):
         'dropped_frames':       p(MFNdata['dropped_frames'], 0, int, 'r'),
     }
 
-
     del p
 
     def __init__(self, config):
@@ -365,9 +364,9 @@ class FakeDriver(AbstractDriver, FakeDriverFrontend):
         for a, p in self.netdata_map.items():
             if isinstance(p, dict):
                 for sa, sp in p.items():
-                    attr_map.update({'{}:{}'.format(a, sa): (sp.vtype, sp.mode,),})
+                    attr_map.update({'{}:{}'.format(a, sa): (sp.vtype, sp.mode,)})
             else:
-                attr_map.update({a: (p.vtype, p.mode,),})
+                attr_map.update({a: (p.vtype, p.mode,)})
 
         return attr_map
 

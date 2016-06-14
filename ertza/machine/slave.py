@@ -8,11 +8,11 @@ from datetime import datetime
 import logging
 import functools
 
-from ertza.machine.AbstractMachine import AbstractMachine
-from ertza.machine.AbstractMachine import AbstractMachineError, AbstractFatalMachineError
+from .abstract_machine import AbstractMachine
+from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
 
-from ertza.drivers.Drivers import Driver
-from ertza.drivers.AbstractDriver import AbstractDriverError
+from ..drivers import Driver
+from ..drivers.abstract_driver import AbstractDriverError
 
 logging = logging.getLogger(__name__)
 

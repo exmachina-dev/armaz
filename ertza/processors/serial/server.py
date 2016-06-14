@@ -4,7 +4,7 @@ import logging
 import serial as sr
 from threading import Thread
 
-from .Serial import SerialMessage, SerialCommandString
+from .message import SerialMessage, SerialCommandString
 
 logging = logging.getLogger(__name__)
 

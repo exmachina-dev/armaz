@@ -6,18 +6,19 @@ import logging
 
 from threading import Event, Thread
 
-from ertza.machine.AbstractMachine import AbstractMachine
-from ertza.machine.AbstractMachine import AbstractMachineError
-from ertza.machine.AbstractMachine import AbstractFatalMachineError
-from ertza.machine.MachineModes import StandaloneMachineMode
-from ertza.machine.MachineModes import MasterMachineMode
-from ertza.machine.MachineModes import SlaveMachineMode
+from .abstract_machine import AbstractMachine
+from .abstract_machine import AbstractMachineError
+from .abstract_machine import AbstractFatalMachineError
 
-from ertza.drivers.Drivers import Driver
-from ertza.drivers.AbstractDriver import AbstractDriverError
+from .machinemodes import StandaloneMachineMode
+from .machinemodes import MasterMachineMode
+from .machinemodes import SlaveMachineMode
 
-from ertza.machine.Slave import Slave, SlaveMachine
-from ertza.machine.Slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+from ..drivers import Driver
+from ..drivers import AbstractDriverError
+
+from ertza.machine.slave import Slave, SlaveMachine
+from ertza.machine.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
 from ertza.drivers.Utils import retry
 

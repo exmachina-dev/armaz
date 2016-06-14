@@ -4,11 +4,11 @@ import liblo as lo
 import logging
 from threading import Thread
 from threading import Event
-from queue import Queue, Empty
+from queue import Queue
 import uuid
 
-from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
-from ertza.processors.osc.Osc import OscAddress, OscMessage
+from .abstract_driver import AbstractDriver, AbstractDriverError
+from ..processors.osc import OscAddress, OscMessage
 
 
 class OscDriverError(AbstractDriverError):
@@ -127,7 +127,6 @@ class OscDriver(AbstractDriver):
                                                        repr(e)))
 
     def done_cb(self, *args):
-        #logging.debug(' '.join([str(i) for i in args]))
         pass
 
     def wait_for_future(self, fut):

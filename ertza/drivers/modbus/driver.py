@@ -3,12 +3,12 @@
 import logging
 from collections import namedtuple
 
-from ertza.drivers.AbstractDriver import AbstractDriver, AbstractDriverError
+from ..abstract_driver import AbstractDriver, AbstractDriverError
 
-from ertza.drivers.ModbusBackend import ModbusBackend, ModbusBackendError
-from ertza.drivers.ModbusFrontend import ModbusDriverFrontend
+from .backend import ModbusBackend, ModbusBackendError
+from .frontend import ModbusDriverFrontend
 
-from ertza.drivers.Utils import retry
+from ..utils import retry
 
 
 class ModbusDriverError(AbstractDriverError):
