@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from ertza.processors.osc.Osc import OscMessage
-from .AbstractCommands import AbstractCommand
+from ..processors.osc import OscMessage
+from .abstract_commands import AbstractCommand
 
 
 class OscCommand(AbstractCommand):

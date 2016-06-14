@@ -2,6 +2,6 @@
 # -*- coding: utf-8 -*-
 
 if __name__ == "__main__":
-    from ertza import Ertza
+    from ertza import ertza
 
-    Ertza.main()
+    ertza.main()
