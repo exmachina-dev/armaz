@@ -4,6 +4,8 @@ from threading import Thread
 import time
 import logging
 
+logging = logging.getLogger(__name__)
+
 
 class TempWatcher(object):
 
