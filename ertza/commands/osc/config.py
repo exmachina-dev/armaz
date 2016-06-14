@@ -24,6 +24,14 @@ class ConfigLoadProfile(UnbufferedCommand, OscCommand):
     def alias(self):
         return '/config/profile/load'
 
+    @property
+    def help_text(self):
+        return 'Load the specified PROFILE'
+
+    @property
+    def args(self):
+        return 'PROFILE'
+
 
 class ConfigUnloadProfile(UnbufferedCommand, OscCommand):
     """
@@ -40,6 +48,10 @@ class ConfigUnloadProfile(UnbufferedCommand, OscCommand):
     @property
     def alias(self):
         return '/config/profile/unload'
+
+    @property
+    def help_text(self):
+        return 'Unload the loaded profile (if any)'
 
 
 class ConfigProfileSet(UnbufferedCommand, OscCommand):
@@ -87,6 +99,10 @@ class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
     def alias(self):
         return '/config/profile/list_options'
 
+    @property
+    def help_text(self):
+        return 'Return a list of options that can be saved into a profile'
+
 
 class ConfigProfileDump(UnbufferedCommand, OscCommand):
     """
@@ -119,6 +135,10 @@ class ConfigProfileDump(UnbufferedCommand, OscCommand):
     def alias(self):
         return '/config/profile/dump'
 
+    @property
+    def help_text(self):
+        return 'Dump actual profile values '
+
 
 class ConfigProfileSave(UnbufferedCommand, OscCommand):
     """
@@ -144,6 +164,14 @@ class ConfigProfileSave(UnbufferedCommand, OscCommand):
     @property
     def alias(self):
         return '/config/profile/save'
+
+    @property
+    def help_text(self):
+        return 'Save the specified PROFILE (or the loaded one if unspecified)'
+
+    @property
+    def args(self):
+        return '[PROFILE]'
 
 
 class ConfigSave(UnbufferedCommand, OscCommand):
@@ -187,3 +215,11 @@ class ConfigGet(UnbufferedCommand, OscCommand):
     @property
     def alias(self):
         return '/config/get'
+
+    @property
+    def help_text(self):
+        return 'Returns the value of SECTION:OPTION'
+
+    @property
+    def args(self):
+        return 'SECTION:OPTION'

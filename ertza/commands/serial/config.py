@@ -86,6 +86,10 @@ class ConfigProfileListOptions(SerialCommand):
     def alias(self):
         return 'config.profile.list_options'
 
+    @property
+    def help_text(self):
+        return 'Return a list of options that can be saved into a profile'
+
 
 class ConfigProfileDump(SerialCommand):
     """
