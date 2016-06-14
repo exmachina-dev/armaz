@@ -60,11 +60,12 @@ class ConfigProfileSet(UnbufferedCommand, OscCommand):
     """
 
     def execute(self, c):
-        if not self.check_args(c, 'ne', 3):
+        if not self.check_args(c, 'ne', 2):
             return
 
         try:
-            sec, opt, value = c.args
+            dest, value = c.args
+            sec, opt = dest.split(':')
             self.machine.config.profile_set(sec, opt, value)
             self.ok(c)
         except Exception as e:
@@ -73,6 +74,14 @@ class ConfigProfileSet(UnbufferedCommand, OscCommand):
     @property
     def alias(self):
         return '/config/profile/set'
+
+    @property
+    def help_text(self):
+        return 'Set the VALUE in SECTION:OPTION'
+
+    @property
+    def args(self):
+        return 'SECTION:OPTION VALUE'
 
 
 class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
