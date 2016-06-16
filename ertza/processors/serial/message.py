@@ -56,6 +56,9 @@ class SerialCommandString(object):
             value = bs.Bits(int=value, length=self.IntLength).tobytes()
         elif type(value) == float:
             value = bs.Bits(float=value, length=self.FloatLength).tobytes()
+        elif type(value) == bool:
+            value = bs.Bits(uint=value, length=1).tobytes()
+            print(value)
 
         return value
 
