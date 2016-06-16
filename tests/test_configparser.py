@@ -38,6 +38,9 @@ class Test_ConfigParser(object):
         assert self.cf.get('machine', 'test_variant', fallback=4) == '2'
         assert self.cf.get('machine', 'test_profile', fallback=4) == '3'
 
+        assert self.cf['machine']['test_variant'] == '2'
+        assert self.cf['machine']['test_profile'] == '3'
+
     def test_set(self):
         with pytest.raises(KeyError):
             self.cf['fake_section']['fake_option'] = 0

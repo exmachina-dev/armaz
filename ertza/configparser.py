@@ -6,6 +6,7 @@ from glob import glob
 import struct
 import configparser
 from configparser import Error, NoSectionError, NoOptionError, ParsingError
+from collections import ChainMap
 
 logger = logging.getLogger('ertza.config')
 
@@ -310,3 +311,17 @@ class ConfigParser(AbstractConfigParser):
             return self._config_proxies[self.PROFILE_PRIORITY]
         except IndexError:
             return None
+
+    def __getitem__(self, key):
+        childs_sec = []
+        for cfp in self._config_proxies:
+            if cfp is not None and key in cfp:
+                childs_sec.append(cfp[key])
+
+        if key in self._proxies:
+            childs_sec.append(self._proxies[key])
+
+        if len(childs_sec) == 0:
+            raise KeyError
+
+        return ChainMap(*childs_sec)
