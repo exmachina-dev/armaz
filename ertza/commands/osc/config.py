@@ -87,7 +87,7 @@ class ConfigProfileSet(UnbufferedCommand, OscCommand):
 class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
     """
     Return a list of assignable options:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.list_options.reply:SECTION:OPTION\r\n
+    /config/profile/list_options/reply SECTION:OPTION\r\n
 
     The command always send a ok reply at the end of the dump:
     ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
@@ -116,10 +116,10 @@ class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
 class ConfigProfileDump(UnbufferedCommand, OscCommand):
     """
     Dump profile content:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION:OPTION:VALUE\r\n
+    /config/profile/dump/reply SECTION:OPTION VALUE\r\n
 
     The command always send a ok reply at the end of the dump:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    /config/profile/dump/ok done\r\n
     """
     def execute(self, c):
         if not self.check_args(c, 'le', 1):
@@ -206,8 +206,6 @@ class ConfigSave(UnbufferedCommand, OscCommand):
 
 class ConfigGet(UnbufferedCommand, OscCommand):
     """
-    config.get:SECTION:OPTION
-
     Returns the value of SECTION:OPTION. This allow to verify the behaviour of the config.
     This behaviour can be changed by variant config or profile.
     """
