@@ -98,7 +98,7 @@ class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
             opts = self.machine.config.profile_list_options()
             for sec, opts in enumerate(list):
                 for opt, vtype in enumerate(opts):
-                    self.reply(c, sec, opt)
+                    self.reply(c, '{}:{}'.format(sec, opt))
 
             self.ok(c, 'done')
         except Exception as e:
