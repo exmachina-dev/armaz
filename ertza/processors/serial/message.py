@@ -134,5 +134,8 @@ class SerialMessage(AbstractMessage):
     def tobytes(self):
         return self.cmd_bytes.tobytes
 
+    def __len__(self):
+        return len(self.cmd_bytes)
+
     def __repr__(self):
         return '%s: %s' % (self.__class__.__name__, self.cmd_bytes)
