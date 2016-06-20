@@ -3,20 +3,18 @@
 import pytest
 import configparser
 
-from ertza.remotes.modbus import ModbusRequest
-from ertza.remotes.modbus import ModbusBackend
-from ertza.utils.fake import FakeModbus
+from ertza.drivers.modbus import ModbusDriver
+from ertza.drivers.modbus import ModbusDriverFrontend
+from ertza.drivers.modbus import ModbusDriverBackend
 
-class Test_ModbusRequest(object):
+class Test_ModbusDriver(object):
     def setup_class(self):
-        self.rq = ModbusRequest(FakeModbus())
+        self.dr = ModbusDriver({'target_address': '127.0.0.1', 'target_port': '502'})
+        self.attrs = self.dr.get_attribute_map()
 
     def test_get(self):
-        assert self.rq.status == \
-                None
-
-        with pytest.raises(configparser.NoSectionError):
-            self.rq.get('fake_section', 'fake_option')
+        with pytest.raises(KeyError):
+            self.dr['nonexistingkey']
 
         assert self.rq.get('fake_section', 'fake_option', 1234) == 1234
 
