@@ -11,6 +11,8 @@ import logging as lg
 
 from ertza.processors.osc.message import OscMessage, OscAddress
 
+from ertza_widgets import SwitchWidget, PushButton
+
 VERSION = '0.0.1'
 
 
@@ -358,19 +360,23 @@ class ErtzaGui(QtGui.QMainWindow):
         frame.setLayout(grid)
 
         ctl_grid = QtGui.QGridLayout()
-        ctl_grid.setSpacing(5)
-        ctl_grid.setColumnStretch(0, 1)
-        ctl_grid.setColumnStretch(1, 1)
-        ctl_grid.setColumnStretch(2, 1)
-        ctl_grid.setColumnStretch(3, 1)
+        ctl_grid.setSpacing(2)
+        for i in range(1, 8, 2):
+            ctl_grid.setColumnMinimumWidth(i, 10)
+        ctl_grid.setColumnStretch(0, 2)
+        ctl_grid.setColumnStretch(2, 2)
+        ctl_grid.setColumnStretch(4, 2)
+        ctl_grid.setColumnStretch(6, 2)
         ctl_frame = QtGui.QFrame()
         ctl_frame.setLayout(ctl_grid)
 
-        self.ctl_enable_but = QtGui.QSlider(QtCore.Qt.Orientation.Horizontal)
-        self.ctl_enable_but.setRange(0, 1)
-        self.ctl_cancel_but = QtGui.QPushButton('Drive cancel')
-        self.ctl_clear_errors_but = QtGui.QPushButton('Clear errors')
-        self.ctl_stop_but = QtGui.QPushButton('Stop')
+        self.ctl_enable_but = SwitchWidget()
+        self.ctl_cancel_but = PushButton('Drive cancel')
+        self.ctl_clear_errors_but = PushButton('Clear errors')
+        self.ctl_stop_but = PushButton('Stop')
+
+        self.ctl_cancel_but.color = QtGui.QColor(156, 96, 96)
+        self.ctl_stop_but.color = QtGui.QColor(156, 96, 96)
 
         self.ctl_enable_but.valueChanged.connect(self.actions.isend_command_enable)
         self.ctl_cancel_but.clicked.connect(self.actions.isend_command_cancel)
@@ -378,10 +384,10 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_stop_but.clicked.connect(self.actions.isend_command_stop)
 
         ctl_grid.addWidget(QtGui.QLabel('Drive enable'), 0, 0)
-        ctl_grid.addWidget(self.ctl_enable_but, 1, 0)
-        ctl_grid.addWidget(self.ctl_cancel_but, 1, 1)
-        ctl_grid.addWidget(self.ctl_clear_errors_but, 1, 2)
-        ctl_grid.addWidget(self.ctl_stop_but, 1, 3)
+        ctl_grid.addWidget(self.ctl_enable_but, 1, 0, 2, 1)
+        ctl_grid.addWidget(self.ctl_cancel_but, 1, 2, 2, 1)
+        ctl_grid.addWidget(self.ctl_clear_errors_but, 1, 4, 2, 1)
+        ctl_grid.addWidget(self.ctl_stop_but, 1, 6, 2, 1)
 
         ctl_tabs = QtGui.QTabWidget()
 
@@ -457,12 +463,17 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_ps_velocity_input = QtGui.QSpinBox()
         self.ctl_ps_acceleration_input = QtGui.QSpinBox()
         self.ctl_ps_deceleration_input = QtGui.QSpinBox()
-        self.ctl_ps_position_mode_input = QtGui.QSpinBox()
+        self.ctl_ps_position_mode_input = SwitchWidget()
+        self.ctl_ps_move_mode_input = SwitchWidget()
 
         self.ctl_position_ref_input.setRange(-100000000, 100000000)
         self.ctl_velocity_ref_input.setRange(-100000, 100000)
         self.ctl_vl_acceleration_input.setRange(0, 10000)
         self.ctl_vl_deceleration_input.setRange(0, 10000)
+        self.ctl_ps_position_mode_input.choices = ('Absolute', 'Relative')
+        self.ctl_ps_position_mode_input.colors = (QtGui.QColor(96, 96, 156), QtGui.QColor(96, 156, 156))
+        self.ctl_ps_move_mode_input.choices = ('Cumulative', 'Replace')
+        self.ctl_ps_move_mode_input.colors = (QtGui.QColor(96, 96, 156), QtGui.QColor(96, 156, 156))
 
         self.ctl_position_ref_input.valueChanged.connect(self.actions.isend_position_ref)
         self.ctl_ps_velocity_input.valueChanged.connect(self.actions.isend_velocity_ref)
@@ -474,17 +485,23 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_ps_acceleration_input.setSuffix(' ms.s-1')
         self.ctl_ps_deceleration_input.setSuffix(' ms.s-1')
 
-        ps_grid.addWidget(QtGui.QLabel('Velocity'), 0, 0)
-        ps_grid.addWidget(self.ctl_ps_velocity_input, 0, 1)
+        ps_grid.addWidget(QtGui.QLabel('Position Mode'), 0, 0)
+        ps_grid.addWidget(self.ctl_ps_position_mode_input, 0, 1)
 
-        ps_grid.addWidget(QtGui.QLabel('Position ref'), 1, 0)
-        ps_grid.addWidget(self.ctl_position_ref_input, 1, 1)
+        ps_grid.addWidget(QtGui.QLabel('Move Mode'), 0, 2)
+        ps_grid.addWidget(self.ctl_ps_move_mode_input, 0, 3)
 
-        ps_grid.addWidget(QtGui.QLabel('Acceleration'), 0, 2)
-        ps_grid.addWidget(self.ctl_ps_acceleration_input, 0, 3)
+        ps_grid.addWidget(QtGui.QLabel('Velocity'), 1, 0)
+        ps_grid.addWidget(self.ctl_ps_velocity_input, 1, 1)
 
-        ps_grid.addWidget(QtGui.QLabel('Deceleration'), 1, 2)
-        ps_grid.addWidget(self.ctl_ps_deceleration_input, 1, 3)
+        ps_grid.addWidget(QtGui.QLabel('Position ref'), 1, 2)
+        ps_grid.addWidget(self.ctl_position_ref_input, 1, 3)
+
+        ps_grid.addWidget(QtGui.QLabel('Acceleration'), 2, 0)
+        ps_grid.addWidget(self.ctl_ps_acceleration_input, 2, 1)
+
+        ps_grid.addWidget(QtGui.QLabel('Deceleration'), 2, 2)
+        ps_grid.addWidget(self.ctl_ps_deceleration_input, 2, 3)
 
         ctl_tabs.addTab(tq_frame, '&Torque mode')
         ctl_tabs.addTab(vl_frame, '&Velocity mode')
@@ -505,7 +522,7 @@ class ErtzaGui(QtGui.QMainWindow):
         self.target_addr = QtGui.QLineEdit()
         self.target_port = QtGui.QSpinBox()
         self.listen_port = QtGui.QSpinBox()
-        connect_button = QtGui.QPushButton('Connect')
+        connect_button = PushButton('Connect')
         debug_checkbox = QtGui.QCheckBox('Debug')
 
         self.target_port.setRange(0, 99999)
