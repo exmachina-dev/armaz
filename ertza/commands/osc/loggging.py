@@ -34,8 +34,7 @@ class LogTo(OscCommand, UnbufferedCommand):
         self.machine.osc_loghandler = OscLogHandler(self.machine, log_ip, log_port)
         root_log = logging.getLogger()
         root_log.addHandler(self.machine.osc_loghandler)
-        self.send(c.sender, '/log/info',
-                  'Binding OSC log handler to %s:%s' % (log_ip, str(log_port)))
+        self.ok(c, 'Binding OSC log handler to %s:%s' % (log_ip, str(log_port)))
 
     @property
     def alias(self):
@@ -48,8 +47,8 @@ class LogLevel(OscCommand, UnbufferedCommand):
         try:
             self.machine.osc_loghandler.setLevel(c.args[0])
         except AttributeError:
-            self.send(c.sender, '/log/error', 'OSC log handler is not specified. '
-                      'Run /log/to target prior to this command',)
+            self.error(c, 'OSC log handler is not specified. '
+                       'Run /log/to target prior to this command')
 
     @property
     def alias(self):
