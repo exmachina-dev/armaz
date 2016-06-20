@@ -327,7 +327,7 @@ class ErtzaGui(QtGui.QMainWindow):
         self.statusBar().showMessage('Ready.')
 
     def _menubar(self):
-        exit_action = QtGui.QAction(QtGui.QIcon('quit24.png'), '&Exit', self)
+        exit_action = QtGui.QAction(QtGui.QIcon.fromTheme('application-exit'), '&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(self.close)
 
