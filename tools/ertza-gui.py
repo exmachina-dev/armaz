@@ -223,6 +223,8 @@ class ErtzaActions(object):
                 return functools.partial(self._setter, attr[4:])
             elif 'isend_' == attr[0:6]:
                 return functools.partial(self._instant_sender, attr[6:])
+            elif 'iconf_' == attr[0:6]:
+                return functools.partial(self._instant_config, attr[6:])
             elif 'get_' == attr[0:4]:
                 return functools.partial(self._getter, attr[4:])
             else:
@@ -237,6 +239,15 @@ class ErtzaActions(object):
     def _instant_sender(self, key, value=1):
         if key.startswith('command_'):
             self.send('/machine/set', 'machine:command:{}'.format(key[8:]), value)
+        else:
+            self.send('/machine/set', 'machine:{}'.format(key), value)
+
+    def _instant_config(self, key, value=None):
+        if key.startswith('profile_'):
+            if value is not None:
+                self.send('/config/profile/{}'.format(key[8:]), value)
+            else:
+                self.send('/config/profile/{}'.format(key[8:]))
         else:
             self.send('/machine/set', 'machine:{}'.format(key), value)
 
