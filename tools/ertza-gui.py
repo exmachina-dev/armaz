@@ -280,7 +280,7 @@ class ErtzaActions(object):
         try:
             return getattr(self, 'get_{}'.format(key))()
         except KeyError:
-            if fallback:
+            if fallback is not None:
                 return fallback
             raise
 
