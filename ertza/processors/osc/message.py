@@ -56,6 +56,9 @@ class OscMessage(AbstractMessage):
         self.receiver = OscAddress(kwargs['receiver']) if 'receiver' in kwargs \
             else None
 
+        if not (self.sender or self.receiver):
+            self.receiver = OscAddress(**kwargs)
+
         self.msg_type = kwargs['msg_type'] if 'msg_type' in kwargs else None
 
         self.answer = None
