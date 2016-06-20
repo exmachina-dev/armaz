@@ -551,7 +551,76 @@ class ErtzaGui(QtGui.QMainWindow):
         self.centralWidget().layout().addWidget(frame, 0, 0)
 
     def _config_section(self):
-        pass
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(5)
+
+        frame = QtGui.QGroupBox('Setup')
+        frame.setLayout(grid)
+
+        stp_grid = QtGui.QGridLayout()
+        stp_frame = QtGui.QFrame()
+        stp_frame.setLayout(stp_grid)
+
+        stp_tabs = QtGui.QTabWidget()
+
+        cnf_grid = QtGui.QGridLayout()
+        cnf_grid.setSpacing(10)
+
+        cnf_frame = QtGui.QFrame()
+        cnf_frame.setLayout(cnf_grid)
+
+        self.stp_torque_ref_input = QtGui.QSpinBox()
+        self.stp_tq_rise_time_input = QtGui.QSpinBox()
+        self.stp_tq_fall_time_input = QtGui.QSpinBox()
+
+        self.stp_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
+        self.stp_tq_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
+        self.stp_tq_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
+
+        self.stp_torque_ref_input.setRange(-100, 100)
+        self.stp_tq_rise_time_input.setRange(0, 100000)
+        self.stp_tq_fall_time_input.setRange(0, 100000)
+
+        self.stp_torque_ref_input.setSuffix(' %')
+        self.stp_tq_rise_time_input.setSuffix(' ms')
+        self.stp_tq_fall_time_input.setSuffix(' ms')
+
+        cnf_grid.addWidget(QtGui.QLabel('Torque ref'), 0, 0)
+        cnf_grid.addWidget(self.stp_torque_ref_input, 0, 1)
+
+        cnf_grid.addWidget(QtGui.QLabel('Torque rise time'), 1, 0)
+        cnf_grid.addWidget(self.stp_tq_rise_time_input, 1, 1)
+
+        cnf_grid.addWidget(QtGui.QLabel('Torque fall time'), 2, 0)
+        cnf_grid.addWidget(self.stp_tq_fall_time_input, 2, 1)
+
+        pfl_grid = QtGui.QGridLayout()
+        pfl_grid.setSpacing(10)
+
+        pfl_frame = QtGui.QFrame()
+        pfl_frame.setLayout(pfl_grid)
+
+        self.stp_load_pfl_but = PushButton('Load Profile')
+        self.stp_unload_pfl_but = PushButton('Unload Profile')
+        self.stp_save_pfl_but = PushButton('Save Profile')
+
+        self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
+
+        self.stp_load_pfl_but.clicked.connect(self.actions.iconf_profile_load)
+        self.stp_unload_pfl_but.clicked.connect(self.actions.iconf_profile_unload)
+        self.stp_save_pfl_but.clicked.connect(self.actions.iconf_profile_save)
+
+        pfl_grid.addWidget(self.stp_load_pfl_but, 1, 0, 2, 1)
+        pfl_grid.addWidget(self.stp_unload_pfl_but, 1, 2, 2, 1)
+        pfl_grid.addWidget(self.stp_save_pfl_but, 1, 4, 2, 1)
+
+        stp_tabs.addTab(cnf_frame, '&Config')
+        stp_tabs.addTab(pfl_frame, 'P&rofile')
+
+        grid.addWidget(stp_frame, 0, 0)
+        grid.addWidget(stp_tabs, 1, 0)
+
+        self.centralWidget().layout().addWidget(frame, 2, 0, 1, 2)
 
     def _profile_section(self):
         pass
