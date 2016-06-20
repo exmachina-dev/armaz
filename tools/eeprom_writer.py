@@ -14,6 +14,7 @@ available_variants = (
     'ARMAZ.HEAVY',
     'ARMAZ.FAST',
     'ARMAZ.FLAT',
+    'ARMAZ.BOLD',
 )
 
 pin_usage = OrderedDict()
