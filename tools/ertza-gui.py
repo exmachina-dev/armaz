@@ -154,8 +154,31 @@ class ErtzaActions(object):
         try:
             if self.connected:
                 return self.osc_server.reply(None, self.target, path, *args)
+            else:
+                logging.error('Cannot send, not connected')
         except OSError as e:
             logging.error(repr(e))
+
+    def cmd_send(self):
+        cmd = self.master.cmd_line.text()
+        if not cmd:
+            return
+
+        try:
+            try:
+                cmd, args, = cmd.split(' ')
+                if not isinstance(args, tuple):
+                    args = (args,)
+
+                self.send(cmd, *args)
+                logging.info('Command sent: {} {}'.format(cmd, ' '.join(args)))
+            except ValueError:
+                self.send(cmd)
+                logging.info('Command sent: {}'.format(cmd))
+            finally:
+                self.master.cmd_line.clear()
+        except Exception as e:
+            logging.error('Error while sending command: {!r}'.format(e))
 
     def drive_toggle(self):
         if self.state['drive_enable']:
@@ -318,10 +341,12 @@ class ErtzaGui(QtGui.QMainWindow):
         frame.setLayout(grid)
 
         self.log_list = QtGui.QTextEdit()
-        cmd_line = QtGui.QLineEdit()
+        self.cmd_line = QtGui.QLineEdit()
+
+        self.cmd_line.returnPressed.connect(self.actions.cmd_send)
 
         grid.addWidget(self.log_list, 0, 0, 9, 0)
-        grid.addWidget(cmd_line, 9, 0)
+        grid.addWidget(self.cmd_line, 9, 0)
 
         self.centralWidget().layout().addWidget(frame, 0, 1)
 
