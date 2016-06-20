@@ -1,11 +1,60 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tkinter as tk
+import sys
+from PySide import QtGui
+from PySide import QtCore
+import functools
+
 import liblo as lo
-from ertza.remotes.osc.server import OSCBaseServer
+import logging as lg
+
+from ertza.processors.osc.message import OscMessage, OscAddress
 
 VERSION = '0.0.1'
+
+
+class EmbeddedLogHandler(lg.Handler):
+
+    def __init__(self, widget):
+        super().__init__()
+        self.setLevel(lg.DEBUG)
+
+        self.widget = widget
+
+        self.color = {
+            "INFO": QtGui.QColor(0, 0, 0),
+            "DEBUG": QtGui.QColor(127, 127, 127),
+            "WARNING": QtGui.QColor(127, 127, 0),
+            "ERROR": QtGui.QColor(127, 0, 0),
+            "CRITICAL": QtGui.QColor(255, 0, 0),
+        }
+        super().__init__()
+
+    def emit(self, record):
+        msg = self.format(record) + '\n'
+
+        self.widget.setTextColor(self.color[record.levelname])
+
+        self.widget.moveCursor(QtGui.QTextCursor.End)
+        self.widget.insertPlainText(msg)
+
+
+console_logger = lg.StreamHandler()
+console_formatter = lg.Formatter(
+    '%(asctime)s %(name)-36s %(levelname)-8s %(message)s',
+    datefmt='%Y%m%d %H:%M:%S')
+
+embedded_formatter = lg.Formatter(
+    '%(asctime)s %(name)-20s %(levelname)-7s %(message)s',
+    datefmt='%d %H:%M:%S')
+
+logging = lg.getLogger('ertza-gui')
+logging.addHandler(console_logger)
+console_logger.setFormatter(console_formatter)
+
+logging.setLevel(lg.DEBUG)
+
 
 class ErtzaOSCServer(lo.ServerThread):
     def __init__(self, to, *args, **kwargs):
@@ -33,10 +82,9 @@ class ErtzaOSCServer(lo.ServerThread):
         self.send(sender, _msg)
         return _msg
 
-    @lo.make_method('/status/online', 'i')
+    @lo.make_method('/alive', None)
     def online_cb(self, path, args, types, sender):
-        self.to.print('%s is online, listening on %s' % (
-            sender.get_hostname(), args[0]))
+        logging.info('{} is online, listening on {}'.format(*args))
         if self.to.to['dev_addr'] == sender.get_hostname():
             self.reply('/setup/dump', sender)
             self.reply('/motor/status', sender)
@@ -52,82 +100,51 @@ class ErtzaActions(object):
         self.connected = False
 
         self.state = {
-                'drive_enable' : False,
-                }
+            'drive_enable': False,
+        }
+
+        self._config = {}
 
     def load_defaults(self):
-        self.master.dev_addr.set('192.168.1.12')
-        self.master.dev_port.set(7900)
-        self.master.srv_port.set(7901)
+        self.master.target_addr.setText('192.168.100.23')
+        self.master.target_port.setValue(6969)
+        self.master.listen_port.setValue(6969)
 
-        self.master.ctl_drive_enable.set('Drive enable')
-
-        self.fields = {
-                'osc': {
-                    'server_port': self.master.conf_osc_server_port,
-                    'client_port': self.master.conf_osc_client_port,
-                    },
-                'control': {
-                    'mode': self.master.conf_ctrl_mode,
-                    },
-                }
-
-        self.print('Welcome to Ertza debug GUI.', 'Version : %s' % (VERSION,))
-
-    def print(self, *msg, **kwargs):
-        index = tk.END
-        if 'index' in kwargs:
-            index = kwargs['index']
-
-        if type(msg) is str:
-            return self.master.log_list.insert(index, msg)
-        else:
-            for m in msg:
-                self.master.log_list.insert(index, m)
+        logging.info('Welcome to Ertza debug GUI.')
+        logging.info('Version : %s' % (VERSION,))
 
     def handle(self, sender, path, *args):
-        if self.master.dbg_state:
-            self.print('From %s : %s %s' % (sender, path, args))
+        """
+        OSC commands loaded: /log/to /config/profile/load /machine/get /config/set /machine/slave/add /config/save /config/profile/save /log/level /slave/ping /slave/register/ok /config/profile/dump /machine/set /slave/set/error /slave/free /machine/slave/remove /slave/get /slave/set /help/list /drive/get /config/get /config/profile/list_options /slave/get/error /slave/register /config/profile/unload /version /machine/slaves /drive/set /slave/set/ok /slave/ping/ok /machine/slave/mode /slave/get/ok /identify /config/profile/set
+        """
 
-        if '/status/motor/' in path:
-            if '/drive_temperature' in path:
-                pass
-            elif '/error_code' in path:
-                pass
-            elif '/enable_input' in path:
-                pass
-            elif '/enable_ready' in path:
-                pass
-            elif '/enable' in path:
-                pass
-            elif '/brake' in path:
-                pass
-        elif '/setup/' in path:
-            if '/get/' in path:
-                sec, opt, val = args
-            elif '/value' in path:
-                sec, opt, val = args
-                self.update_field(sec, opt, val)
+        if '/error' in path:
+            logging.error('Error in response: {} {}'.format(path, ' '.join(args)))
+        elif '/ok' in path:
+            if self.config_get('debug', False):
+                logging.debug('From %s : %s %s' % (sender, path, args))
+            if '/machine/get' in path:
+                k, v = args
+                self.state[k] = v
+        else:
+            logging.warn('Unexpected response: {} {}'.format(path, ' '.join([str(a) for a in args])))
 
     def connect(self):
-        self.to = {
-                'dev_addr': self.master.dev_addr.get(),
-                'dev_port': self.master.dev_port.get(),
-                'srv_port': self.master.srv_port.get(),
-                }
+        target_addr = self.config_get('target_addr', '127.0.0.1')
+        target_port = self.config_get('target_port', 6969)
+        listen_port = self.config_get('listen_port', 6970)
+
         if self.connected:
             del self.osc_server
 
-        self.print('Starting server on %s' % self.to['srv_port'])
-        self.osc_server = ErtzaOSCServer(self, self.to['srv_port'], lo.UDP)
+        logging.info('Starting server on {}'.format(listen_port))
+        self.osc_server = ErtzaOSCServer(self, listen_port, lo.UDP)
         self.osc_server.start()
-        self.print('Setting target to %s:%s' % (self.to['dev_addr'],
-            self.to['dev_port'],))
-        self.target = lo.Address(self.to['dev_addr'], self.to['dev_port'])
+        logging.info('Setting target to {}:{}'.format(target_addr, target_port))
+        self.target = lo.Address(target_addr, target_port)
         self.connected = True
 
-    def stop(self):
-        pass
+        self.request_state()
 
     def close(self):
         self.stop()
@@ -138,7 +155,7 @@ class ErtzaActions(object):
             if self.connected:
                 return self.osc_server.reply(None, self.target, path, *args)
         except OSError as e:
-            self.print(repr(e))
+            logging.error(repr(e))
 
     def drive_toggle(self):
         if self.state['drive_enable']:
@@ -148,6 +165,9 @@ class ErtzaActions(object):
 
         self.state['drive_enable'] = not self.state['drive_enable']
         self.send('/debug/drive/drive_enable', int(self.state['drive_enable']))
+
+    def request_state(self):
+        self.send('/machine/get', 'machine:status')
 
     def drive_cancel(self):
         self.send('/debug/drive/drive_cancel', 1)
@@ -159,7 +179,7 @@ class ErtzaActions(object):
         self.speed(0)
 
     def speed(self, speed=None):
-        if not speed is None:
+        if speed is not None:
             self.master.ctl_speed.set(speed)
         else:
             speed = self.master.ctl_speed.get()
@@ -176,23 +196,90 @@ class ErtzaActions(object):
     def update_field(self, sec, opt, val):
         try:
             self.fields[sec][opt].set(val)
-            self.print('Setting %s.%s to %s' % (sec, opt, val))
+            logging.error('Setting %s.%s to %s' % (sec, opt, val))
         except KeyError:
-            self.print('Unexcepted config %s.%s %s' % (sec, opt, val))
+            logging.error('Unexcepted config %s.%s %s' % (sec, opt, val))
             pass
 
     def update_device(self, *args):
         pass
 
+    def __setattr__(self, attr, value):
+        try:
+            super().__setattr__(attr, value)
+        except AttributeError:
+            if 'set_' == attr[0:4]:
+                self._config[attr[4:]] = value
+            elif 'isend_' == attr[0:6]:
+                self._instant_sender(attr[6:], value)
+            else:
+                raise AttributeError
 
-class ErtzaGui(tk.Frame):
-    def __init__(self, master):
+    def __getattribute__(self, attr):
+        try:
+            return super().__getattribute__(attr)
+        except AttributeError:
+            if 'set_' == attr[0:4]:
+                return functools.partial(self._setter, attr[4:])
+            elif 'isend_' == attr[0:6]:
+                return functools.partial(self._instant_sender, attr[6:])
+            elif 'get_' == attr[0:4]:
+                return functools.partial(self._getter, attr[4:])
+            else:
+                raise AttributeError
+
+    def _setter(self, key, value):
+        self._config[key] = value
+
+    def _getter(self, key):
+        return self._config[key]
+
+    def _instant_sender(self, key, value=1):
+        if key.startswith('command_'):
+            self.send('/machine/set', 'machine:command:{}'.format(key[8:]), value)
+        else:
+            self.send('/machine/set', 'machine:{}'.format(key), value)
+
+    def config_get(self, key, fallback=None):
+        try:
+            return getattr(self, 'get_{}'.format(key))()
+        except KeyError:
+            if fallback:
+                return fallback
+            raise
+
+
+class ErtzaGui(QtGui.QMainWindow):
+    def __init__(self):
+        super().__init__()
         self.actions = ErtzaActions(self)
-        tk.Frame.__init__(self, master)
-        self.pack()
+
         self.create_widgets()
 
+        self.embedded_log_handler = EmbeddedLogHandler(self.log_list)
+        self.embedded_log_handler.setFormatter(embedded_formatter)
+        logging.addHandler(self.embedded_log_handler)
+        self.embedded_log_handler.setLevel(lg.DEBUG)
+        logging.setLevel(lg.DEBUG)
+
+        self.actions.load_defaults()
+
     def create_widgets(self):
+        QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Plastique'))
+
+        self.statusBar().showMessage('Starting…')
+
+        self.setGeometry(500, 900, 250, 150)
+        self.setWindowTitle('Ertza debug GUI')
+
+        main_frame = QtGui.QFrame(self)
+        self._main_layout = QtGui.QGridLayout(main_frame)
+        self.setCentralWidget(main_frame)
+
+        self._menubar()
+
+        self.show()
+
         self._device_section()
 
         self._log_section()
@@ -201,156 +288,223 @@ class ErtzaGui(tk.Frame):
 
         self._config_section()
 
-        self.quit_but = tk.Button(self, text="Close",
-                command=self.actions.close)
-        self.quit_but.grid()
+        self.statusBar().showMessage('Ready.')
 
-        self.actions.load_defaults()
+    def _menubar(self):
+        exit_action = QtGui.QAction(QtGui.QIcon('quit24.png'), '&Exit', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(self.close)
+
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('&File')
+        file_menu.addAction(exit_action)
 
     def _log_section(self):
-        self.log_frame = tk.Frame(self)
-        lg = self.log_frame
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(5)
 
-        self.log_y_scroll = tk.Scrollbar(lg, orient=tk.VERTICAL)
-        self.log_y_scroll.grid(row=0, column=1, sticky=tk.N+tk.S)
+        frame = QtGui.QGroupBox('Log')
+        frame.setLayout(grid)
 
-        self.log_x_scroll = tk.Scrollbar(lg, orient=tk.HORIZONTAL)
-        self.log_x_scroll.grid(row=1, column=0, sticky=tk.E+tk.W)
+        self.log_list = QtGui.QTextEdit()
+        cmd_line = QtGui.QLineEdit()
 
-        self.log_list = tk.Listbox(lg,
-                xscrollcommand=self.log_x_scroll.set,
-                yscrollcommand=self.log_y_scroll.set,
-                width=40)
-        self.log_list.grid(row=0, column=0,
-                sticky=tk.N+tk.S+tk.E+tk.W)
-        self.log_x_scroll['command'] = self.log_list.xview
-        self.log_y_scroll['command'] = self.log_list.yview
+        grid.addWidget(self.log_list, 0, 0, 9, 0)
+        grid.addWidget(cmd_line, 9, 0)
 
-        self.log_frame.grid(row=0, column=1)
+        self.centralWidget().layout().addWidget(frame, 0, 1)
 
     def _control_section(self):
-        self.ctl_drive_enable = tk.StringVar()
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(5)
 
-        self.ctl_speed = tk.IntVar()
-        self.ctl_accel = tk.IntVar()
-        self.ctl_decel = tk.IntVar()
+        frame = QtGui.QGroupBox('Control')
+        frame.setLayout(grid)
 
-        self.ctl_frame = tk.Frame(self)
-        ct = self.ctl_frame
+        ctl_grid = QtGui.QGridLayout()
+        ctl_grid.setSpacing(5)
+        ctl_grid.setColumnStretch(0, 1)
+        ctl_grid.setColumnStretch(1, 1)
+        ctl_grid.setColumnStretch(2, 1)
+        ctl_grid.setColumnStretch(3, 1)
+        ctl_frame = QtGui.QFrame()
+        ctl_frame.setLayout(ctl_grid)
 
-        self.ctl_enable_but = tk.Button(ct, text='Drive enable')
-        self.ctl_enable_but.grid(row=0, columnspan=2)
-        self.ctl_enable_but['command'] = self.actions.drive_toggle
-        self.ctl_enable_but['textvariable'] = self.ctl_drive_enable
+        self.ctl_enable_but = QtGui.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.ctl_enable_but.setRange(0, 1)
+        self.ctl_cancel_but = QtGui.QPushButton('Drive cancel')
+        self.ctl_clear_errors_but = QtGui.QPushButton('Clear errors')
+        self.ctl_stop_but = QtGui.QPushButton('Stop')
 
-        self.ctl_cancel_but = tk.Button(ct, text='Drive cancel')
-        self.ctl_cancel_but.grid(row=0, column=2, columnspan=2)
-        self.ctl_cancel_but['command'] = self.actions.drive_cancel
+        self.ctl_enable_but.valueChanged.connect(self.actions.isend_command_enable)
+        self.ctl_cancel_but.clicked.connect(self.actions.isend_command_cancel)
+        self.ctl_clear_errors_but.clicked.connect(self.actions.isend_command_clear_errors)
+        self.ctl_stop_but.clicked.connect(self.actions.isend_command_stop)
 
-        self.ctl_clearerrors_but = tk.Button(ct, text='Clear errors')
-        self.ctl_clearerrors_but.grid(row=0, column=4, columnspan=2)
-        self.ctl_clearerrors_but['command'] = self.actions.drive_clear
+        ctl_grid.addWidget(QtGui.QLabel('Drive enable'), 0, 0)
+        ctl_grid.addWidget(self.ctl_enable_but, 1, 0)
+        ctl_grid.addWidget(self.ctl_cancel_but, 1, 1)
+        ctl_grid.addWidget(self.ctl_clear_errors_but, 1, 2)
+        ctl_grid.addWidget(self.ctl_stop_but, 1, 3)
 
-        self.ctl_speed_box = self._generic_box(ct, 'Speed', 1, 0,
-                textvariable=self.ctl_speed, width=10, change_action=True)
+        ctl_tabs = QtGui.QTabWidget()
 
-        self.ctl_aceel_box = self._generic_box(ct, 'Acceleration', 1, 3,
-                textvariable=self.ctl_accel, width=10, change_action=True)
+        tq_grid = QtGui.QGridLayout()
+        tq_grid.setSpacing(10)
 
-        self.ctl_decel_box = self._generic_box(ct, 'Deceleration', 2, 3,
-                textvariable=self.ctl_decel, width=10, change_action=True)
+        tq_frame = QtGui.QFrame()
+        tq_frame.setLayout(tq_grid)
 
-        self.ctl_reverse_but = tk.Button(ct, text='Reverse')
-        self.ctl_reverse_but.grid(row=2, column=1, columnspan=2)
-        self.ctl_reverse_but['command'] = self.actions.reverse_speed
+        self.ctl_torque_ref_input = QtGui.QSpinBox()
+        self.ctl_tq_rise_time_input = QtGui.QSpinBox()
+        self.ctl_tq_fall_time_input = QtGui.QSpinBox()
 
-        self.ctl_stop_but = tk.Button(ct, text='Stop')
-        self.ctl_stop_but.grid(row=2, column=0)
-        self.ctl_stop_but['command'] = self.actions.stop
+        self.ctl_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
+        self.ctl_tq_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
+        self.ctl_tq_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
 
-        self.ctl_frame.grid(columnspan=2)
+        self.ctl_torque_ref_input.setRange(-100, 100)
+        self.ctl_tq_rise_time_input.setRange(0, 100000)
+        self.ctl_tq_fall_time_input.setRange(0, 100000)
+
+        self.ctl_torque_ref_input.setSuffix(' %')
+        self.ctl_tq_rise_time_input.setSuffix(' ms')
+        self.ctl_tq_fall_time_input.setSuffix(' ms')
+
+        tq_grid.addWidget(QtGui.QLabel('Torque ref'), 0, 0)
+        tq_grid.addWidget(self.ctl_torque_ref_input, 0, 1)
+
+        tq_grid.addWidget(QtGui.QLabel('Torque rise time'), 1, 0)
+        tq_grid.addWidget(self.ctl_tq_rise_time_input, 1, 1)
+
+        tq_grid.addWidget(QtGui.QLabel('Torque fall time'), 2, 0)
+        tq_grid.addWidget(self.ctl_tq_fall_time_input, 2, 1)
+
+        vl_grid = QtGui.QGridLayout()
+        vl_grid.setSpacing(10)
+
+        vl_frame = QtGui.QFrame()
+        vl_frame.setLayout(vl_grid)
+
+        self.ctl_velocity_ref_input = QtGui.QSpinBox()
+        self.ctl_vl_acceleration_input = QtGui.QSpinBox()
+        self.ctl_vl_deceleration_input = QtGui.QSpinBox()
+
+        self.ctl_velocity_ref_input.setRange(-100000, 100000)
+        self.ctl_vl_acceleration_input.setRange(0, 10000)
+        self.ctl_vl_deceleration_input.setRange(0, 10000)
+
+        self.ctl_velocity_ref_input.valueChanged.connect(self.actions.isend_velocity_ref)
+        self.ctl_vl_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
+        self.ctl_vl_deceleration_input.valueChanged.connect(self.actions.isend_deceleration)
+
+        self.ctl_velocity_ref_input.setSuffix(' rpm')
+        self.ctl_vl_acceleration_input.setSuffix(' ms.s-1')
+        self.ctl_vl_deceleration_input.setSuffix(' ms.s-1')
+
+        vl_grid.addWidget(QtGui.QLabel('Velocity ref'), 0, 0)
+        vl_grid.addWidget(self.ctl_velocity_ref_input, 0, 1)
+
+        vl_grid.addWidget(QtGui.QLabel('Acceleration'), 1, 0)
+        vl_grid.addWidget(self.ctl_vl_acceleration_input, 1, 1)
+
+        vl_grid.addWidget(QtGui.QLabel('Deceleration'), 2, 0)
+        vl_grid.addWidget(self.ctl_vl_deceleration_input, 2, 1)
+
+        ps_grid = QtGui.QGridLayout()
+        ps_grid.setSpacing(10)
+
+        ps_frame = QtGui.QFrame()
+        ps_frame.setLayout(ps_grid)
+
+        self.ctl_position_ref_input = QtGui.QSpinBox()
+        self.ctl_ps_velocity_input = QtGui.QSpinBox()
+        self.ctl_ps_acceleration_input = QtGui.QSpinBox()
+        self.ctl_ps_deceleration_input = QtGui.QSpinBox()
+        self.ctl_ps_position_mode_input = QtGui.QSpinBox()
+
+        self.ctl_position_ref_input.setRange(-100000000, 100000000)
+        self.ctl_velocity_ref_input.setRange(-100000, 100000)
+        self.ctl_vl_acceleration_input.setRange(0, 10000)
+        self.ctl_vl_deceleration_input.setRange(0, 10000)
+
+        self.ctl_position_ref_input.valueChanged.connect(self.actions.isend_position_ref)
+        self.ctl_ps_velocity_input.valueChanged.connect(self.actions.isend_velocity_ref)
+        self.ctl_ps_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
+        self.ctl_ps_deceleration_input.valueChanged.connect(self.actions.isend_deceleration)
+
+        self.ctl_position_ref_input.setSuffix(' ticks')
+        self.ctl_ps_velocity_input.setSuffix(' rpm')
+        self.ctl_ps_acceleration_input.setSuffix(' ms.s-1')
+        self.ctl_ps_deceleration_input.setSuffix(' ms.s-1')
+
+        ps_grid.addWidget(QtGui.QLabel('Velocity'), 0, 0)
+        ps_grid.addWidget(self.ctl_ps_velocity_input, 0, 1)
+
+        ps_grid.addWidget(QtGui.QLabel('Position ref'), 1, 0)
+        ps_grid.addWidget(self.ctl_position_ref_input, 1, 1)
+
+        ps_grid.addWidget(QtGui.QLabel('Acceleration'), 0, 2)
+        ps_grid.addWidget(self.ctl_ps_acceleration_input, 0, 3)
+
+        ps_grid.addWidget(QtGui.QLabel('Deceleration'), 1, 2)
+        ps_grid.addWidget(self.ctl_ps_deceleration_input, 1, 3)
+
+        ctl_tabs.addTab(tq_frame, '&Torque mode')
+        ctl_tabs.addTab(vl_frame, '&Velocity mode')
+        ctl_tabs.addTab(ps_frame, '&Position mode')
+
+        grid.addWidget(ctl_frame, 0, 0)
+        grid.addWidget(ctl_tabs, 1, 0)
+
+        self.centralWidget().layout().addWidget(frame, 1, 0, 1, 2)
 
     def _device_section(self):
-        self.dbg_state = tk.IntVar()
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(5)
 
-        self.dev_addr = tk.StringVar()
-        self.dev_port = tk.IntVar()
-        self.srv_port = tk.IntVar()
+        frame = QtGui.QGroupBox('Connection')
+        frame.setLayout(grid)
 
-        self.dev_frame = tk.Frame(self)
-        dv = self.dev_frame
-        r = 0
-        dev_addr_label = self._address_box(dv, 'Device address', r, 0,
-                textvariable=self.dev_addr)
-        dev_port_label = self._port_box(dv, ':', r, 2,
-                textvariable=self.dev_port)
+        self.target_addr = QtGui.QLineEdit()
+        self.target_port = QtGui.QSpinBox()
+        self.listen_port = QtGui.QSpinBox()
+        connect_button = QtGui.QPushButton('Connect')
+        debug_checkbox = QtGui.QCheckBox('Debug')
 
-        r = 1
-        dev_port_label = self._port_box(dv, 'Listen on', r, 0,
-                textvariable=self.srv_port)
+        self.target_port.setRange(0, 99999)
+        self.listen_port.setRange(0, 99999)
 
-        self.debug_check = tk.Checkbutton(dv, text='Debug',
-                variable=self.dbg_state)
-        self.debug_check.grid(row=r, column=2, columnspan=2)
+        self.target_addr.textEdited.connect(self.actions.set_target_addr)
+        self.target_port.valueChanged.connect(self.actions.set_target_port)
+        self.listen_port.valueChanged.connect(self.actions.set_listen_port)
 
-        r = 2
-        self.connect_but = tk.Button(dv, text='Connect',
-                command=self.actions.connect)
-        self.connect_but.grid(row=r, column=0, columnspan=4)
+        debug_checkbox.stateChanged.connect(self.actions.set_debug)
+        connect_button.clicked.connect(self.actions.connect)
 
-        self.dev_frame.grid()
+        grid.addWidget(QtGui.QLabel('IP Address'), 0, 0)
+        grid.addWidget(self.target_addr, 0, 1, 1, 3,)
+
+        grid.addWidget(QtGui.QLabel(':'), 0, 4)
+        grid.addWidget(self.target_port, 0, 5)
+
+        grid.addWidget(QtGui.QLabel('Listen Port'), 1, 0)
+        grid.addWidget(self.listen_port, 1, 1)
+
+        grid.addWidget(debug_checkbox, 1, 5)
+
+        grid.addWidget(connect_button, 2, 1, 1, 4)
+
+        self.centralWidget().layout().addWidget(frame, 0, 0)
 
     def _config_section(self):
-        self.conf_osc_server_port = tk.IntVar()
-        self.conf_osc_client_port = tk.IntVar()
+        pass
 
-        self.conf_ctrl_mode = tk.StringVar()
-
-        self.config_frame = tk.Frame(self)
-        cf = self.config_frame
-        r = 0
-        conf_osc_server_port_entry = self._port_box(cf, 'Server port',
-                textvariable=self.conf_osc_server_port, row=r, column=0,
-                change_action=self.actions.update_device)
-
-        conf_osc_client_port_entry = self._port_box(cf, 'Client port',
-                textvariable=self.conf_osc_client_port, row=r, column=3,
-                change_action=True)
-
-        r = 1
-        conf_ctrl_mode = self._generic_box(cf, 'Control mode',
-                textvariable=self.conf_ctrl_mode, row=r, column=0,
-                change_action=True)
-
-        self.config_frame.grid()
-
-    @classmethod
-    def _generic_box(cls, parent, label, row=None, column=None, **kwargs):
-        change_action = kwargs.pop('change_action', False)
-        label = tk.Label(parent, text=label)
-        entry = tk.Entry(parent, **kwargs)
-        label.grid(row=row, column=column)
-        if not column is None:
-            entry.grid(row=row, column=column+1)
-        if change_action:
-            but = tk.Button(parent, text='C', command=change_action)
-            but.grid(row=row, column=column+2)
-            return label, entry, but
-        return label, entry
-
-    @classmethod
-    def _address_box(cls, parent, label, row=None, column=None, **kwargs):
-        return cls._generic_box(parent, label, row=row, column=column, width=15,
-                **kwargs)
-
-    @classmethod
-    def _port_box(cls, parent, label, row=None, column=None, **kwargs):
-        return cls._generic_box(parent, label, row=row, column=column, width=5,
-                **kwargs)
+    def _profile_section(self):
+        pass
 
 
-
-root = tk.Tk()
-ertzagui = ErtzaGui(master=root)
-ertzagui.master.title('Ertza GUI')
-ertzagui.mainloop()
+if __name__ == '__main__':
+    root = QtGui.QApplication(sys.argv)
+    ertzagui = ErtzaGui()
+    sys.exit(root.exec_())
