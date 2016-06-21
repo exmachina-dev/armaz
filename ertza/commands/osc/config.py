@@ -87,17 +87,17 @@ class ConfigProfileSet(UnbufferedCommand, OscCommand):
 class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
     """
     Return a list of assignable options:
-    /config/profile/list_options/reply SECTION:OPTION\r\n
+    /config/profile/list_options/reply SECTION:OPTION
 
     The command always send a ok reply at the end of the dump:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    /config/profile/list_options/ok done
     """
     def execute(self, c):
 
         try:
-            opts = self.machine.config.profile_list_options()
-            for sec, opts in enumerate(list):
-                for opt, vtype in enumerate(opts):
+            list_opts = self.machine.config.get_profile_options()
+            for sec, opts in list_opts.items():
+                for opt, vtype in opts.items():
                     self.reply(c, '{}:{}'.format(sec, opt))
 
             self.ok(c, 'done')
