@@ -113,6 +113,34 @@ class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
         return 'Return a list of options that can be saved into a profile'
 
 
+class ConfigProfileList(UnbufferedCommand, OscCommand):
+    """
+    Return a list of available profils:
+    /config/profile/list/reply PROFILE
+
+    The command always send a ok reply at the end of the dump:
+    /config/profile/list/ok done
+    """
+    def execute(self, c):
+
+        try:
+            pfl_list = self.machine.config.get_profiles_list()
+            for profile in pfl_list:
+                self.reply(c, profile)
+
+            self.ok(c, 'done')
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return '/config/profile/list'
+
+    @property
+    def help_text(self):
+        return 'Return a list of available profiles'
+
+
 class ConfigProfileDump(UnbufferedCommand, OscCommand):
     """
     Dump profile content:

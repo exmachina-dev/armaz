@@ -238,6 +238,9 @@ class ConfigParser(AbstractConfigParser):
         else:
             return self.profile_config.dump()
 
+    def get_profile_options(self):
+        return self.PROFILE_OPTIONS
+
     def save_profile(self, profile=None):
         if not self.profile:
             raise ProfileError('No profile loaded')
