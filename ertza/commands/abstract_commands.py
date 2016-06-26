@@ -7,7 +7,7 @@ class AbstractCommand(object):
 
     def __init__(self, machine):
         self.machine = machine
-        self.eventReady = None
+        self.event_ready = None
 
     def execute(self, command):
         """
