@@ -34,14 +34,11 @@ class ProfileError(ConfigParserError):
 
 
 class _ChainMap(ChainMap):
-    def __getitem__(self, key, **kwargs):
+    def get(self, key, **kwargs):
         try:
-            return super().__getitem__(key)
+            return super().get(key, default=kwargs['fallback'])
         except KeyError:
-            if 'fallback' in kwargs:
-                return kwargs['fallback']
-            else:
-                raise
+            return super().get(key)
 
 
 class AbstractConfigParser(configparser.ConfigParser):
