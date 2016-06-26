@@ -44,6 +44,9 @@ class LogTo(OscCommand, UnbufferedCommand):
 class LogLevel(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
+        if not self.check_args(c, 'eq', '1'):
+            return
+
         try:
             self.machine.osc_loghandler.setLevel(c.args[0])
         except AttributeError:
