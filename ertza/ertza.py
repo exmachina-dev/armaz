@@ -254,7 +254,8 @@ class Ertza(object):
                 fan_channel = self.machine.config.getint("fans",
                                                          "address_F%d" % f_p)
                 fan = Fan(fan_channel)
-                fan.min_speed = self.machine.config.getfloat("fans", 'min_speed_F{}'.format(f_p), fallback=0.0)
+                fan.min_speed = float(self.machine.config.get(
+                    "fans", 'min_speed_F{}'.format(f_p), fallback=0.0))
                 self.machine.fans.append(fan)
                 logger.debug(
                     "Found fan F%d at channel %d" % (f_p, fan_channel))
@@ -276,22 +277,22 @@ class Ertza(object):
                                         fallback=False):
                         tw = TempWatcher(therm, fan,
                                          "TempWatcher-{}-{}".format(t, f))
-                        tw.set_target_temperature(
-                            th_cf.getfloat("target_temperature_TH%d" % t))
-                        tw.set_max_temperature(
-                            th_cf.getfloat("max_temperature_TH%d" % t))
-                        tw.interval = th_cf.getfloat('update_interval_TH{}'.format(t),
-                                                     fallback=5)
+                        tw.set_target_temperature(float(
+                            th_cf.get("target_temperature_TH%d" % t)))
+                        tw.set_max_temperature(float(
+                            th_cf.get("max_temperature_TH%d" % t)))
+                        tw.interval = float(th_cf.get('update_interval_TH{}'.format(t),
+                                                     fallback=5))
                         tw.enable()
                         self.machine.temperature_watchers.append(tw)
         elif self.machine.thermistors:
             self.machine.temperature_watchers = []
             for t, therm in enumerate(self.machine.thermistors):
                 tw = TempWatcher(therm, None, "TempLogger-%d" % t)
-                tw.set_max_temperature(
-                    th_cf.getfloat("max_temperature_TH%d" % t))
-                tw.interval = th_cf.getfloat('update_interval_TH{}'.format(t),
-                                             fallback=5)
+                tw.set_max_temperature(float(
+                    th_cf.get("max_temperature_TH%d" % t)))
+                tw.interval = float(th_cf.get('update_interval_TH{}'.format(t),
+                                              fallback=5))
                 tw.enable(mode=False)
                 self.machine.temperature_watchers.append(tw)
 
