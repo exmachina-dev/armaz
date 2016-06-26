@@ -90,7 +90,7 @@ class Ertza(object):
             machine.ip_address = IpAddress(machine.config.get('machine', 'interface', fallback=None)).ips[0].split('/')[0]
         except IndexError:
             machine.ip_address = '0.0.0.0'
-            logging.warn('No IP address found')
+            logger.warn('No IP address found')
 
         self._config_leds()
         for l in self.machine.leds:
