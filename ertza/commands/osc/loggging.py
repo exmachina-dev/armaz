@@ -59,3 +59,21 @@ class LogLevel(OscCommand, UnbufferedCommand):
     @property
     def alias(self):
         return '/log/level'
+
+
+class LogStop(OscCommand, UnbufferedCommand):
+
+    def execute(self, c):
+        try:
+            root_log = logging.getLogger()
+            root_log.removeHandler(self.machine.osc_loghandler)
+            self.ok(c, 'Stopped log forwarding')
+        except AttributeError:
+            self.error(c, 'OSC log handler is not specified. '
+                       'Run /log/to target prior to this command')
+        except Exception as e:
+            self.error(c, 'Error while setting loglevel: {!r}'.format(e))
+
+    @property
+    def alias(self):
+        return '/log/stop'
