@@ -86,7 +86,11 @@ class Ertza(object):
             logger.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
             SerialCommandString.SerialNumber = machine.serialnumber
 
-        machine.ip_address = IpAddress(machine.config.get('machine', 'interface', fallback=None)).ips[0].split('/')[0]
+        try:
+            machine.ip_address = IpAddress(machine.config.get('machine', 'interface', fallback=None)).ips[0].split('/')[0]
+        except IndexError:
+            machine.ip_address = '0.0.0.0'
+            logging.warn('No IP address found')
 
         self._config_leds()
         for l in self.machine.leds:
