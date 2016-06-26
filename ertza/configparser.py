@@ -33,6 +33,17 @@ class ProfileError(ConfigParserError):
     pass
 
 
+class _ChainMap(ChainMap):
+    def __getitem__(self, key, **kwargs):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            if 'fallback' in kwargs:
+                return kwargs['fallback']
+            else:
+                raise
+
+
 class AbstractConfigParser(configparser.ConfigParser):
     def __init__(self, *args, **kwargs):
         super().__init__(interpolation=configparser.ExtendedInterpolation(), **kwargs)
@@ -327,4 +338,4 @@ class ConfigParser(AbstractConfigParser):
         if len(childs_sec) == 0:
             raise KeyError
 
-        return ChainMap(*childs_sec)
+        return _ChainMap(*childs_sec)
