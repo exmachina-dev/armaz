@@ -48,10 +48,13 @@ class LogLevel(OscCommand, UnbufferedCommand):
             return
 
         try:
-            self.machine.osc_loghandler.setLevel(c.args[0])
+            level, = c.args
+            self.machine.osc_loghandler.setLevel(int(level))
         except AttributeError:
             self.error(c, 'OSC log handler is not specified. '
                        'Run /log/to target prior to this command')
+        except Exception as e:
+            self.error(c, 'Error while setting loglevel: {!r}'.format(e))
 
     @property
     def alias(self):
