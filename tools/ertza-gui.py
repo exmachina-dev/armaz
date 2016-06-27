@@ -100,6 +100,7 @@ class ErtzaActions(object):
     def __init__(self, master):
         self.master = master
         self.connected = False
+        self.osc_server = None
 
         self.state = {
             'drive_enable': False,
@@ -108,7 +109,7 @@ class ErtzaActions(object):
         self._config = {}
 
     def load_defaults(self):
-        self.master.target_addr.setText('192.168.100.23')
+        self.master.target_addr.setText('10.0.0.0')
         self.master.target_port.setValue(6969)
         self.master.listen_port.setValue(6969)
 
@@ -128,32 +129,47 @@ class ErtzaActions(object):
             if '/machine/get' in path:
                 k, v = args
                 self.state[k] = v
+            if '/identify' in path:
+                logging.info('Machine {} found at {}'.format(*args))
+        elif '/identify' in path:
+            # Ignore identify requests
+            pass
         else:
             logging.warn('Unexpected response: {} {}'.format(path, ' '.join([str(a) for a in args])))
 
     def connect(self):
         target_addr = self.config_get('target_addr', '127.0.0.1')
         target_port = self.config_get('target_port', 6969)
-        listen_port = self.config_get('listen_port', 6970)
 
-        if self.connected:
-            del self.osc_server
+        if self.osc_server:
+            self.osc_server = None
 
-        logging.info('Starting server on {}'.format(listen_port))
-        self.osc_server = ErtzaOSCServer(self, listen_port, lo.UDP)
-        self.osc_server.start()
+        self.launch_server()
+
         logging.info('Setting target to {}:{}'.format(target_addr, target_port))
         self.target = lo.Address(target_addr, target_port)
         self.connected = True
 
         self.request_state()
 
+    def launch_server(self):
+        listen_port = self.config_get('listen_port', 6969)
+
+        logging.info('Starting server on {}'.format(listen_port))
+        self.osc_server = ErtzaOSCServer(self, listen_port, lo.UDP)
+        self.osc_server.start()
+
     def close(self):
         self.stop()
         root.destroy()
 
-    def send(self, path, *args):
+    def send(self, path, *args, **kwargs):
         try:
+            if 'target' in kwargs:
+                if not self.osc_server:
+                    self.launch_server()
+
+                return self.osc_server.reply(None, kwargs.get('target'), path, *args)
             if self.connected:
                 return self.osc_server.reply(None, self.target, path, *args)
             else:
@@ -182,14 +198,9 @@ class ErtzaActions(object):
         except Exception as e:
             logging.error('Error while sending command: {!r}'.format(e))
 
-    def drive_toggle(self):
-        if self.state['drive_enable']:
-            self.master.ctl_drive_enable.set('Drive enable')
-        else:
-            self.master.ctl_drive_enable.set('Drive disable')
-
-        self.state['drive_enable'] = not self.state['drive_enable']
-        self.send('/debug/drive/drive_enable', int(self.state['drive_enable']))
+    def identify(self):
+        t = lo.Address('255.255.255.255', self.config_get('target_port', 6969))
+        self.send('/identify', target=t)
 
     def request_state(self):
         self.send('/machine/get', 'machine:status')
@@ -519,6 +530,7 @@ class ErtzaGui(QtGui.QMainWindow):
         frame = QtGui.QGroupBox('Connection')
         frame.setLayout(grid)
 
+        scan_button = PushButton('Scan request')
         self.target_addr = QtGui.QLineEdit()
         self.target_port = QtGui.QSpinBox()
         self.listen_port = QtGui.QSpinBox()
@@ -528,6 +540,7 @@ class ErtzaGui(QtGui.QMainWindow):
         self.target_port.setRange(0, 99999)
         self.listen_port.setRange(0, 99999)
 
+        scan_button.clicked.connect(self.actions.identify)
         self.target_addr.textEdited.connect(self.actions.set_target_addr)
         self.target_port.valueChanged.connect(self.actions.set_target_port)
         self.listen_port.valueChanged.connect(self.actions.set_listen_port)
@@ -535,18 +548,20 @@ class ErtzaGui(QtGui.QMainWindow):
         debug_checkbox.stateChanged.connect(self.actions.set_debug)
         connect_button.clicked.connect(self.actions.connect)
 
-        grid.addWidget(QtGui.QLabel('IP Address'), 0, 0)
-        grid.addWidget(self.target_addr, 0, 1, 1, 3,)
+        grid.addWidget(scan_button, 0, 1, 1, 4)
 
-        grid.addWidget(QtGui.QLabel(':'), 0, 4)
-        grid.addWidget(self.target_port, 0, 5)
+        grid.addWidget(QtGui.QLabel('IP Address'), 1, 0)
+        grid.addWidget(self.target_addr, 1, 1, 1, 3,)
 
-        grid.addWidget(QtGui.QLabel('Listen Port'), 1, 0)
-        grid.addWidget(self.listen_port, 1, 1)
+        grid.addWidget(QtGui.QLabel(':'), 1, 4)
+        grid.addWidget(self.target_port, 1, 5)
 
-        grid.addWidget(debug_checkbox, 1, 5)
+        grid.addWidget(QtGui.QLabel('Listen Port'), 2, 0)
+        grid.addWidget(self.listen_port, 2, 1)
 
-        grid.addWidget(connect_button, 2, 1, 1, 4)
+        grid.addWidget(debug_checkbox, 2, 5)
+
+        grid.addWidget(connect_button, 3, 1, 1, 4)
 
         self.centralWidget().layout().addWidget(frame, 0, 0)
 
