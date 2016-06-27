@@ -46,6 +46,20 @@ class EthernetInterface(object):
         finally:
             self.update_table()
 
+    def add_route(self, target, via=None):
+        if not target == 'default':
+            self._check_cidr(target)
+
+        c = ['ip', 'route', 'add', target, 'dev', self.interface]
+        if via:
+            self._check_ip(via)
+            c += ['via', via]
+
+        try:
+            subprocess.check_call(c)
+        except subprocess.CalledProcessError as e:
+            raise e
+
     def link_up(self):
         c = ['ip', 'link', 'set', 'dev', self.interface, 'up']
         subprocess.check_call(c)
