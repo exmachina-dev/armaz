@@ -92,6 +92,7 @@ class Ertza(object):
             eth = EthernetInterface(i)
             try:
                 eth.link_up()
+                logger.info('Interface {} i set to up'.format(i))
             except Exception as e:
                 logger.error(e)
 
@@ -104,6 +105,7 @@ class Ertza(object):
 
             try:
                 eth.add_ip(ip)
+                logger.info('Added ip {} to {}'.format(ip, i))
             except Exception as e:
                 logger.error(e)
             machine.ip_address = eth.ips[0].split('/')[0]
