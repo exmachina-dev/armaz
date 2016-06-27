@@ -22,7 +22,7 @@ from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
 from ..drivers.utils import retry
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.machine')
 
 
 class MachineError(AbstractMachineError):

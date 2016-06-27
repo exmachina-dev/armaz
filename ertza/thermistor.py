@@ -3,6 +3,8 @@
 from threading import Lock
 import logging
 
+logging = logging.getLogger('ertza.thermistor')
+
 from .temp_chart import temp_chart
 
 _ADC_PATH = "/sys/bus/iio/devices/iio:device0"

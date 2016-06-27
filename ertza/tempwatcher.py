@@ -4,7 +4,7 @@ from threading import Thread
 import time
 import logging
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.temperature')
 
 
 class TempWatcher(object):
