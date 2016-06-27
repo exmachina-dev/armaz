@@ -78,13 +78,26 @@ class Ertza(object):
                                       _MACHINE_CONF,
                                       custom_conf)
 
-        machine.config.load_variant()
+        self._config_leds()
+        for l in self.machine.leds:
+            if l.function == 'status':
+                l.set_blink(500)
+
+        # Get loglevel from config file
+        level = self.machine.config.getint('system', 'loglevel', fallback=10)
+        if level > 0:
+            lg.getLogger('').setLevel(level)
+            logger.setLevel(level)
+            logger.info("Log level set to %d" % level)
 
         machine.cape_infos = machine.config.find_cape('ARMAZCAPE')
+
         if machine.cape_infos:
             name = machine.cape_infos['name']
             logger.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
             SerialCommandString.SerialNumber = machine.serialnumber
+
+        machine.config.load_variant()
 
         try:
             i = machine.config.get('machine', 'interface', fallback='eth1')
@@ -115,18 +128,6 @@ class Ertza(object):
         except IndexError:
             machine.ip_address = '0.0.0.0'
             logger.warn('No IP address found')
-
-        self._config_leds()
-        for l in self.machine.leds:
-            if l.function == 'status':
-                l.set_blink(500)
-
-        # Get loglevel from config file
-        level = self.machine.config.getint('system', 'loglevel', fallback=10)
-        if level > 0:
-            logger.info("Setting loglevel to %d" % level)
-            lg.getLogger('').setLevel(level)
-            logger.setLevel(level)
 
         drv = machine.init_driver()
         if drv:
