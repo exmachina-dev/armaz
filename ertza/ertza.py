@@ -29,7 +29,7 @@ from .switch import Switch
 from .tempwatcher import TempWatcher
 from .led import Led
 
-from .network_utils import IpAddress
+from .network_utils import EthernetInterface
 
 version = "0.1.0~Siderunner"
 
@@ -87,7 +87,27 @@ class Ertza(object):
             SerialCommandString.SerialNumber = machine.serialnumber
 
         try:
-            machine.ip_address = IpAddress(machine.config.get('machine', 'interface', fallback=None)).ips[0].split('/')[0]
+            i = machine.config.get('machine', 'interface', fallback='eth1')
+            logger.info('Configuring {} interface'.format(i))
+            eth = EthernetInterface(i)
+            try:
+                eth.link_up()
+            except Exception as e:
+                logger.error(e)
+
+            ip = machine.config.get('machine', 'ip_address', fallback=None)
+            if not ip:
+                ip = '10'
+                for byte in eth.mac_address.split(':')[3:6]:
+                    ip += '.{}'.format(int('0x{}'.format(byte), base=0))
+                ip += '/8'
+
+            try:
+                eth.add_ip(ip)
+            except Exception as e:
+                logger.error(e)
+            machine.ip_address = eth.ips[0].split('/')[0]
+            machine.ethernet_interface = eth
         except IndexError:
             machine.ip_address = '0.0.0.0'
             logger.warn('No IP address found')
