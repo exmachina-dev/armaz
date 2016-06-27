@@ -44,7 +44,7 @@ class LogTo(OscCommand, UnbufferedCommand):
 class LogLevel(OscCommand, UnbufferedCommand):
 
     def execute(self, c):
-        if not self.check_args(c, 'eq', '1'):
+        if not self.check_args(c, 'eq', 1):
             return
 
         try:
