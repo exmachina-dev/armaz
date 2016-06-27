@@ -46,7 +46,7 @@ class Machine(AbstractMachine):
         self.config = None
         self.driver = None
         self.cape_infos = None
-        self.ip_address = None
+        self.ethernet_interface = None
 
         self.comms = {}
         self.processors = {}
@@ -137,7 +137,7 @@ class Machine(AbstractMachine):
     def infos(self):
         rev = self.cape_infos['revision'] if self.cape_infos \
             else '0000'
-        var = self.config.variant.split('.')
+        var = self.config['machine']['variant'].split('.')
 
         return ('identify', var[0].upper(), var[1].upper(), rev)
 
@@ -156,9 +156,12 @@ class Machine(AbstractMachine):
 
     @property
     def address(self):
-        a = self.ip_address
-        p = self.config.getint('osc', 'listen_port')
-        return '{addr}:{port}'.format(addr=a, port=p)
+        try:
+            a = self.ethernet_interface.ips[0].split('/')[0]
+            p = self.config.getint('osc', 'listen_port')
+            return '{addr}:{port}'.format(addr=a, port=p)
+        except (IndexError, KeyError):
+            return '0.0.0.0:00'
 
     def search_slaves(self):
         slaves_cf = self.config['slaves']
