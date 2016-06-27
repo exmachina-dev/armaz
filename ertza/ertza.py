@@ -93,6 +93,8 @@ class Ertza(object):
             try:
                 eth.link_up()
                 logger.info('Interface {} i set to up'.format(i))
+                logger.info('Setting up default route'.format(i))
+                eth.add_route('default')
             except Exception as e:
                 logger.error(e)
 
