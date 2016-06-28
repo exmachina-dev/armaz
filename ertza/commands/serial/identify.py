@@ -9,9 +9,8 @@ from ertza.commands import SerialCommand
 class Identify(SerialCommand, BufferedCommand):
 
     def execute(self, c):
-        infos = self.c.args + (self.c.data['serial_number'],)
-        logging.info('Found %s %s with S/N %s' % infos)
-        data = ('identify',) + self.machine.infos
+        logging.info('Found remote with S/N {}'.format(c.serial_number))
+        data = ('identify', self.machine.serialnumber)
         self.send(*data)
 
     @property
