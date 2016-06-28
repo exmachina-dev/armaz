@@ -5,6 +5,7 @@ import sys
 from PySide import QtGui
 from PySide import QtCore
 import functools
+import collections
 
 import liblo as lo
 import logging as lg
@@ -25,7 +26,7 @@ class EmbeddedLogHandler(lg.Handler):
         self.widget = widget
 
         self.color = {
-            "INFO": QtGui.QColor(0, 0, 0),
+            "INFO": QtGui.QColor(0, 127, 0),
             "DEBUG": QtGui.QColor(127, 127, 127),
             "WARNING": QtGui.QColor(127, 127, 0),
             "ERROR": QtGui.QColor(127, 0, 0),
@@ -40,6 +41,34 @@ class EmbeddedLogHandler(lg.Handler):
 
         self.widget.moveCursor(QtGui.QTextCursor.End)
         self.widget.insertPlainText(msg)
+
+
+class OrderedDictTrigger(collections.OrderedDict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        try:
+            self.set_trigger(kwargs['trigger'])
+        except KeyError:
+            pass
+
+    def set_trigger(self, trigger):
+        self._trigger = trigger
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._trigger.setRowCount(len(self))
+        r = list(self.keys()).index(key)
+        self._trigger.setItem(r, 0, QtGui.QTableWidgetItem(str(key)))
+        if isinstance(value, bool):
+            value = 'on' if value else 'off'
+        elif isinstance(value, float):
+            value = '{:.2f}'.format(value)
+
+        self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
+
+        self._trigger.verticalHeader().stretchLastSection()
+        self._trigger.resizeColumnsToContents()
 
 
 console_logger = lg.StreamHandler()
@@ -97,14 +126,14 @@ class ErtzaOSCServer(lo.ServerThread):
 
 
 class ErtzaActions(object):
+    REFRESH_VALUES = ('disable', '500 ms', '1 s' , '2 s', '5 s')
+
     def __init__(self, master):
         self.master = master
         self.connected = False
         self.osc_server = None
 
-        self.state = {
-            'drive_enable': False,
-        }
+        self.status = OrderedDictTrigger()
 
         self._config = {}
 
@@ -125,20 +154,25 @@ class ErtzaActions(object):
             logging.error('Error in response: {} {}'.format(path, ' '.join(args)))
         elif '/ok' in path:
             if self.config_get('debug', False):
-                logging.debug('From %s : %s %s' % (sender, path, args))
+                a = ' '.join(map(repr, args))
+                logging.debug('From {}: {} {}'.format(sender, path, a))
             if '/machine/get' in path:
                 k, v = args
-                self.state[k] = v
-            if '/identify' in path:
+                self.status[k] = v
+            elif '/identify' in path:
                 logging.info('Machine {} found at {}'.format(*args))
+            elif '/version' in path:
+                logging.info('Version for {}: {}'.format(sender, *args))
         elif '/identify' in path:
             # Ignore identify requests
             pass
+        elif '/config/profile/list' in path:
+            self.master.stp_profile_list.addItem(args[0])
         else:
             logging.warn('Unexpected response: {} {}'.format(path, ' '.join([str(a) for a in args])))
 
     def connect(self):
-        target_addr = self.config_get('target_addr', '127.0.0.1')
+        target_addr = self.config_get('target_addr', None)
         target_port = self.config_get('target_port', 6969)
 
         if self.osc_server:
@@ -150,7 +184,7 @@ class ErtzaActions(object):
         self.target = lo.Address(target_addr, target_port)
         self.connected = True
 
-        self.request_state()
+        self.request_version()
 
     def launch_server(self):
         listen_port = self.config_get('listen_port', 6969)
@@ -202,8 +236,33 @@ class ErtzaActions(object):
         t = lo.Address('255.255.255.255', self.config_get('target_port', 6969))
         self.send('/identify', target=t)
 
-    def request_state(self):
-        self.send('/machine/get', 'machine:status')
+    def request_version(self):
+        self.send('/version')
+
+    def request_status(self):
+        st = (
+            'machine:status:drive_ready', 'machine:status:drive_enable',
+            'machine:status:drive_input', 'machine:status:motor_brake',
+            'machine:status:motor_temp', 'machine:status:timeout',
+
+            'machine:error_code', 'machine:jog',
+            'machine:torque_ref', 'machine:velocity_ref',
+            'machine:torque_rise_time', 'machine:torque_fall_time',
+            'machine:acceleration', 'machine:deceleration',
+            'machine:entq_kp', 'machine:entq_kp_vel',
+            'machine:entq_ki', 'machine:entq_kd',
+
+            'machine:velocity', 'machine:position',
+            'machine:position_target', 'machine:position_remaining',
+            'machine:encoder_ticks', 'machine:encoder_velocity',
+            'machine:velocity_error', 'machine:follow_error',
+            'machine:torque', 'machine:current_ratio',
+            'machine:effort',
+
+            'machine:drive_temp', 'machine:dropped_frames',
+        )
+        for s in st:
+            self.send('/machine/get', s)
 
     def drive_cancel(self):
         self.send('/debug/drive/drive_cancel', 1)
@@ -274,12 +333,16 @@ class ErtzaActions(object):
 
     def _instant_sender(self, key, value=1):
         if key.startswith('command_'):
+            if 'control_mode' in key:
+                value += 1
             self.send('/machine/set', 'machine:command:{}'.format(key[8:]), value)
         else:
             self.send('/machine/set', 'machine:{}'.format(key), value)
 
     def _instant_config(self, key, value=None):
         if key.startswith('profile_'):
+            if 'profile_load' in key:
+                value = self.config_get('profile_name')
             if value is not None:
                 self.send('/config/profile/{}'.format(key[8:]), value)
             else:
@@ -328,12 +391,10 @@ class ErtzaGui(QtGui.QMainWindow):
         self.show()
 
         self._device_section()
-
         self._log_section()
-
         self._control_section()
-
         self._config_section()
+        self._status_section()
 
         self.statusBar().showMessage('Ready.')
 
@@ -356,12 +417,15 @@ class ErtzaGui(QtGui.QMainWindow):
         self.log_list = QtGui.QTextEdit()
         self.cmd_line = QtGui.QLineEdit()
 
+        self.log_list.setReadOnly(True)
+        self.log_list.setLineWrapMode(QtGui.QTextEdit.NoWrap)
+
         self.cmd_line.returnPressed.connect(self.actions.cmd_send)
 
         grid.addWidget(self.log_list, 0, 0, 9, 0)
         grid.addWidget(self.cmd_line, 9, 0)
 
-        self.centralWidget().layout().addWidget(frame, 0, 1)
+        self.centralWidget().layout().addWidget(frame, 0, 1, 1, 2)
 
     def _control_section(self):
         grid = QtGui.QGridLayout()
@@ -401,6 +465,7 @@ class ErtzaGui(QtGui.QMainWindow):
         ctl_grid.addWidget(self.ctl_stop_but, 1, 6, 2, 1)
 
         ctl_tabs = QtGui.QTabWidget()
+        ctl_tabs.currentChanged.connect(self.actions.isend_command_control_mode)
 
         tq_grid = QtGui.QGridLayout()
         tq_grid.setSpacing(10)
@@ -408,9 +473,9 @@ class ErtzaGui(QtGui.QMainWindow):
         tq_frame = QtGui.QFrame()
         tq_frame.setLayout(tq_grid)
 
-        self.ctl_torque_ref_input = QtGui.QSpinBox()
-        self.ctl_tq_rise_time_input = QtGui.QSpinBox()
-        self.ctl_tq_fall_time_input = QtGui.QSpinBox()
+        self.ctl_torque_ref_input = QtGui.QDoubleSpinBox()
+        self.ctl_tq_rise_time_input = QtGui.QDoubleSpinBox()
+        self.ctl_tq_fall_time_input = QtGui.QDoubleSpinBox()
 
         self.ctl_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
         self.ctl_tq_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
@@ -439,9 +504,9 @@ class ErtzaGui(QtGui.QMainWindow):
         vl_frame = QtGui.QFrame()
         vl_frame.setLayout(vl_grid)
 
-        self.ctl_velocity_ref_input = QtGui.QSpinBox()
-        self.ctl_vl_acceleration_input = QtGui.QSpinBox()
-        self.ctl_vl_deceleration_input = QtGui.QSpinBox()
+        self.ctl_velocity_ref_input = QtGui.QDoubleSpinBox()
+        self.ctl_vl_acceleration_input = QtGui.QDoubleSpinBox()
+        self.ctl_vl_deceleration_input = QtGui.QDoubleSpinBox()
 
         self.ctl_velocity_ref_input.setRange(-100000, 100000)
         self.ctl_vl_acceleration_input.setRange(0, 10000)
@@ -470,10 +535,12 @@ class ErtzaGui(QtGui.QMainWindow):
         ps_frame = QtGui.QFrame()
         ps_frame.setLayout(ps_grid)
 
-        self.ctl_position_ref_input = QtGui.QSpinBox()
-        self.ctl_ps_velocity_input = QtGui.QSpinBox()
-        self.ctl_ps_acceleration_input = QtGui.QSpinBox()
-        self.ctl_ps_deceleration_input = QtGui.QSpinBox()
+        self.ctl_ps_go_but = PushButton('GO')
+        self.ctl_ps_set_home_but = PushButton('Set home')
+        self.ctl_position_ref_input = QtGui.QDoubleSpinBox()
+        self.ctl_ps_velocity_input = QtGui.QDoubleSpinBox()
+        self.ctl_ps_acceleration_input = QtGui.QDoubleSpinBox()
+        self.ctl_ps_deceleration_input = QtGui.QDoubleSpinBox()
         self.ctl_ps_position_mode_input = SwitchWidget()
         self.ctl_ps_move_mode_input = SwitchWidget()
 
@@ -482,10 +549,12 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_vl_acceleration_input.setRange(0, 10000)
         self.ctl_vl_deceleration_input.setRange(0, 10000)
         self.ctl_ps_position_mode_input.choices = ('Absolute', 'Relative')
-        self.ctl_ps_position_mode_input.colors = (QtGui.QColor(96, 96, 156), QtGui.QColor(96, 156, 156))
+        self.ctl_ps_position_mode_input.colors = (QtGui.QColor(80, 80, 122), QtGui.QColor(80, 122, 122))
         self.ctl_ps_move_mode_input.choices = ('Cumulative', 'Replace')
-        self.ctl_ps_move_mode_input.colors = (QtGui.QColor(96, 96, 156), QtGui.QColor(96, 156, 156))
+        self.ctl_ps_move_mode_input.colors = (QtGui.QColor(80, 80, 122), QtGui.QColor(80, 122, 122))
 
+        self.ctl_ps_go_but.clicked.connect(self.actions.isend_command_go)
+        self.ctl_ps_set_home_but.clicked.connect(self.actions.isend_command_set_home)
         self.ctl_position_ref_input.valueChanged.connect(self.actions.isend_position_ref)
         self.ctl_ps_velocity_input.valueChanged.connect(self.actions.isend_velocity_ref)
         self.ctl_ps_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
@@ -496,27 +565,70 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_ps_acceleration_input.setSuffix(' ms.s-1')
         self.ctl_ps_deceleration_input.setSuffix(' ms.s-1')
 
-        ps_grid.addWidget(QtGui.QLabel('Position Mode'), 0, 0)
-        ps_grid.addWidget(self.ctl_ps_position_mode_input, 0, 1)
+        ps_grid.addWidget(QtGui.QLabel('Position ref'), 0, 0)
+        ps_grid.addWidget(self.ctl_position_ref_input, 0, 1)
 
-        ps_grid.addWidget(QtGui.QLabel('Move Mode'), 0, 2)
-        ps_grid.addWidget(self.ctl_ps_move_mode_input, 0, 3)
+        ps_grid.addWidget(self.ctl_ps_go_but, 0, 3)
+
+        ps_grid.addWidget(QtGui.QLabel('Position Mode'), 1, 2)
+        ps_grid.addWidget(self.ctl_ps_position_mode_input, 1, 3)
+
+        ps_grid.addWidget(QtGui.QLabel('Move Mode'), 2, 2)
+        ps_grid.addWidget(self.ctl_ps_move_mode_input, 2, 3)
+
+        ps_grid.addWidget(self.ctl_ps_set_home_but, 3, 3)
 
         ps_grid.addWidget(QtGui.QLabel('Velocity'), 1, 0)
         ps_grid.addWidget(self.ctl_ps_velocity_input, 1, 1)
 
-        ps_grid.addWidget(QtGui.QLabel('Position ref'), 1, 2)
-        ps_grid.addWidget(self.ctl_position_ref_input, 1, 3)
-
         ps_grid.addWidget(QtGui.QLabel('Acceleration'), 2, 0)
         ps_grid.addWidget(self.ctl_ps_acceleration_input, 2, 1)
 
-        ps_grid.addWidget(QtGui.QLabel('Deceleration'), 2, 2)
-        ps_grid.addWidget(self.ctl_ps_deceleration_input, 2, 3)
+        ps_grid.addWidget(QtGui.QLabel('Deceleration'), 3, 0)
+        ps_grid.addWidget(self.ctl_ps_deceleration_input, 3, 1)
+
+        et_grid = QtGui.QGridLayout()
+        et_grid.setSpacing(10)
+
+        et_frame = QtGui.QFrame()
+        et_frame.setLayout(et_grid)
+
+        self.ctl_et_torque_ref_input = QtGui.QDoubleSpinBox()
+        self.ctl_et_velocity_ref_input = QtGui.QDoubleSpinBox()
+        self.ctl_et_rise_time_input = QtGui.QDoubleSpinBox()
+        self.ctl_et_fall_time_input = QtGui.QDoubleSpinBox()
+
+        self.ctl_et_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
+        self.ctl_et_velocity_ref_input.valueChanged.connect(self.actions.isend_velocity_ref)
+        self.ctl_et_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
+        self.ctl_et_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
+
+        self.ctl_et_torque_ref_input.setRange(-200, 200)
+        self.ctl_et_velocity_ref_input.setRange(-10000, 10000)
+        self.ctl_et_rise_time_input.setRange(0, 100000)
+        self.ctl_et_fall_time_input.setRange(0, 100000)
+
+        self.ctl_et_torque_ref_input.setSuffix(' %')
+        self.ctl_et_velocity_ref_input.setSuffix(' rpm')
+        self.ctl_et_rise_time_input.setSuffix(' ms')
+        self.ctl_et_fall_time_input.setSuffix(' ms')
+
+        et_grid.addWidget(QtGui.QLabel('Torque ref'), 0, 0)
+        et_grid.addWidget(self.ctl_et_torque_ref_input, 0, 1)
+
+        et_grid.addWidget(QtGui.QLabel('Velocity ref'), 1, 0)
+        et_grid.addWidget(self.ctl_et_velocity_ref_input, 1, 1)
+
+        et_grid.addWidget(QtGui.QLabel('Torque rise time'), 2, 0)
+        et_grid.addWidget(self.ctl_et_rise_time_input, 2, 1)
+
+        et_grid.addWidget(QtGui.QLabel('Torque fall time'), 3, 0)
+        et_grid.addWidget(self.ctl_et_fall_time_input, 3, 1)
 
         ctl_tabs.addTab(tq_frame, '&Torque mode')
         ctl_tabs.addTab(vl_frame, '&Velocity mode')
         ctl_tabs.addTab(ps_frame, '&Position mode')
+        ctl_tabs.addTab(et_frame, '&Enhanced Torque mode')
 
         grid.addWidget(ctl_frame, 0, 0)
         grid.addWidget(ctl_tabs, 1, 0)
@@ -572,10 +684,6 @@ class ErtzaGui(QtGui.QMainWindow):
         frame = QtGui.QGroupBox('Setup')
         frame.setLayout(grid)
 
-        stp_grid = QtGui.QGridLayout()
-        stp_frame = QtGui.QFrame()
-        stp_frame.setLayout(stp_grid)
-
         stp_tabs = QtGui.QTabWidget()
 
         cnf_grid = QtGui.QGridLayout()
@@ -584,30 +692,19 @@ class ErtzaGui(QtGui.QMainWindow):
         cnf_frame = QtGui.QFrame()
         cnf_frame.setLayout(cnf_grid)
 
-        self.stp_torque_ref_input = QtGui.QSpinBox()
-        self.stp_tq_rise_time_input = QtGui.QSpinBox()
-        self.stp_tq_fall_time_input = QtGui.QSpinBox()
+        self.stp_save_cnf_but = PushButton('Save Config')
+        self.stp_operation_mode_input = QtGui.QComboBox()
 
-        self.stp_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
-        self.stp_tq_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
-        self.stp_tq_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
+        self.stp_operation_mode_input.addItem('Standalone')
+        self.stp_operation_mode_input.addItem('Master')
+        self.stp_operation_mode_input.addItem('Slave')
 
-        self.stp_torque_ref_input.setRange(-100, 100)
-        self.stp_tq_rise_time_input.setRange(0, 100000)
-        self.stp_tq_fall_time_input.setRange(0, 100000)
+        self.stp_save_cnf_but.clicked.connect(self.actions.iconf_save)
 
-        self.stp_torque_ref_input.setSuffix(' %')
-        self.stp_tq_rise_time_input.setSuffix(' ms')
-        self.stp_tq_fall_time_input.setSuffix(' ms')
+        cnf_grid.addWidget(self.stp_save_cnf_but, 0, 1)
 
-        cnf_grid.addWidget(QtGui.QLabel('Torque ref'), 0, 0)
-        cnf_grid.addWidget(self.stp_torque_ref_input, 0, 1)
-
-        cnf_grid.addWidget(QtGui.QLabel('Torque rise time'), 1, 0)
-        cnf_grid.addWidget(self.stp_tq_rise_time_input, 1, 1)
-
-        cnf_grid.addWidget(QtGui.QLabel('Torque fall time'), 2, 0)
-        cnf_grid.addWidget(self.stp_tq_fall_time_input, 2, 1)
+        cnf_grid.addWidget(QtGui.QLabel('Operating mode'), 1, 0)
+        cnf_grid.addWidget(self.stp_operation_mode_input, 1, 1)
 
         pfl_grid = QtGui.QGridLayout()
         pfl_grid.setSpacing(10)
@@ -618,30 +715,72 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_load_pfl_but = PushButton('Load Profile')
         self.stp_unload_pfl_but = PushButton('Unload Profile')
         self.stp_save_pfl_but = PushButton('Save Profile')
+        self.stp_profile_list = QtGui.QComboBox()
+        self.stp_refresh_pfl_but = PushButton('Refresh Profile List')
+        self.stp_refresh_opt_but = PushButton('Refresh Options')
+        self.stp_options_box = QtGui.QGroupBox('Options')
 
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
+        self.stp_profile_list.setEditable(True)
 
         self.stp_load_pfl_but.clicked.connect(self.actions.iconf_profile_load)
         self.stp_unload_pfl_but.clicked.connect(self.actions.iconf_profile_unload)
         self.stp_save_pfl_but.clicked.connect(self.actions.iconf_profile_save)
+        self.stp_profile_list.currentIndexChanged.connect(self.actions.set_profile_id)
+        self.stp_profile_list.editTextChanged.connect(self.actions.set_profile_name)
+        self.stp_refresh_pfl_but.clicked.connect(self.actions.iconf_profile_list)
+        self.stp_refresh_pfl_but.clicked.connect(self.stp_profile_list.clear)
+        self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
 
-        pfl_grid.addWidget(self.stp_load_pfl_but, 1, 0, 2, 1)
-        pfl_grid.addWidget(self.stp_unload_pfl_but, 1, 2, 2, 1)
-        pfl_grid.addWidget(self.stp_save_pfl_but, 1, 4, 2, 1)
+        pfl_grid.addWidget(self.stp_load_pfl_but, 0, 0)
+        pfl_grid.addWidget(self.stp_unload_pfl_but, 0, 1)
+        pfl_grid.addWidget(self.stp_save_pfl_but, 0, 2)
+        pfl_grid.addWidget(self.stp_profile_list, 1, 0)
+        pfl_grid.addWidget(self.stp_refresh_pfl_but, 1, 1)
+        pfl_grid.addWidget(self.stp_refresh_opt_but, 1, 2)
+        pfl_grid.addWidget(self.stp_options_box, 2, 0, 10, 0)
 
         stp_tabs.addTab(cnf_frame, '&Config')
         stp_tabs.addTab(pfl_frame, 'P&rofile')
 
-        grid.addWidget(stp_frame, 0, 0)
-        grid.addWidget(stp_tabs, 1, 0)
+        grid.addWidget(stp_tabs, 0, 0)
 
         self.centralWidget().layout().addWidget(frame, 2, 0, 1, 2)
+
+    def _status_section(self):
+        sts_grid = QtGui.QGridLayout()
+        sts_grid.setSpacing(10)
+
+        sts_frame = QtGui.QGroupBox('Status')
+        sts_frame.setLayout(sts_grid)
+
+        self.sts_refresh_but = PushButton('Refresh')
+        self.sts_refresh_interval_input = QtGui.QComboBox()
+        self.sts_status_table = QtGui.QTableWidget(0, 2, parent=sts_frame)
+
+        self.sts_refresh_interval_input.addItems(self.actions.REFRESH_VALUES)
+
+        self.sts_refresh_but.clicked.connect(self.actions.request_status)
+        self.sts_refresh_interval_input.currentIndexChanged.connect(self.actions.set_status_refresh_interval)
+        self.actions.status.set_trigger(self.sts_status_table)
+
+        sts_grid.addWidget(self.sts_refresh_but, 0, 0)
+
+        sts_grid.addWidget(QtGui.QLabel('Refresh interval'), 0, 1)
+        sts_grid.addWidget(self.sts_refresh_interval_input, 0, 2)
+        sts_grid.addWidget(self.sts_status_table, 1, 0, 10, 3)
+
+        self.centralWidget().layout().addWidget(sts_frame, 1, 2, 2, 1)
 
     def _profile_section(self):
         pass
 
 
 if __name__ == '__main__':
+    fstyle = open('./style.qss', 'r')
+    with fstyle as f:
+        style = f.readlines()
     root = QtGui.QApplication(sys.argv)
+    root.setStyleSheet(' '.join(style))
     ertzagui = ErtzaGui()
     sys.exit(root.exec_())

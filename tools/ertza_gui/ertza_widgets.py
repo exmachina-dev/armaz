@@ -14,8 +14,8 @@ class SwitchWidget(QtGui.QPushButton):
         self.setMinimumSize(1, 30)
         self.checked = 0
         self.choices = ['Off', 'On']
-        self.colors = [QtGui.QColor(96, 156, 96), QtGui.QColor(156, 96, 96)]
-        self.bg_color = QtGui.QColor(56, 56, 56)
+        self.colors = [QtGui.QColor(81, 122, 81), QtGui.QColor(122, 81, 81)]
+        self.bg_color = QtGui.QColor(34, 41, 50)
 
         self.setState(0)
 
@@ -119,8 +119,8 @@ class PushButton(QtGui.QPushButton):
         self.state = None
         self.setMinimumSize(1, 30)
         self.text = text
-        self.color = QtGui.QColor(96, 156, 96)
-        self.bg_color = QtGui.QColor(56, 56, 56)
+        self.color = QtGui.QColor(81, 122, 81)
+        self.bg_color = QtGui.QColor(30, 36, 44)
 
         self.setState(0)
 
@@ -135,7 +135,8 @@ class PushButton(QtGui.QPushButton):
             return
 
         self.state = new_state
-        self.clicked.emit()
+        if self.state:
+            self.clicked.emit()
 
     def mousePressEvent(self, ev):
         self.setState(True)
