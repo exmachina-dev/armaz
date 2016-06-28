@@ -8,6 +8,8 @@ from collections import namedtuple
 from ..abstract_message import AbstractMessage
 
 
+logging = logging.getLogger('ertza.serial.message')
+
 SerialCommandStruct = namedtuple('SerialCommandStruct', ('protocol', 'length', 'serial_number', 'data', 'end'))
 
 
@@ -24,7 +26,6 @@ class SerialCommandString(object):
     def __init__(self, cmd_bytes=None, **kwargs):
         if cmd_bytes:
             self._b = bs.pack('bits', cmd_bytes)
-            logging.debug(self._b)
             self._c = SerialCommandStruct(*[b.bytes for b in self._b.unpack(self.CmdFormat)])
             logging.debug(self._c)
         else:
