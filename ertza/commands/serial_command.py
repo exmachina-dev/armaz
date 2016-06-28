@@ -23,12 +23,12 @@ class SerialCommand(AbstractCommand):
         self.reply(command, *args, add_path='.error', **kwargs)
 
     def reply(self, command, *args, **kwargs):
-        add_path = kwargs.pop('add_path', None)
-        if add_path:
-            if not isinstance(add_path, str):
+        if 'add_path' in kwargs:
+            if not isinstance(kwargs['add_path'], str):
                 raise TypeError('add_path kwarg must be a string')
-            full_path = self.alias + add_path if add_path.startswith(self.SEP) \
-                else '{0.alias}{0.SEP}{1}'.format(self, add_path)
+            full_path = self.alias + kwargs['add_path'] \
+                if kwargs['add_path'].startswith(self.SEP) \
+                else '{0.alias}{0.SEP}{1[add_path]}'.format(self, kwargs)
         else:
             full_path = self.alias
 
