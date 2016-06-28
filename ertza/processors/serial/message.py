@@ -55,15 +55,14 @@ class SerialCommandString(object):
         return bs.Bits(self['length']).uint
 
     def _pack(self, value):
-        if type(value) == str:
+        if isinstance(value, str):
             value = value.encode()
-        elif type(value) == int:
+        elif isinstance(value, int):
             value = bs.Bits(int=value, length=self.IntLength).tobytes()
-        elif type(value) == float:
+        elif isinstance(value, float):
             value = bs.Bits(float=value, length=self.FloatLength).tobytes()
-        elif type(value) == bool:
+        elif isinstance(value, bool):
             value = bs.Bits(uint=value, length=1).tobytes()
-            print(value)
 
         return value
 
