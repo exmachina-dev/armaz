@@ -50,6 +50,10 @@ class SerialCommandString(object):
     def args(self):
         return tuple(self['data'].split(self.CmdSep, maxsplit=2)[1:])
 
+    @property
+    def length(self):
+        return bs.Bits(self['length']).uint
+
     def _pack(self, value):
         if type(value) == str:
             value = value.encode()
@@ -84,10 +88,10 @@ class SerialCommandString(object):
         return len(self.tobytes)
 
     def __repr__(self):
-        return '{0[protocol]} {0[serial_number]} {0[data]}'.format(self)
+        return '{0[protocol]} {0[serial_number]} {0.length} {0[data]}'.format(self)
 
     def __str__(self):
-        return '{0[protocol]} {0[serial_number]} {0[data]}'.format(self)
+        return '{0[protocol]} {0[serial_number]} {0.length} {0[data]}'.format(self)
 
 
 class SerialTarget(object):
@@ -130,6 +134,14 @@ class SerialMessage(AbstractMessage):
     @property
     def args(self):
         return self.cmd_bytes.args
+
+    @property
+    def serial_number(self):
+        return self.cmd_bytes['serial_number']
+
+    @property
+    def length(self):
+        return self.cmd_bytes.length
 
     @property
     def tobytes(self):
