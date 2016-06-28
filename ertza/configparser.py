@@ -262,7 +262,7 @@ class ConfigParser(AbstractConfigParser):
         files = glob('{}/*.conf'.format(_PROFILE_PATH))
         profiles = []
         for f in files:
-            profiles.append(f.replace(_PROFILE_PATH, '')[0:len('.conf') * -1])
+            profiles.append(f.replace(_PROFILE_PATH + '/', '')[0:len('.conf') * -1])
 
         return profiles
 
