@@ -53,15 +53,17 @@ class MachineSet(SerialCommand):
 class MachineGet(SerialCommand):
 
     def execute(self, c):
-        if len(c.args) != 1:
-            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+        if not self.check_args(c, 'eq', 1):
             return
 
         try:
             k, = c.args
             nk = k.decode().replace('.', ':')
             v = self.machine[nk]
-            self.ok(c, k, v)
+            if v is not None:
+                self.ok(c, k, v)
+            else:
+                raise ValueError('Bad machine response: None')
         except Exception as e:
             self.error(c, k, str(e))
 
