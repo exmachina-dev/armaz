@@ -249,7 +249,7 @@ else:
         import subprocess
 
         cmd = ['opkg', 'remove',]
-        for pkg in ['armaz-commissioning-wizard', 'emmc-flasher', 'ertza-eeprom',]:
+        for pkg in ['armaz-commissioning-wizard', 'set-rtc-clock', 'emmc-flasher', 'ertza-eeprom',]:
             c_out = subprocess.check_output(cmd + [pkg,], universal_newlines=True).splitlines()
             print(*c_out, sep='\n')
 
