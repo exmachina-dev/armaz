@@ -106,9 +106,9 @@ class Test_SerialCommand(object):
         assert len(c) == 33
 
         c = self.cmd.send('test', True)
-        assert c.tobytes == b'ExmEisla\x00\x1eYYWWPPPPNNNNtest:\x80\r\n'
-        assert len(c) == 30
+        assert c.tobytes == b'ExmEisla\x00!YYWWPPPPNNNNtest:\x00\x00\x00\x01\r\n'
+        assert len(c) == 33
 
         c = self.cmd.send('test', False)
-        assert c.tobytes == b'ExmEisla\x00\x1eYYWWPPPPNNNNtest:\x00\r\n'
-        assert len(c) == 30
+        assert c.tobytes == b'ExmEisla\x00!YYWWPPPPNNNNtest:\x00\x00\x00\x00\r\n'
+        assert len(c) == 33
