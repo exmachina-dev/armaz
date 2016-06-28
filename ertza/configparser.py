@@ -12,6 +12,9 @@ logger = logging.getLogger('ertza.config')
 
 _VARIANT_PATH = "/etc/ertza/variants"
 _PROFILE_PATH = "/etc/ertza/profiles"
+_PROFILE_OPTIONS = (
+    '',
+)
 
 __all__ = ['NoSectionError', 'NoOptionError', 'ParsingError', 'ConfigParserError',
            'FileNotFoundError', 'VariantError', 'ProfileError', 'ConfigParser']
