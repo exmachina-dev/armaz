@@ -174,7 +174,7 @@ class ModbusDriverFrontend(object):
                 if self.custom_min_position is not None:
                     value = value if value > self.custom_min_position else self.custom_min_position
 
-            value = value * -1 if not self.invert else value
+            value = value * -1 if self.invert else value
             value /= self.gearbox_ratio
             value *= self.application_coeff
         elif key in ('acceleration', 'deceleration',):
@@ -188,7 +188,7 @@ class ModbusDriverFrontend(object):
             if self.acceleration_time_mode:
                 value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
         elif key in ('torque_ref'):
-            value = value * -1 if not self.invert else value
+            value = value * -1 if self.invert else value
             value *= self.gearbox_ratio
             value /= self.torque_constant
             value /= self.drive_rated_current
@@ -214,12 +214,12 @@ class ModbusDriverFrontend(object):
             value *= self.drive_rated_current
             value *= self.torque_constant
             value /= self.gearbox_ratio
-            value = value * -1 if not self.invert else value
+            value = value * -1 if self.invert else value
         elif key in ('torque'):
             value /= self.gearbox_ratio
-            value = value * -1 if not self.invert else value
+            value = value * -1 if self.invert else value
         elif key in ('current_ratio'):
-            value = value * -1 if not self.invert else value
+            value = value * -1 if self.invert else value
 
         return value
 
