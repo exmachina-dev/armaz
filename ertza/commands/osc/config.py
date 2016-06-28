@@ -193,7 +193,7 @@ class ConfigProfileSave(UnbufferedCommand, OscCommand):
             else:
                 profile = None
 
-            self.machine.config.profile_save(profile)
+            self.machine.config.save_profile(profile)
             self.ok(c)
         except Exception as e:
             self.error(c, str(e))
