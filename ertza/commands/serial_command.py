@@ -32,4 +32,4 @@ class SerialCommand(AbstractCommand):
         else:
             full_path = self.alias
 
-        self.send(command.sender, full_path, *args, **kwargs)
+        self.send(full_path, *args, **kwargs)

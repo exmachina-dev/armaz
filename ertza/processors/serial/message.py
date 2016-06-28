@@ -55,6 +55,9 @@ class SerialCommandString(object):
         return bs.Bits(self['length']).uint
 
     def _pack(self, value):
+        if value is None:
+            raise ValueError('''value can't be None''')
+
         if isinstance(value, str):
             value = value.encode()
         elif isinstance(value, int):
@@ -76,9 +79,6 @@ class SerialCommandString(object):
 
     def __add__(self, value):
         value = self._pack(value)
-
-        if value is None:
-            raise ValueError('''value can't be None''')
 
         if self['data'] != b'':
             self['data'] += self.CmdSep + value
@@ -110,7 +110,7 @@ class SerialTarget(object):
 class SerialMessage(AbstractMessage):
 
     def __init__(self, **kwargs):
-        self.cmd_bytes = SerialCommandString(kwargs['cmd_bytes']) \
+        self.cmd_bytes = SerialCommandString(cmd_bytes=kwargs['cmd_bytes']) \
             if 'cmd_bytes' in kwargs else SerialCommandString()
 
         self.sender, self.receiver = None, None
