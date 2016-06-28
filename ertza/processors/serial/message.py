@@ -77,6 +77,9 @@ class SerialCommandString(object):
     def __add__(self, value):
         value = self._pack(value)
 
+        if value is None:
+            raise ValueError('''value can't be None''')
+
         if self['data'] != b'':
             self['data'] += self.CmdSep + value
         else:
