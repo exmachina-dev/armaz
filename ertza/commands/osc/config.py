@@ -10,11 +10,11 @@ class ConfigLoadProfile(UnbufferedCommand, OscCommand):
     """
 
     def execute(self, c):
-        if self.check_args(c, 'ne', 1):
-            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+        if not self.check_args(c, 'eq', 1):
+            return
 
         try:
-            profile = c.args
+            profile, = c.args
             self.machine.config.load_profile(profile)
             self.ok(c)
         except Exception as e:
@@ -60,7 +60,7 @@ class ConfigProfileSet(UnbufferedCommand, OscCommand):
     """
 
     def execute(self, c):
-        if not self.check_args(c, 'ne', 2):
+        if not self.check_args(c, 'eq', 2):
             return
 
         try:
