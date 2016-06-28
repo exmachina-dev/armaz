@@ -12,20 +12,40 @@ logger = logging.getLogger('ertza.config')
 
 _VARIANT_PATH = "/etc/ertza/variants"
 _PROFILE_PATH = "/etc/ertza/profiles"
-_PROFILE_OPTIONS = (
-    'machine:ip_adress', 'machine:operating_mode',
+_PROFILE_OPTIONS = {
+    'machine': {
+        'ip_address': ('str', None),
+        'machine:operating_mode': ('str', None),
+    },
+    'motor': {
+        'acceleration': ('float', 'm.s-1'),
+        'deceleration': ('float', 'm.s-1'),
+        'control_mode': ('int', None),
 
-    'motor:acceleration ', 'motor:deceleration ',
-    'motor:control_mode ',
-    'motor:entq_kp ', 'motor:entq_kp_vel ', 'motor:entq_ki ', 'motor:entq_kd ',
-    'motor:torque_rise_time ', 'motor:torque_fall_time ',
-    'motor:application_coefficient ',
-    'motor:invert ',
-    'motor:acceleration_time_mode ',
-    'motor:custom_max_velocity ',
-    'motor:custom_max_acceleration ', 'motor:custom_max_deceleration ',
-    'motor:custom_max_position ', 'motor:custom_min_position ',
-)
+        'entq_kp': ('float', None),
+
+        'entq_kp_vel': ('float', None),
+        'entq_ki': ('float', None),
+        'entq_kd': ('float', None),
+        'torque_rise_time': ('float', 'ms'),
+        'torque_fall_time': ('float', 'ms'),
+
+        'application_coefficient': ('float', None),
+        'application_velocity_unit': ('str', None),
+        'application_position_unit': ('str', None),
+
+        'invert': ('bool', None),
+
+        'acceleration_time_mode': ('bool', None),
+
+        'custom_max_velocity': ('float', None),
+
+        'custom_max_acceleration': ('float', None),
+        'custom_max_deceleration': ('float', None),
+        'custom_max_position': ('float', None),
+        'custom_min_position': ('float', None),
+    }
+}
 
 __all__ = ['NoSectionError', 'NoOptionError', 'ParsingError', 'ConfigParserError',
            'FileNotFoundError', 'VariantError', 'ProfileError', 'ConfigParser']
@@ -177,6 +197,8 @@ class ConfigParser(AbstractConfigParser):
 
     VARIANT_PRIORITY = 0
     PROFILE_PRIORITY = 1
+
+    PROFILE_OPTIONS = _PROFILE_OPTIONS
 
     def load_config(self, config_file):
         if not os.path.isfile(config_file):

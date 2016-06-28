@@ -97,8 +97,11 @@ class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
         try:
             list_opts = self.machine.config.get_profile_options()
             for sec, opts in list_opts.items():
-                for opt, vtype in opts.items():
-                    self.reply(c, '{}:{}'.format(sec, opt))
+                for opt, data in opts.items():
+                    if data[1] is not None:
+                        self.reply(c, '{s}:{o}'.format(s=sec, o=opt), *data)
+                    else:
+                        self.reply(c, '{s}:{o}'.format(s=sec, o=opt), data[0])
 
             self.ok(c, 'done')
         except Exception as e:
