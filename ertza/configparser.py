@@ -13,7 +13,18 @@ logger = logging.getLogger('ertza.config')
 _VARIANT_PATH = "/etc/ertza/variants"
 _PROFILE_PATH = "/etc/ertza/profiles"
 _PROFILE_OPTIONS = (
-    '',
+    'machine:ip_adress', 'machine:operating_mode',
+
+    'motor:acceleration ', 'motor:deceleration ',
+    'motor:control_mode ',
+    'motor:entq_kp ', 'motor:entq_kp_vel ', 'motor:entq_ki ', 'motor:entq_kd ',
+    'motor:torque_rise_time ', 'motor:torque_fall_time ',
+    'motor:application_coefficient ',
+    'motor:invert ',
+    'motor:acceleration_time_mode ',
+    'motor:custom_max_velocity ',
+    'motor:custom_max_acceleration ', 'motor:custom_max_deceleration ',
+    'motor:custom_max_position ', 'motor:custom_min_position ',
 )
 
 __all__ = ['NoSectionError', 'NoOptionError', 'ParsingError', 'ConfigParserError',
