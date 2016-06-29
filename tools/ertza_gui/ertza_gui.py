@@ -47,6 +47,8 @@ class OrderedDictTrigger(collections.OrderedDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._vtypes = {}
+
         try:
             self.set_trigger(kwargs['trigger'])
         except KeyError:
@@ -60,12 +62,25 @@ class OrderedDictTrigger(collections.OrderedDict):
         self._trigger.setRowCount(len(self))
         r = list(self.keys()).index(key)
         self._trigger.setItem(r, 0, QtGui.QTableWidgetItem(str(key)))
-        if isinstance(value, bool):
-            value = 'on' if value else 'off'
-        elif isinstance(value, float):
-            value = '{:.2f}'.format(value)
+        if isinstance(value, (tuple, list)):
+            if len(value) == 2:
+                vtype, unit = value
+                self._trigger.setItem(r, 2, QtGui.QTableWidgetItem(str(unit)))
+                self._vtypes[key] = vtype
+            elif len(value) == 1:
+                self._vtypes[key] = value[0]
+            elif len(value) == 3:
+                value, vtype, unit = value
+                self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
+                self._trigger.setItem(r, 2, QtGui.QTableWidgetItem(str(unit)))
+                self._vtypes[key] = vtype
+        else:
+            if isinstance(value, bool):
+                value = 'on' if value else 'off'
+            elif isinstance(value, float):
+                value = '{:.2f}'.format(value)
 
-        self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
+            self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
 
         self._trigger.verticalHeader().stretchLastSection()
         self._trigger.resizeColumnsToContents()
