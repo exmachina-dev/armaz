@@ -359,7 +359,7 @@ class ErtzaActions(object):
 
     def _instant_config(self, key, value=None):
         if key.startswith('profile_'):
-            if 'profile_load' in key:
+            if 'profile_load' in key or 'profile_dump' in key:
                 value = self.config_get('profile_name')
             if value is not None:
                 self.send('/config/profile/{}'.format(key[8:]), value)
@@ -734,14 +734,14 @@ class ErtzaGui(QtGui.QMainWindow):
         pfl_frame = QtGui.QFrame()
         pfl_frame.setLayout(pfl_grid)
 
-        self.stp_load_pfl_but = PushButton('Load Profile')
-        self.stp_unload_pfl_but = PushButton('Unload Profile')
-        self.stp_save_pfl_but = PushButton('Save Profile')
         self.stp_profile_list = QtGui.QComboBox()
-        self.stp_refresh_pfl_but = PushButton('Refresh Profile List')
-        self.stp_refresh_opt_but = PushButton('Refresh Options')
-        self.stp_options_box = QtGui.QGroupBox('Options')
+        self.stp_refresh_pfl_but = PushButton('Refresh profile list')
+        self.stp_load_pfl_but = PushButton('Load profile')
+        self.stp_unload_pfl_but = PushButton('Unload profile')
+        self.stp_save_pfl_but = PushButton('Save profile')
         self.stp_refresh_opt_but = PushButton('Get option list')
+        self.stp_dump_profile_but = PushButton('Dump profile')
+        self.stp_get_actual_values_but = PushButton('Get values')
 
         stp_options_box = QtGui.QGroupBox('Options')
         stp_options_grid = QtGui.QGridLayout()
@@ -751,25 +751,30 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_profile_list.setEditable(True)
 
+        self.stp_profile_list.currentIndexChanged.connect(self.actions.set_profile_id)
+        self.stp_profile_list.editTextChanged.connect(self.actions.set_profile_name)
+
+        self.stp_refresh_pfl_but.clicked.connect(self.actions.iconf_profile_list)
+        self.stp_refresh_pfl_but.clicked.connect(self.stp_profile_list.clear)
+
         self.stp_load_pfl_but.clicked.connect(self.actions.iconf_profile_load)
         self.stp_unload_pfl_but.clicked.connect(self.actions.iconf_profile_unload)
         self.stp_save_pfl_but.clicked.connect(self.actions.iconf_profile_save)
-        self.stp_profile_list.currentIndexChanged.connect(self.actions.set_profile_id)
-        self.stp_profile_list.editTextChanged.connect(self.actions.set_profile_name)
-        self.stp_refresh_pfl_but.clicked.connect(self.actions.iconf_profile_list)
-        self.stp_refresh_pfl_but.clicked.connect(self.stp_profile_list.clear)
-        self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
-
-        pfl_grid.addWidget(self.stp_load_pfl_but, 0, 0)
-        pfl_grid.addWidget(self.stp_unload_pfl_but, 0, 1)
-        pfl_grid.addWidget(self.stp_save_pfl_but, 0, 2)
-        pfl_grid.addWidget(self.stp_profile_list, 1, 0)
-        pfl_grid.addWidget(self.stp_refresh_pfl_but, 1, 1)
-        pfl_grid.addWidget(self.stp_refresh_opt_but, 1, 2)
-        pfl_grid.addWidget(self.stp_options_box, 2, 0, 10, 0)
 
         self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
+        self.stp_dump_profile_but.clicked.connect(self.actions.iconf_profile_dump)
+        self.stp_get_actual_values_but.clicked.connect(self.actions.iconf_config_get)
         self.actions.profile_options.set_trigger(self.stp_profile_options_table)
+
+        pfl_grid.addWidget(self.stp_profile_list, 0, 0, 1, 2)
+        pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 2)
+        pfl_grid.addWidget(self.stp_load_pfl_but, 1, 0)
+        pfl_grid.addWidget(self.stp_unload_pfl_but, 1, 1)
+        pfl_grid.addWidget(self.stp_save_pfl_but, 1, 2)
+        pfl_grid.addWidget(self.stp_refresh_opt_but, 2, 0)
+        pfl_grid.addWidget(self.stp_dump_profile_but, 2, 1)
+        pfl_grid.addWidget(self.stp_get_actual_values_but, 2, 2)
+        pfl_grid.addWidget(stp_options_box, 3, 0, 10, 0)
 
         stp_options_grid.addWidget(self.stp_profile_options_table, 0, 0)
 
