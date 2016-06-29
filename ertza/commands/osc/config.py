@@ -248,8 +248,7 @@ class ConfigGet(UnbufferedCommand, OscCommand):
 
         try:
             k, = c.args
-            nk = k.decode().replace('.', ':')
-            v = self.machine[nk]
+            v = self.machine[k]
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, k, str(e))
