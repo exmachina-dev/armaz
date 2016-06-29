@@ -7,7 +7,7 @@ from ertza.commands import OscCommand
 class Identify(OscCommand, BufferedCommand):
 
     def execute(self, c):
-        self.ok(c, self.machine.serialnumber, self.machine.address)
+        self.ok(c, self.machine.serialnumber, self.machine.osc_address)
 
     @property
     def alias(self):

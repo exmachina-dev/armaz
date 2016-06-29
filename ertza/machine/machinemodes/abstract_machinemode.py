@@ -20,7 +20,7 @@ class AbstractMachineMode(object):
     MachineMap = {
         'operation_mode':   _param(str, 'rw'),
         'serialnumber':     _param(str, 'r'),
-        'address':          _param(str, 'r'),
+        'osc_address':          _param(str, 'r'),
         'ip_address':       _param(str, 'rw'),
     }
 
@@ -28,7 +28,7 @@ class AbstractMachineMode(object):
         'serialnumber',
         'operating_mode',
         'infos',
-        'address',
+        'osc_address',
         'ip_address'
     )
 

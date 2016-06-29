@@ -155,9 +155,9 @@ class Machine(AbstractMachine):
         return sn
 
     @property
-    def address(self):
+    def osc_address(self):
         try:
-            a = self.ethernet_interface.ips[0].split('/')[0]
+            a = self.ip_address
             p = self.config.getint('osc', 'listen_port')
             return '{addr}:{port}'.format(addr=a, port=p)
         except (IndexError, KeyError):
