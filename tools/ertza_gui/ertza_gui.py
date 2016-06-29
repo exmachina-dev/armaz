@@ -149,6 +149,7 @@ class ErtzaActions(object):
         self.osc_server = None
 
         self.status = OrderedDictTrigger()
+        self.profile_options = OrderedDictTrigger()
 
         self._config = {}
 
@@ -181,6 +182,8 @@ class ErtzaActions(object):
         elif '/identify' in path:
             # Ignore identify requests
             pass
+        elif '/config/profile/list_options' in path:
+            self.profile_options[args[0]] = args[1:]
         elif '/config/profile/list' in path:
             self.master.stp_profile_list.addItem(args[0])
         else:
@@ -362,6 +365,10 @@ class ErtzaActions(object):
                 self.send('/config/profile/{}'.format(key[8:]), value)
             else:
                 self.send('/config/profile/{}'.format(key[8:]))
+        elif key.startswith('config_'):
+            if 'get' in key:
+                for k in self.profile_options.keys():
+                    self.send('/config/get', k)
         else:
             self.send('/machine/set', 'machine:{}'.format(key), value)
 
@@ -734,6 +741,12 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_refresh_pfl_but = PushButton('Refresh Profile List')
         self.stp_refresh_opt_but = PushButton('Refresh Options')
         self.stp_options_box = QtGui.QGroupBox('Options')
+        self.stp_refresh_opt_but = PushButton('Get option list')
+
+        stp_options_box = QtGui.QGroupBox('Options')
+        stp_options_grid = QtGui.QGridLayout()
+        stp_options_box.setLayout(stp_options_grid)
+        self.stp_profile_options_table = QtGui.QTableWidget(0, 3)
 
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_profile_list.setEditable(True)
@@ -754,6 +767,11 @@ class ErtzaGui(QtGui.QMainWindow):
         pfl_grid.addWidget(self.stp_refresh_pfl_but, 1, 1)
         pfl_grid.addWidget(self.stp_refresh_opt_but, 1, 2)
         pfl_grid.addWidget(self.stp_options_box, 2, 0, 10, 0)
+
+        self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
+        self.actions.profile_options.set_trigger(self.stp_profile_options_table)
+
+        stp_options_grid.addWidget(self.stp_profile_options_table, 0, 0)
 
         stp_tabs.addTab(cnf_frame, '&Config')
         stp_tabs.addTab(pfl_frame, 'P&rofile')
