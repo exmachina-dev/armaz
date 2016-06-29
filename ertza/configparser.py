@@ -6,7 +6,7 @@ from glob import glob
 import struct
 import configparser
 from configparser import Error, NoSectionError, NoOptionError, ParsingError
-from collections import ChainMap
+from collections import ChainMap, namedtuple
 
 logger = logging.getLogger('ertza.config')
 
@@ -49,6 +49,8 @@ _PROFILE_OPTIONS = {
 
 __all__ = ['NoSectionError', 'NoOptionError', 'ParsingError', 'ConfigParserError',
            'FileNotFoundError', 'VariantError', 'ProfileError', 'ConfigParser']
+
+parameter = namedtuple('parameter', ['vtype', 'unit', 'value'])
 
 
 class ConfigParserError(Error):

@@ -22,6 +22,8 @@ from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
 from ..drivers.utils import retry
 
+from ..configparser import parameter as _p
+
 logging = logging.getLogger('ertza.machine')
 
 
@@ -58,6 +60,12 @@ class Machine(AbstractMachine):
         self.master = None
         self.operation_mode = None
         self._machine_keys = None
+
+        self._profile_parameters = {
+            'ip_address': _p(str, None, self.set_ip_address),
+            'operating_mode': _p(str, None, self.set_operating_mode),
+        }
+
 
         self._last_command_time = time.time()
         self._running_event = Event()
