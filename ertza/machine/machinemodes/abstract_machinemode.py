@@ -21,6 +21,7 @@ class AbstractMachineMode(object):
         'operation_mode':   _param(str, 'rw'),
         'serialnumber':     _param(str, 'r'),
         'address':          _param(str, 'r'),
+        'ip_address':       _param(str, 'rw'),
     }
 
     DirectAttributesGet = (
@@ -28,9 +29,11 @@ class AbstractMachineMode(object):
         'operation_mode',
         'infos',
         'address',
+        'ip_address'
     )
 
     DirectAttributesSet = (
+        'ip_address'
     )
 
     StaticKeys = (
