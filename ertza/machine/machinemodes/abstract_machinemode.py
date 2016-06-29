@@ -26,7 +26,7 @@ class AbstractMachineMode(object):
 
     DirectAttributesGet = (
         'serialnumber',
-        'operation_mode',
+        'operating_mode',
         'infos',
         'address',
         'ip_address'
@@ -72,7 +72,7 @@ class AbstractMachineMode(object):
     def __setitem__(self, key, value):
         self._check_write_access(key)
 
-        if key == 'operation_mode':
+        if key == 'operating_mode':
             if isinstance(value, (list, tuple)):
                 return self._machine.set_operation_mode(*value)
             else:

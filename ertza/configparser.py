@@ -15,7 +15,7 @@ _PROFILE_PATH = "/etc/ertza/profiles"
 _PROFILE_OPTIONS = {
     'machine': {
         'ip_address': ('str', None),
-        'machine:operating_mode': ('str', None),
+        'operating_mode': ('str', None),
     },
     'motor': {
         'acceleration': ('float', 'm.s-1'),
