@@ -96,7 +96,7 @@ class Machine(AbstractMachine):
         logging.debug("%s driver loaded" % drv)
 
         self.frontend_config = self.config['motor']
-        self.driver.load_frontend_config(self.frontend_config)
+        self.driver.frontend.load_config(self.frontend_config)
         return drv
 
     def start(self):
@@ -395,6 +395,13 @@ class Machine(AbstractMachine):
     @property
     def standalone_mode(self):
         return self._check_operation_mode('standalone', raise_exception=False)
+
+    @property
+    def paramaters(self):
+        p = {}
+        p += self._profile_parameters
+        if self.frontend:
+            p += self.frontend.parameters
 
     def _check_operation_mode(self, mode='slave', raise_exception=True):
         if self.operation_mode == mode:

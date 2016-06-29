@@ -3,7 +3,7 @@
 
 class ModbusDriverFrontend(object):
 
-    def load_frontend_config(self, config):
+    def load_config(self, config):
         self.frontend_config = config
 
         self.gearbox_ratio = (

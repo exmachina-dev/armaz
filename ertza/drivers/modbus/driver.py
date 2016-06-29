@@ -30,7 +30,7 @@ class WriteOnlyError(ModbusDriverError, IOError):
         super().__init__('%s is write-only' % key)
 
 
-class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
+class ModbusDriver(AbstractDriver):
 
     netdata = namedtuple('netdata', ['addr', 'fmt'])
     parameter = namedtuple('parameter', ['netdata', 'start',
@@ -144,6 +144,8 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
         self.connected = None
 
+        self.frontend = ModbusDriverFrontend()
+
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
         try:
@@ -244,7 +246,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
         else:
             ndk = self.netdata_map[seckey]
-            data = (self._output_value(key, ndk.vtype(value)),)
+            data = (self.frontend.output_value(key, ndk.vtype(value)),)
 
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
@@ -259,7 +261,7 @@ class ModbusDriver(AbstractDriver, ModbusDriverFrontend):
 
         try:
             res = self.back.read_netdata(nd.addr, nd.fmt)
-            return self._input_value(key, vt(res[st]))
+            return self.frontend.input_value(key, vt(res[st]))
         except ModbusBackendError as e:
             raise ModbusDriverError('No data returned from backend '
                                     'for {}: {!s}'.format(key, e))
