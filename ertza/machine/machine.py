@@ -122,9 +122,9 @@ class Machine(AbstractMachine):
             self.load_slaves()
         if m == 'slave':
             master = self.config.get('machine', 'master')
-            self.set_operation_mode(m, master)
+            self.set_operating_mode(m, master)
         else:
-            self.set_operation_mode(m)
+            self.set_operating_mode(m)
 
     def reply(self, command):
         if command.answer is not None:
@@ -305,9 +305,12 @@ class Machine(AbstractMachine):
                                     'with S/N {0}: {exc}'
                                     .format(*slave_machine.slave, exc=e))
 
-    def set_operation_mode(self, *args):
+    def set_operating_mode(self, *args):
         if len(args) >= 1:
             mode = args[0]
+            if mode not in ('standalone', 'master', 'slave'):
+                raise MachineError('Unexpected mode: {}'.format(mode))
+
             logging.info('Setting operating mode to {}'.format(mode))
 
             if mode == 'master':
@@ -345,11 +348,11 @@ class Machine(AbstractMachine):
         else:
             logging.info('Deactivating %s mode' % self.operation_mode)
 
-            if self.operation_mode == 'slave':
+            if self.operating_mode == 'slave':
                 self.free()
                 self.master = None
 
-            elif self.operation_mode == 'master':
+            elif self.operating_mode == 'master':
                 pass
 
     def activate_mode(self, mode):
