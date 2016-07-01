@@ -63,6 +63,8 @@ class DriverFrontend(object):
                          'acceleration', 'deceleration',
                          'position', 'position_target', 'position_remaining')
 
+    DEFAULTS_KEYS = ('acceleration', 'deceleration', 'torque_constant', 'drive_rated_current')
+
     def load_config(self, config, section='motor'):
         self.frontend_config = config
         self.frontend_section = section

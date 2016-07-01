@@ -147,6 +147,9 @@ class FakeDriver(AbstractDriver):
 
         return attr_map
 
+    def send_default_values(self):
+        pass
+
     def __getitem__(self, key):
         try:
             if len(key.split(':')) == 2:

@@ -174,6 +174,10 @@ class ModbusDriver(AbstractDriver):
 
         return attr_map
 
+    def send_default_values(self):
+        for key in self.frontend.DEFAULTS_KEYS:
+            self[key] = self.frontend[key]
+
     def __getitem__(self, key):
         try:
             if len(key.split(':')) == 2:
