@@ -4,9 +4,9 @@ import logging
 from collections import namedtuple
 
 from ..abstract_driver import AbstractDriver, AbstractDriverError
+from ..frontend import DriverFrontend
 
 from .backend import ModbusBackend, ModbusBackendError
-from .frontend import ModbusDriverFrontend
 
 from ..utils import retry
 
@@ -144,7 +144,7 @@ class ModbusDriver(AbstractDriver):
 
         self.connected = None
 
-        self.frontend = ModbusDriverFrontend()
+        self.frontend = DriverFrontend()
 
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):

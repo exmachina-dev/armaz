@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
 
-class ModbusDriverFrontend(object):
 
     def load_config(self, config):
         self.frontend_config = config
 
-        self.gearbox_ratio = (
-            self._safe_config_get("gearbox_input_coefficient", float, 1) /
-            self._safe_config_get("gearbox_output_coefficient", float, 1))
+class DriverFrontend(object):
+
 
         self.torque_constant = self._safe_config_get("torque_constant", float, 1)  # in Nm/A
         self.drive_rated_current = self._safe_config_get("drive_rated_current", float, 1)  # in A
