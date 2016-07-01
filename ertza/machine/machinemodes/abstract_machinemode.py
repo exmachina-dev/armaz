@@ -20,17 +20,20 @@ class AbstractMachineMode(object):
     MachineMap = {
         'operation_mode':   _param(str, 'rw'),
         'serialnumber':     _param(str, 'r'),
-        'address':          _param(str, 'r'),
+        'osc_address':          _param(str, 'r'),
+        'ip_address':       _param(str, 'rw'),
     }
 
     DirectAttributesGet = (
         'serialnumber',
-        'operation_mode',
+        'operating_mode',
         'infos',
-        'address',
+        'osc_address',
+        'ip_address'
     )
 
     DirectAttributesSet = (
+        'ip_address'
     )
 
     StaticKeys = (
@@ -69,7 +72,7 @@ class AbstractMachineMode(object):
     def __setitem__(self, key, value):
         self._check_write_access(key)
 
-        if key == 'operation_mode':
+        if key == 'operating_mode':
             if isinstance(value, (list, tuple)):
                 return self._machine.set_operation_mode(*value)
             else:

@@ -6,12 +6,8 @@ from collections import namedtuple
 from ..abstract_driver import AbstractDriver, AbstractDriverError
 from ..frontend import DriverFrontend
 
-from .backend import ModbusBackend, ModbusBackendError
 
-from ..utils import retry
-
-
-class ModbusDriverError(AbstractDriverError):
+class FakeDriverError(AbstractDriverError):
     def __init__(self, exception=None):
         self._parent_exception = exception
 
@@ -20,17 +16,17 @@ class ModbusDriverError(AbstractDriverError):
             return '{0.__class__.__name__}: {0._parent_exception!r}'.format(self)
 
 
-class ReadOnlyError(ModbusDriverError, IOError):
+class ReadOnlyError(FakeDriverError, IOError):
     def __init__(self, key):
         super().__init__('%s is read-only' % key)
 
 
-class WriteOnlyError(ModbusDriverError, IOError):
+class WriteOnlyError(FakeDriverError, IOError):
     def __init__(self, key):
         super().__init__('%s is write-only' % key)
 
 
-class ModbusDriver(AbstractDriver):
+class FakeDriver(AbstractDriver):
 
     netdata = namedtuple('netdata', ['addr', 'fmt'])
     parameter = namedtuple('parameter', ['netdata', 'start',
@@ -38,7 +34,7 @@ class ModbusDriver(AbstractDriver):
     MFNdata = {
         'status':               netdata(0, 'pad:24,bool,bool,bool,bool,'
                                         'bool,bool,bool,bool'),
-        'command':              netdata(1, 'pad:20,bool,bool,bool,bool,uint:1,uint:3,'
+        'command':              netdata(1, 'pad:21,bool,bool,bool,uint:1,uint:3,'
                                         'bool,bool,bool,bool'),
         'error_code':           netdata(2, 'uint:32'),
         'jog':                  netdata(3, 'float:32'),
@@ -50,10 +46,6 @@ class ModbusDriver(AbstractDriver):
         'torque_fall_time':     netdata(11, 'float:32'),
         'acceleration':         netdata(12, 'float:32'),
         'deceleration':         netdata(13, 'float:32'),
-        'entq_kp':              netdata(14, 'float:32'),
-        'entq_kp_vel':          netdata(15, 'float:32'),
-        'entq_ki':              netdata(16, 'float:32'),
-        'entq_kd':              netdata(17, 'float:32'),
 
         'velocity':             netdata(21, 'float:32'),
         'position':             netdata(22, 'float:32'),
@@ -84,15 +76,14 @@ class ModbusDriver(AbstractDriver):
         },
 
         'command': {
-            'enable':           p(MFNdata['command'], 9, bool, 'w'),
-            'cancel':           p(MFNdata['command'], 8, bool, 'w'),
-            'clear_errors':     p(MFNdata['command'], 7, bool, 'w'),
-            'reset':            p(MFNdata['command'], 6, bool, 'w'),
-            'control_mode':     p(MFNdata['command'], 5, int, 'w'),
-            'move_mode':        p(MFNdata['command'], 4, int, 'w'),
-            'go':               p(MFNdata['command'], 3, bool, 'w'),
-            'set_home':         p(MFNdata['command'], 2, bool, 'w'),
-            'go_home':          p(MFNdata['command'], 1, bool, 'w'),
+            'enable':           p(MFNdata['command'], 8, bool, 'w'),
+            'cancel':           p(MFNdata['command'], 7, bool, 'w'),
+            'clear_errors':     p(MFNdata['command'], 6, bool, 'w'),
+            'reset':            p(MFNdata['command'], 5, bool, 'w'),
+            'control_mode':     p(MFNdata['command'], 4, int, 'w'),
+            'move_mode':        p(MFNdata['command'], 3, int, 'w'),
+            'go':               p(MFNdata['command'], 2, bool, 'w'),
+            'set_home':         p(MFNdata['command'], 1, bool, 'w'),
             'stop':             p(MFNdata['command'], 0, bool, 'w'),
         },
 
@@ -105,10 +96,6 @@ class ModbusDriver(AbstractDriver):
         'torque_fall_time':     p(MFNdata['torque_fall_time'], 0, float, 'rw'),
         'acceleration':         p(MFNdata['acceleration'], 0, float, 'rw'),
         'deceleration':         p(MFNdata['deceleration'], 0, float, 'rw'),
-        'entq_kp':              p(MFNdata['entq_kp'], 0, float, 'rw'),
-        'entq_kp_vel':          p(MFNdata['entq_kp_vel'], 0, float, 'rw'),
-        'entq_ki':              p(MFNdata['entq_ki'], 0, float, 'rw'),
-        'entq_kd':              p(MFNdata['entq_kd'], 0, float, 'rw'),
 
         'velocity':             p(MFNdata['velocity'], 0, float, 'r'),
         'position':             p(MFNdata['position'], 0, float, 'r'),
@@ -132,36 +119,22 @@ class ModbusDriver(AbstractDriver):
 
         self.config = config
 
-        self.target_address = config.get("target_address")
-        self.target_port = int(config.get("target_port"))
-        self.target_nodeid = '.'.split(self.target_address)[-1]     # On MFE100, nodeid is always the last byte of his IP address
-
-        self.back = ModbusBackend(self.target_address, self.target_port,
-                                  self.target_nodeid)
-
-        self.netdata_map = ModbusDriver.MFE100Map
+        self.netdata_map = FakeDriver.MFE100Map
         self._prev_data = {}
 
         self.connected = None
 
+        self.fake_data = {}
+
         self.frontend = DriverFrontend()
 
-    @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
-        try:
-            if not self.back.connect():
-                self.connected = False
-                raise ModbusDriverError('Failed to connect {0}:{1}'.format(
-                    self.target_address, self.target_port))
+        if not self.connected:
             self.connected = True
-        except ModbusBackendError as e:
-            raise ModbusDriverError('Failed to connect {0}:{1}: {2}'.format(
-                self.target_address, self.target_port, e))
+        self.connected = True
 
     def exit(self):
         self['command:enable'] = False
-
-        self.back.close()
 
     def get_attribute_map(self):
         attr_map = {}
@@ -186,7 +159,7 @@ class ModbusDriver(AbstractDriver):
 
             if type(self.netdata_map[seckey]) == dict:
                 if subkey:
-                    if subkey not in self.netdata_map[seckey]:
+                    if subkey not in self.netdata_map:
                         raise KeyError(subkey)
                     ndk = self.netdata_map[seckey][subkey]
                 else:
@@ -198,7 +171,7 @@ class ModbusDriver(AbstractDriver):
             return self._get_value(ndk, seckey)
         except Exception as e:
             logging.error('Got exception in {!r}: {!r}'.format(self, e))
-            raise ModbusDriverError(e)
+            raise FakeDriverError(e)
 
     def __setitem__(self, key, value):
         if len(key.split(':')) == 2:
@@ -213,45 +186,37 @@ class ModbusDriver(AbstractDriver):
             if subkey not in self.netdata_map[seckey]:
                 raise KeyError('Unable to find {0} in {1} '
                                'netdata map'.format(subkey, seckey))
-            pndk = self.netdata_map[seckey]
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
-
             if seckey not in self._prev_data.keys():
-                self._prev_data[seckey] = {}
+                data = list((0,) * seclen)
+                data[ndk.start] = ndk.vtype(value)
+            else:
+                pdata = list(self._prev_data[seckey])
 
-            forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
-            unique_values = ('control_mode',)
-            data = list((-1,) * seclen)
-
-            for k, cndk in pndk.items():
-                data[cndk.start] = self._prev_data[seckey].get(k, cndk.vtype(0))
-            data[ndk.start] = ndk.vtype(value)
-
-            for k, cndk in pndk.items():
-                if k == subkey and subkey in unique_values:
-                    try:
-                        if ndk.vtype(value) == self._prev_data[seckey][k]:
+                forget_values = (0, 1, 4, 6,)
+                unique_values = (3,)
+                data = list((-1,) * seclen)
+                data[ndk.start] = ndk.vtype(value)
+                for i, pvalue in enumerate(pdata):
+                    if ndk.start == i and ndk.start in unique_values:
+                        if data[ndk.start] == pvalue:
                             return
-                    except KeyError:
-                        pass
-                elif ndk.start != cndk.start:
-                    if k in forget_values:
-                        data[cndk.start] = cndk.vtype(0)
-                        self._prev_data[seckey][k] = cndk.vtype(0)
-                    if k in unique_values:
-                        data[cndk.start] = cndk.vtype(0)
+                    elif ndk.start != i:
+                        if i in forget_values:
+                            data[i] = 0
+                        else:
+                            data[i] = pvalue
 
-            self._prev_data[seckey][subkey] = ndk.vtype(value)
-
+            self._prev_data[seckey] = data
         else:
             ndk = self.netdata_map[seckey]
-            data = (self.frontend.output_value(key, ndk.vtype(value)),)
+            data = (self._output_value(key, ndk.vtype(value)),)
 
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
 
-        return self.back.write_netdata(ndk.netdata.addr, data, ndk.netdata.fmt)
+        return self.write_fake_data(ndk.netdata.addr, data)
 
     def _get_value(self, ndk, key):
         nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
@@ -259,26 +224,17 @@ class ModbusDriver(AbstractDriver):
         if 'r' not in md:
             raise ReadOnlyError(key)
 
+        res = self.read_fake_data(nd.addr, nd.fmt)
+        if not res:
+            return
+
+        return self._input_value(key, vt(res[st]))
+
+    def write_fake_data(self, addr, data, fmt=None):
+        self.fake_data[addr] = data
+
+    def read_fake_data(self, addr, fmt=None):
         try:
-            res = self.back.read_netdata(nd.addr, nd.fmt)
-            return self.frontend.input_value(key, vt(res[st]))
-        except ModbusBackendError as e:
-            raise ModbusDriverError('No data returned from backend '
-                                    'for {}: {!s}'.format(key, e))
-
-    def __repr__(self):
-        return '{0.__class__.__name__}'.format(self)
-
-if __name__ == "__main__":
-    c = {
-        'target_address': 'localhost',
-        'target_port': 501,
-    }
-
-    d = ModbusDriver(c)
-
-    try:
-        d['velocity'] = True    # This shoud raise ReadOnlyError
-        print(d['position_ref'])    # This shoud raise WriteOnlyError
-    except ModbusDriverError:
-        pass
+            return self.fake_data[addr]
+        except KeyError:
+            return None

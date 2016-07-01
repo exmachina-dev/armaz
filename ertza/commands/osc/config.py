@@ -162,7 +162,7 @@ class ConfigProfileDump(UnbufferedCommand, OscCommand):
             else:
                 profile = None
 
-            dump = self.machine.config.profile_dump(profile)
+            dump = self.machine.config.dump_profile(profile)
             for options, val in dump.items():
                 sec, opt = options
                 self.reply(c, sec, opt, val)
@@ -248,8 +248,7 @@ class ConfigGet(UnbufferedCommand, OscCommand):
 
         try:
             k, = c.args
-            nk = k.decode().replace('.', ':')
-            v = self.machine[nk]
+            v = self.machine[k]
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, k, str(e))

@@ -22,6 +22,8 @@ from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
 from ..drivers.utils import retry
 
+from ..configparser import parameter as _p
+
 logging = logging.getLogger('ertza.machine')
 
 
@@ -59,6 +61,12 @@ class Machine(AbstractMachine):
         self.operation_mode = None
         self._machine_keys = None
 
+        self._profile_parameters = {
+            'ip_address': _p(str, None, self.set_ip_address),
+            'operating_mode': _p(str, None, self.set_operating_mode),
+        }
+
+
         self._last_command_time = time.time()
         self._running_event = Event()
         self._timeout_event = Event()
@@ -87,8 +95,7 @@ class Machine(AbstractMachine):
 
         logging.debug("%s driver loaded" % drv)
 
-        self.frontend_config = self.config['motor']
-        self.driver.load_frontend_config(self.frontend_config)
+        self.driver.frontend.load_config(self.config, 'motor')
         return drv
 
     def start(self):
@@ -115,9 +122,9 @@ class Machine(AbstractMachine):
             self.load_slaves()
         if m == 'slave':
             master = self.config.get('machine', 'master')
-            self.set_operation_mode(m, master)
+            self.set_operating_mode(m, master)
         else:
-            self.set_operation_mode(m)
+            self.set_operating_mode(m)
 
     def reply(self, command):
         if command.answer is not None:
@@ -155,9 +162,9 @@ class Machine(AbstractMachine):
         return sn
 
     @property
-    def address(self):
+    def osc_address(self):
         try:
-            a = self.ethernet_interface.ips[0].split('/')[0]
+            a = self.ip_address
             p = self.config.getint('osc', 'listen_port')
             return '{addr}:{port}'.format(addr=a, port=p)
         except (IndexError, KeyError):
@@ -298,9 +305,12 @@ class Machine(AbstractMachine):
                                     'with S/N {0}: {exc}'
                                     .format(*slave_machine.slave, exc=e))
 
-    def set_operation_mode(self, *args):
+    def set_operating_mode(self, *args):
         if len(args) >= 1:
             mode = args[0]
+            if mode not in ('standalone', 'master', 'slave'):
+                raise MachineError('Unexpected mode: {}'.format(mode))
+
             logging.info('Setting operating mode to {}'.format(mode))
 
             if mode == 'master':
@@ -338,11 +348,11 @@ class Machine(AbstractMachine):
         else:
             logging.info('Deactivating %s mode' % self.operation_mode)
 
-            if self.operation_mode == 'slave':
+            if self.operating_mode == 'slave':
                 self.free()
                 self.master = None
 
-            elif self.operation_mode == 'master':
+            elif self.operating_mode == 'master':
                 pass
 
     def activate_mode(self, mode):
@@ -387,6 +397,13 @@ class Machine(AbstractMachine):
     @property
     def standalone_mode(self):
         return self._check_operation_mode('standalone', raise_exception=False)
+
+    @property
+    def paramaters(self):
+        p = {}
+        p += self._profile_parameters
+        if self.frontend:
+            p += self.frontend.parameters
 
     def _check_operation_mode(self, mode='slave', raise_exception=True):
         if self.operation_mode == mode:

@@ -47,6 +47,8 @@ class OrderedDictTrigger(collections.OrderedDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._vtypes = {}
+
         try:
             self.set_trigger(kwargs['trigger'])
         except KeyError:
@@ -60,12 +62,25 @@ class OrderedDictTrigger(collections.OrderedDict):
         self._trigger.setRowCount(len(self))
         r = list(self.keys()).index(key)
         self._trigger.setItem(r, 0, QtGui.QTableWidgetItem(str(key)))
-        if isinstance(value, bool):
-            value = 'on' if value else 'off'
-        elif isinstance(value, float):
-            value = '{:.2f}'.format(value)
+        if isinstance(value, (tuple, list)):
+            if len(value) == 2:
+                vtype, unit = value
+                self._trigger.setItem(r, 2, QtGui.QTableWidgetItem(str(unit)))
+                self._vtypes[key] = vtype
+            elif len(value) == 1:
+                self._vtypes[key] = value[0]
+            elif len(value) == 3:
+                value, vtype, unit = value
+                self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
+                self._trigger.setItem(r, 2, QtGui.QTableWidgetItem(str(unit)))
+                self._vtypes[key] = vtype
+        else:
+            if isinstance(value, bool):
+                value = 'on' if value else 'off'
+            elif isinstance(value, float):
+                value = '{:.2f}'.format(value)
 
-        self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
+            self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
 
         self._trigger.verticalHeader().stretchLastSection()
         self._trigger.resizeColumnsToContents()
@@ -134,6 +149,7 @@ class ErtzaActions(object):
         self.osc_server = None
 
         self.status = OrderedDictTrigger()
+        self.profile_options = OrderedDictTrigger()
 
         self._config = {}
 
@@ -166,6 +182,8 @@ class ErtzaActions(object):
         elif '/identify' in path:
             # Ignore identify requests
             pass
+        elif '/config/profile/list_options' in path:
+            self.profile_options[args[0]] = args[1:]
         elif '/config/profile/list' in path:
             self.master.stp_profile_list.addItem(args[0])
         else:
@@ -341,12 +359,16 @@ class ErtzaActions(object):
 
     def _instant_config(self, key, value=None):
         if key.startswith('profile_'):
-            if 'profile_load' in key:
+            if 'profile_load' in key or 'profile_dump' in key:
                 value = self.config_get('profile_name')
             if value is not None:
                 self.send('/config/profile/{}'.format(key[8:]), value)
             else:
                 self.send('/config/profile/{}'.format(key[8:]))
+        elif key.startswith('config_'):
+            if 'get' in key:
+                for k in self.profile_options.keys():
+                    self.send('/config/get', k)
         else:
             self.send('/machine/set', 'machine:{}'.format(key), value)
 
@@ -712,33 +734,49 @@ class ErtzaGui(QtGui.QMainWindow):
         pfl_frame = QtGui.QFrame()
         pfl_frame.setLayout(pfl_grid)
 
-        self.stp_load_pfl_but = PushButton('Load Profile')
-        self.stp_unload_pfl_but = PushButton('Unload Profile')
-        self.stp_save_pfl_but = PushButton('Save Profile')
         self.stp_profile_list = QtGui.QComboBox()
-        self.stp_refresh_pfl_but = PushButton('Refresh Profile List')
-        self.stp_refresh_opt_but = PushButton('Refresh Options')
-        self.stp_options_box = QtGui.QGroupBox('Options')
+        self.stp_refresh_pfl_but = PushButton('Refresh profile list')
+        self.stp_load_pfl_but = PushButton('Load profile')
+        self.stp_unload_pfl_but = PushButton('Unload profile')
+        self.stp_save_pfl_but = PushButton('Save profile')
+        self.stp_refresh_opt_but = PushButton('Get option list')
+        self.stp_dump_profile_but = PushButton('Dump profile')
+        self.stp_get_actual_values_but = PushButton('Get values')
+
+        stp_options_box = QtGui.QGroupBox('Options')
+        stp_options_grid = QtGui.QGridLayout()
+        stp_options_box.setLayout(stp_options_grid)
+        self.stp_profile_options_table = QtGui.QTableWidget(0, 3)
 
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_profile_list.setEditable(True)
 
+        self.stp_profile_list.currentIndexChanged.connect(self.actions.set_profile_id)
+        self.stp_profile_list.editTextChanged.connect(self.actions.set_profile_name)
+
+        self.stp_refresh_pfl_but.clicked.connect(self.actions.iconf_profile_list)
+        self.stp_refresh_pfl_but.clicked.connect(self.stp_profile_list.clear)
+
         self.stp_load_pfl_but.clicked.connect(self.actions.iconf_profile_load)
         self.stp_unload_pfl_but.clicked.connect(self.actions.iconf_profile_unload)
         self.stp_save_pfl_but.clicked.connect(self.actions.iconf_profile_save)
-        self.stp_profile_list.currentIndexChanged.connect(self.actions.set_profile_id)
-        self.stp_profile_list.editTextChanged.connect(self.actions.set_profile_name)
-        self.stp_refresh_pfl_but.clicked.connect(self.actions.iconf_profile_list)
-        self.stp_refresh_pfl_but.clicked.connect(self.stp_profile_list.clear)
-        self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
 
-        pfl_grid.addWidget(self.stp_load_pfl_but, 0, 0)
-        pfl_grid.addWidget(self.stp_unload_pfl_but, 0, 1)
-        pfl_grid.addWidget(self.stp_save_pfl_but, 0, 2)
-        pfl_grid.addWidget(self.stp_profile_list, 1, 0)
-        pfl_grid.addWidget(self.stp_refresh_pfl_but, 1, 1)
-        pfl_grid.addWidget(self.stp_refresh_opt_but, 1, 2)
-        pfl_grid.addWidget(self.stp_options_box, 2, 0, 10, 0)
+        self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
+        self.stp_dump_profile_but.clicked.connect(self.actions.iconf_profile_dump)
+        self.stp_get_actual_values_but.clicked.connect(self.actions.iconf_config_get)
+        self.actions.profile_options.set_trigger(self.stp_profile_options_table)
+
+        pfl_grid.addWidget(self.stp_profile_list, 0, 0, 1, 2)
+        pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 2)
+        pfl_grid.addWidget(self.stp_load_pfl_but, 1, 0)
+        pfl_grid.addWidget(self.stp_unload_pfl_but, 1, 1)
+        pfl_grid.addWidget(self.stp_save_pfl_but, 1, 2)
+        pfl_grid.addWidget(self.stp_refresh_opt_but, 2, 0)
+        pfl_grid.addWidget(self.stp_dump_profile_but, 2, 1)
+        pfl_grid.addWidget(self.stp_get_actual_values_but, 2, 2)
+        pfl_grid.addWidget(stp_options_box, 3, 0, 10, 0)
+
+        stp_options_grid.addWidget(self.stp_profile_options_table, 0, 0)
 
         stp_tabs.addTab(cnf_frame, '&Config')
         stp_tabs.addTab(pfl_frame, 'P&rofile')
