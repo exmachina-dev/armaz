@@ -170,6 +170,10 @@ class Machine(AbstractMachine):
         except (IndexError, KeyError):
             return '0.0.0.0:00'
 
+    @property
+    def ip_address(self):
+        return self.ethernet_interface.ips[-1]
+
     def search_slaves(self):
         slaves_cf = self.config['slaves']
         slaves = []
@@ -354,6 +358,13 @@ class Machine(AbstractMachine):
 
             elif self.operating_mode == 'master':
                 pass
+
+    def set_ip_address(self, new_ip):
+        if '/' not in new_ip:
+            new_ip += '/8'
+
+        self.ethernet_interface.add_ip(new_ip)
+        self.ethernet_interface.del_ip(self.ip_address)
 
     def activate_mode(self, mode):
         if mode not in ('standalone', 'master', 'slave'):

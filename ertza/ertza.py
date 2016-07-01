@@ -123,10 +123,8 @@ class Ertza(object):
                 eth.add_ip(ip)
             except Exception as e:
                 logger.error(e)
-            machine.ip_address = eth.ips[-1].split('/')[0]
             machine.ethernet_interface = eth
         except IndexError:
-            machine.ip_address = '0.0.0.0'
             logger.warn('No IP address found')
 
         drv = machine.init_driver()
