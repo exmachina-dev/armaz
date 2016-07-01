@@ -28,7 +28,7 @@ setup(
     platforms = ["Beaglebone"],
     entry_points = {
         'console_scripts': [
-            'ertza = ertza.Ertza:main'
+            'ertza = ertza.ertza:main'
         ]
     },
     classifiers=(
