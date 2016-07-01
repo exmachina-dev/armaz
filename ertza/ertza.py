@@ -305,7 +305,7 @@ class Ertza(object):
                         tw.set_max_temperature(float(
                             th_cf.get("max_temperature_TH%d" % t)))
                         tw.interval = float(th_cf.get('update_interval_TH{}'.format(t),
-                                                     fallback=5))
+                                                      fallback=5))
                         tw.enable()
                         self.machine.temperature_watchers.append(tw)
         elif self.machine.thermistors:
