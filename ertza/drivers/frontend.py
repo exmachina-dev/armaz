@@ -26,6 +26,7 @@ class DriverFrontend(object):
         'min_torque_fall_time':         _PARAM(float, 5000),
 
         # Default values
+        'acceleration':                 _PARAM(float, 1),
         'deceleration':                 _PARAM(float, 1),
 
         'control_mode':                 _PARAM(int, 2),
