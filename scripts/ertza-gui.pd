@@ -1,11 +1,11 @@
-#N canvas 379 205 1366 736 10;
+#N canvas 4124 -609 1366 736 10;
 #X declare -lib mrpeach/packOSC;
 #X declare -lib mrpeach/udpsend;
 #X declare -lib mrpeach/udpreceive;
 #X declare -lib mrpeach/unpackOSC;
 #X declare -lib mrpeach/routeOSC;
 #X declare -lib mrpeach;
-#N canvas 2396 0 1366 720 config 0;
+#N canvas 2164 -596 1366 720 config 1;
 #X obj 486 321 route 1;
 #X obj 486 -43 inlet;
 #X obj 431 390 loadbang;
@@ -36,7 +36,7 @@
 #X obj 106 143 bng 16 250 50 0 conf_dev_disconnect _null_s Disconnect
 17 7 0 10 -261234 -258113 -1;
 #X obj 400 121 tgl 30 0 _null_snd conf_dev_status empty 17 7 0 10 -24198
--225271 -262144 0 1;
+-225271 -262144 1 1;
 #X floatatom 238 183 7 0 230400 1 - conf_dev_bs _null_snd;
 #X floatatom 358 183 7 0 230400 0 - conf_dev_sb _null_snd;
 #X text 432 121 Device;
@@ -61,9 +61,6 @@
 #X obj 689 174 print receiving;
 #X obj 704 61 unpackOSC;
 #X obj 704 114 s osc_receive;
-#X msg 486 -3 connect \$1 7900;
-#X msg 496 37 connect 192.168.0.50 7900;
-#X msg 516 97 connect 127.0.0.1 7900;
 #X obj 704 42 udpreceive 7901;
 #X text 122 120 Connect to 192.168.0.50:7900;
 #X obj 74 -52 loadbang;
@@ -78,15 +75,18 @@
 #X msg 1076 37 connect 192.168.1.255 7900;
 #X obj 1096 97 r send_to_broadcast;
 #X obj 1065 -3 loadbang;
+#X msg 496 38 connect 192.168.0.50 6969;
+#X msg 516 97 connect 127.0.0.1 6969;
+#X msg 486 -3 connect \$1 6969;
 #X connect 0 0 20 0;
 #X connect 0 1 21 0;
 #X connect 1 0 9 0;
 #X connect 2 0 21 0;
-#X connect 3 0 50 0;
+#X connect 3 0 63 0;
 #X connect 4 0 5 0;
 #X connect 5 0 10 0;
 #X connect 8 0 10 0;
-#X connect 9 0 49 0;
+#X connect 9 0 65 0;
 #X connect 10 0 0 0;
 #X connect 10 0 16 0;
 #X connect 11 0 22 0;
@@ -96,7 +96,7 @@
 #X connect 13 0 18 0;
 #X connect 13 1 19 0;
 #X connect 14 0 19 0;
-#X connect 15 0 52 0;
+#X connect 15 0 49 0;
 #X connect 17 0 13 0;
 #X connect 31 0 36 0;
 #X connect 36 0 32 0;
@@ -108,33 +108,33 @@
 #X connect 45 0 44 1;
 #X connect 47 0 44 0;
 #X connect 47 0 48 0;
-#X connect 49 0 10 0;
-#X connect 50 0 10 0;
-#X connect 51 0 10 0;
-#X connect 52 0 47 0;
-#X connect 52 1 11 0;
-#X connect 54 0 56 0;
-#X connect 54 0 55 0;
-#X connect 54 0 59 0;
-#X connect 54 0 57 0;
-#X connect 54 0 58 0;
-#X connect 61 0 63 0;
-#X connect 63 0 62 0;
-#X connect 64 0 62 0;
-#X connect 65 0 63 0;
+#X connect 49 0 47 0;
+#X connect 49 1 11 0;
+#X connect 51 0 53 0;
+#X connect 51 0 52 0;
+#X connect 51 0 56 0;
+#X connect 51 0 54 0;
+#X connect 51 0 55 0;
+#X connect 58 0 60 0;
+#X connect 60 0 59 0;
+#X connect 61 0 59 0;
+#X connect 62 0 60 0;
+#X connect 63 0 10 0;
+#X connect 64 0 10 0;
+#X connect 65 0 10 0;
 #X coords 0 -1 1 1 375 104 2 100 100;
 #X restore 60 -9183 pd config;
 #X text 62 -9200 Custom device;
 #N canvas 901 56 682 736 motor_control 0;
 #X floatatom 104 190 10 0 0 2 Speed motor_speed_r motor_speed_s;
 #X obj 174 211 tgl 15 0 motor_enable_s motor_enable_r Enable 17 7 0
-10 -258699 -258699 -1 0 1;
+10 -258699 -261689 -1 0 1;
 #X obj 104 151 bng 15 250 50 0 motor_status_s motor_status_r Update_status
 17 7 0 10 -262144 -1 -1;
 #X obj 104 131 bng 15 250 50 0 armaz_request_announce_s armaz_request_announce_r
 Request_announce 17 7 0 10 -262144 -1 -1;
 #X obj 174 191 bng 15 250 50 0 motor_validate_s motor_validate_r Validate
-17 7 0 10 -258113 -261234 -1;
+17 7 0 10 -258699 -261689 -1;
 #X obj 104 211 bng 15 250 50 0 motor_stop_s motor_stop_r Stop 17 7
 0 10 -258113 -261234 -1;
 #X obj 385 161 i 0;
@@ -152,14 +152,14 @@ Request_announce 17 7 0 10 -262144 -1 -1;
 #X obj 1 101 cnv 14 198 14 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X text 3 99 Status;
-#X obj 5 119 tgl 15 0 _null motor_brake_r Brake 17 7 0 10 -258699 -258699
+#X obj 5 119 tgl 15 0 _null motor_brake_r Brake 17 7 0 10 -258699 -261689
 -1 0 1;
 #X obj 5 139 tgl 15 0 _null motor_enable_r Enable 17 7 0 10 -258699
--258699 -1 0 1;
+-261689 -1 0 1;
 #X obj 105 119 tgl 15 0 _null motor_enable_input_r Enable_input 17
-7 0 10 -24198 -24198 -1 1 1;
+7 0 10 -258699 -261689 -1 0 1;
 #X obj 105 139 tgl 15 0 _null motor_enable_ready_r Enable_ready 17
-7 0 10 -24198 -24198 -1 1 1;
+7 0 10 -258699 -261689 -1 0 1;
 #X obj 383 39 r motor_brake;
 #X obj 417 67 s motor_brake_r;
 #X obj 383 249 r motor_enable;
@@ -208,7 +208,7 @@ Request_announce 17 7 0 10 -262144 -1 -1;
 #X connect 29 1 31 0;
 #X coords 0 -1 1 1 200 200 1 0 100;
 #X restore 419 -8933 pd motor_status;
-#N canvas 1986 -466 1366 720 dispatch 0;
+#N canvas 1986 0 1366 720 dispatch 0;
 #X obj -282 687 s send_to_device;
 #X obj -282 627 packOSC;
 #X obj -249 647 r conf_send;
@@ -298,7 +298,7 @@ color 13 3 22;
 #X connect 45 0 43 1;
 #X coords 0 -1 1 1 170 210 2 -190 100;
 #X restore 439 -9183 pd dispatch;
-#X msg 227 -9200 192.168.1.12;
 #X msg 147 -9200 192.168.1.31;
+#X msg 228 -9200 192.168.100.24;
 #X connect 5 0 0 0;
 #X connect 6 0 0 0;
