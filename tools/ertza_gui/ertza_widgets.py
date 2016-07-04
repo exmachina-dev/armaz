@@ -189,3 +189,49 @@ class PushButton(QtGui.QPushButton):
     def resizeEvent(self, ev):
         self.setState(self.state)
         QtGui.QPushButton.resizeEvent(self, ev)
+
+
+class UpdatableTableWidget(QtGui.QTableWidget):
+    def __init__(self, *args, **kwargs):
+        self._keys = list()
+
+        super().__init__(*args, **kwargs)
+
+    @QtCore.Slot()
+    def clear_values(self):
+        for r in range(len(self._keys)):
+            self.setItem(r, 1, QtGui.QTableWidgetItem(''))
+
+    @QtCore.Slot(object)
+    def update_content(self, obj):
+        key, args = obj[0], obj[1:]
+        value = vtype = unit = None
+        if isinstance(args, (tuple, list)):
+            if len(args) == 1:
+                value = args[0]
+            elif len(args) == 2:
+                vtype, unit = args
+            elif len(args) == 3:
+                value, vtype, unit = args
+        else:
+            value = args
+
+        if isinstance(value, bool):
+            value = 'on' if value else 'off'
+        elif isinstance(value, float):
+            value = '{:.2f}'.format(value)
+
+        if key not in self._keys:
+            self._keys.append(key)
+            self.setRowCount(len(self._keys))
+            self.setItem(len(self._keys)-1, 0, QtGui.QTableWidgetItem(str(key)))
+
+        i = self._keys.index(key)
+        if value is not None:
+            self.setItem(i, 1, QtGui.QTableWidgetItem(str(value)))
+
+        if unit is not None:
+            self.setItem(i, 2, QtGui.QTableWidgetItem(str(unit)))
+
+        self.verticalHeader().stretchLastSection()
+        self.resizeColumnsToContents()

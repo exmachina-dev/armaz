@@ -12,7 +12,7 @@ import logging as lg
 
 from ertza.processors.osc.message import OscMessage, OscAddress
 
-from ertza_widgets import SwitchWidget, PushButton
+from ertza_widgets import SwitchWidget, PushButton, UpdatableTableWidget
 
 VERSION = '0.0.1'
 
@@ -43,47 +43,48 @@ class EmbeddedLogHandler(lg.Handler):
         self.widget.insertPlainText(msg)
 
 
-class OrderedDictTrigger(collections.OrderedDict):
+class OrderedDictTrigger(QtCore.QObject):
+    signal = QtCore.Signal(object)
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+        self._values = collections.OrderedDict()
         self._vtypes = {}
+        self._vunits = {}
 
-        try:
-            self.set_trigger(kwargs['trigger'])
-        except KeyError:
-            pass
+        QtCore.QObject.__init__(self, *args, **kwargs)
 
-    def set_trigger(self, trigger):
-        self._trigger = trigger
+    def get_type(self, key):
+        return self._vtypes[key]
+
+    def get_unit(self, key):
+        return self._vunits[key]
 
     def __setitem__(self, key, value):
-        super().__setitem__(key, value)
-        self._trigger.setRowCount(len(self))
-        r = list(self.keys()).index(key)
-        self._trigger.setItem(r, 0, QtGui.QTableWidgetItem(str(key)))
+        vl = vt = vu = None
+
         if isinstance(value, (tuple, list)):
-            if len(value) == 2:
-                vtype, unit = value
-                self._trigger.setItem(r, 2, QtGui.QTableWidgetItem(str(unit)))
-                self._vtypes[key] = vtype
-            elif len(value) == 1:
-                self._vtypes[key] = value[0]
+            if len(value) == 1:
+                vt, = value
+            elif len(value) == 2:
+                vt, vu = value
             elif len(value) == 3:
-                value, vtype, unit = value
-                self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
-                self._trigger.setItem(r, 2, QtGui.QTableWidgetItem(str(unit)))
-                self._vtypes[key] = vtype
+                vl, vt, vu = value
         else:
-            if isinstance(value, bool):
-                value = 'on' if value else 'off'
-            elif isinstance(value, float):
-                value = '{:.2f}'.format(value)
+            vl = value
 
-            self._trigger.setItem(r, 1, QtGui.QTableWidgetItem(str(value)))
+        self._values.__setitem__(key, vl)
+        self._vtypes[key] = vt
+        self._vunits[key] = vu
+        self.signal.emit((key, vl, vt, vu))
 
-        self._trigger.verticalHeader().stretchLastSection()
-        self._trigger.resizeColumnsToContents()
+    def __getitem__(self, key):
+        return self._values[key]
+
+    def __len__(self):
+        return len(self.__values)
+
+    def keys(self):
+        return self._values.keys()
 
 
 console_logger = lg.StreamHandler()
@@ -168,22 +169,33 @@ class ErtzaActions(object):
 
         if '/error' in path:
             logging.error('Error in response: {} {}'.format(path, ' '.join(args)))
-        elif '/ok' in path:
+            return
+
+        if '/identify' in path:
+            # Ignore identify requests
+            return
+
+        if '/ok' in path:
             if self.config_get('debug', False):
                 a = ' '.join(map(repr, args))
                 logging.debug('From {}: {} {}'.format(sender, path, a))
             if '/machine/get' in path:
-                k, v = args
+                k, v, = args
                 self.status[k] = v
+            elif '/config/get' in path:
+                k, v, = args
+                self.profile_options[k] = v
             elif '/identify' in path:
                 logging.info('Machine {} found at {}'.format(*args))
             elif '/version' in path:
                 logging.info('Version for {}: {}'.format(sender, *args))
-        elif '/identify' in path:
-            # Ignore identify requests
-            pass
+
         elif '/config/profile/list_options' in path:
-            self.profile_options[args[0]] = args[1:]
+            k, v = args
+            self.profile_options[k] = (v,)
+        elif '/config/profile/dump' in path:
+            p, k, v = args
+            self.profile_options[k] = v
         elif '/config/profile/list' in path:
             self.master.stp_profile_list.addItem(args[0])
         else:
@@ -360,14 +372,18 @@ class ErtzaActions(object):
     def _instant_config(self, key, value=None):
         if key.startswith('profile_'):
             if 'profile_load' in key or 'profile_dump' in key:
-                value = self.config_get('profile_name')
+                try:
+                    value = self.config_get('profile_name')
+                except KeyError:
+                    pass
+
             if value is not None:
                 self.send('/config/profile/{}'.format(key[8:]), value)
             else:
                 self.send('/config/profile/{}'.format(key[8:]))
         elif key.startswith('config_'):
             if 'get' in key:
-                for k in self.profile_options.keys():
+                for k in self.profile_options._values.keys():
                     self.send('/config/get', k)
         else:
             self.send('/machine/set', 'machine:{}'.format(key), value)
@@ -746,7 +762,7 @@ class ErtzaGui(QtGui.QMainWindow):
         stp_options_box = QtGui.QGroupBox('Options')
         stp_options_grid = QtGui.QGridLayout()
         stp_options_box.setLayout(stp_options_grid)
-        self.stp_profile_options_table = QtGui.QTableWidget(0, 3)
+        self.stp_profile_options_table = UpdatableTableWidget(0, 3)
 
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_profile_list.setEditable(True)
@@ -762,9 +778,13 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_save_pfl_but.clicked.connect(self.actions.iconf_profile_save)
 
         self.stp_refresh_opt_but.clicked.connect(self.actions.iconf_profile_list_options)
+
         self.stp_dump_profile_but.clicked.connect(self.actions.iconf_profile_dump)
+        self.stp_dump_profile_but.clicked.connect(self.stp_profile_options_table.clear_values)
+
         self.stp_get_actual_values_but.clicked.connect(self.actions.iconf_config_get)
-        self.actions.profile_options.set_trigger(self.stp_profile_options_table)
+
+        self.actions.profile_options.signal.connect(self.stp_profile_options_table.update_content)
 
         pfl_grid.addWidget(self.stp_profile_list, 0, 0, 1, 2)
         pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 2)
@@ -794,13 +814,13 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.sts_refresh_but = PushButton('Refresh')
         self.sts_refresh_interval_input = QtGui.QComboBox()
-        self.sts_status_table = QtGui.QTableWidget(0, 2, parent=sts_frame)
+        self.sts_status_table = UpdatableTableWidget(0, 2, parent=sts_frame)
 
         self.sts_refresh_interval_input.addItems(self.actions.REFRESH_VALUES)
 
         self.sts_refresh_but.clicked.connect(self.actions.request_status)
         self.sts_refresh_interval_input.currentIndexChanged.connect(self.actions.set_status_refresh_interval)
-        self.actions.status.set_trigger(self.sts_status_table)
+        self.actions.status.signal.connect(self.sts_status_table.update_content)
 
         sts_grid.addWidget(self.sts_refresh_but, 0, 0)
 
