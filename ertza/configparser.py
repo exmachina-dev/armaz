@@ -82,7 +82,7 @@ class AbstractConfigParser(configparser.ConfigParser):
         super().__init__(interpolation=configparser.ExtendedInterpolation(), **kwargs)
 
         self.config_files = []
-        if args and not isinstance(args, tuple):
+        if args and not isinstance(args, (tuple, list)):
             args = (args,)
 
         for cfg in args:
