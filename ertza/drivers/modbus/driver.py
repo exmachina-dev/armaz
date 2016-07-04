@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from collections import namedtuple
 
 from ..abstract_driver import AbstractDriver, AbstractDriverError
 from ..frontend import DriverFrontend
+from ..netdata_maps import MicroflexE100Map
 
 from .backend import ModbusBackend, ModbusBackendError
 
@@ -31,103 +31,6 @@ class WriteOnlyError(ModbusDriverError, IOError):
 
 
 class ModbusDriver(AbstractDriver):
-
-    netdata = namedtuple('netdata', ['addr', 'fmt'])
-    parameter = namedtuple('parameter', ['netdata', 'start',
-                                         'vtype', 'mode'])
-    MFNdata = {
-        'status':               netdata(0, 'pad:24,bool,bool,bool,bool,'
-                                        'bool,bool,bool,bool'),
-        'command':              netdata(1, 'pad:20,bool,bool,bool,bool,uint:1,uint:3,'
-                                        'bool,bool,bool,bool'),
-        'error_code':           netdata(2, 'uint:32'),
-        'jog':                  netdata(3, 'float:32'),
-        'torque_ref':           netdata(4, 'float:32'),
-        'velocity_ref':         netdata(5, 'float:32'),
-        'position_ref':         netdata(6, 'float:32'),
-
-        'torque_rise_time':     netdata(10, 'float:32'),
-        'torque_fall_time':     netdata(11, 'float:32'),
-        'acceleration':         netdata(12, 'float:32'),
-        'deceleration':         netdata(13, 'float:32'),
-        'entq_kp':              netdata(14, 'float:32'),
-        'entq_kp_vel':          netdata(15, 'float:32'),
-        'entq_ki':              netdata(16, 'float:32'),
-        'entq_kd':              netdata(17, 'float:32'),
-
-        'velocity':             netdata(21, 'float:32'),
-        'position':             netdata(22, 'float:32'),
-        'position_target':      netdata(23, 'float:32'),
-        'position_remaining':   netdata(24, 'float:32'),
-        'encoder_ticks':        netdata(25, 'float:32'),
-        'encoder_velocity':     netdata(26, 'float:32'),
-        'velocity_error':       netdata(27, 'float:32'),
-        'follow_error':         netdata(28, 'float:32'),
-        'torque':               netdata(29, 'float:32'),
-        'current_ratio':        netdata(30, 'float:32'),
-        'effort':               netdata(31, 'float:32'),
-
-        'drive_temp':           netdata(50, 'float:32'),
-        'dropped_frames':       netdata(51, 'uint:32'),
-    }
-
-    p = parameter
-
-    MFE100Map = {
-        'status': {
-            'drive_ready':      p(MFNdata['status'], 7, bool, 'r'),
-            'drive_enable':     p(MFNdata['status'], 6, bool, 'r'),
-            'drive_input':      p(MFNdata['status'], 5, bool, 'r'),
-            'motor_brake':      p(MFNdata['status'], 4, bool, 'r'),
-            'motor_temp':       p(MFNdata['status'], 3, bool, 'r'),
-            'timeout':          p(MFNdata['status'], 2, bool, 'r'),
-        },
-
-        'command': {
-            'enable':           p(MFNdata['command'], 9, bool, 'w'),
-            'cancel':           p(MFNdata['command'], 8, bool, 'w'),
-            'clear_errors':     p(MFNdata['command'], 7, bool, 'w'),
-            'reset':            p(MFNdata['command'], 6, bool, 'w'),
-            'control_mode':     p(MFNdata['command'], 5, int, 'w'),
-            'move_mode':        p(MFNdata['command'], 4, int, 'w'),
-            'go':               p(MFNdata['command'], 3, bool, 'w'),
-            'set_home':         p(MFNdata['command'], 2, bool, 'w'),
-            'go_home':          p(MFNdata['command'], 1, bool, 'w'),
-            'stop':             p(MFNdata['command'], 0, bool, 'w'),
-        },
-
-        'error_code':           p(MFNdata['error_code'], 0, int, 'r'),
-        'jog':                  p(MFNdata['jog'], 0, float, 'rw'),
-        'torque_ref':           p(MFNdata['torque_ref'], 0, float, 'rw'),
-        'velocity_ref':         p(MFNdata['velocity_ref'], 0, float, 'rw'),
-        'position_ref':         p(MFNdata['position_ref'], 0, float, 'w'),
-        'torque_rise_time':     p(MFNdata['torque_rise_time'], 0, float, 'rw'),
-        'torque_fall_time':     p(MFNdata['torque_fall_time'], 0, float, 'rw'),
-        'acceleration':         p(MFNdata['acceleration'], 0, float, 'rw'),
-        'deceleration':         p(MFNdata['deceleration'], 0, float, 'rw'),
-        'entq_kp':              p(MFNdata['entq_kp'], 0, float, 'rw'),
-        'entq_kp_vel':          p(MFNdata['entq_kp_vel'], 0, float, 'rw'),
-        'entq_ki':              p(MFNdata['entq_ki'], 0, float, 'rw'),
-        'entq_kd':              p(MFNdata['entq_kd'], 0, float, 'rw'),
-
-        'velocity':             p(MFNdata['velocity'], 0, float, 'r'),
-        'position':             p(MFNdata['position'], 0, float, 'r'),
-        'position_target':      p(MFNdata['position_target'], 0, float, 'r'),
-        'position_remaining':   p(MFNdata['position_remaining'], 0, float, 'r'),
-        'encoder_ticks':        p(MFNdata['encoder_ticks'], 0, float, 'r'),
-        'encoder_velocity':     p(MFNdata['encoder_velocity'], 0, float, 'r'),
-        'velocity_error':       p(MFNdata['velocity_error'], 0, float, 'r'),
-        'follow_error':         p(MFNdata['follow_error'], 0, float, 'r'),
-        'torque':               p(MFNdata['torque'], 0, float, 'r'),
-        'current_ratio':        p(MFNdata['current_ratio'], 0, float, 'r'),
-        'effort':               p(MFNdata['effort'], 0, float, 'r'),
-
-        'drive_temp':           p(MFNdata['drive_temp'], 0, float, 'r'),
-        'dropped_frames':       p(MFNdata['dropped_frames'], 0, int, 'r'),
-    }
-
-    del p
-
     def __init__(self, config):
 
         self.config = config
@@ -139,7 +42,7 @@ class ModbusDriver(AbstractDriver):
         self.back = ModbusBackend(self.target_address, self.target_port,
                                   self.target_nodeid)
 
-        self.netdata_map = ModbusDriver.MFE100Map
+        self.netdata_map = MicroflexE100Map
         self._prev_data = {}
 
         self.connected = None
