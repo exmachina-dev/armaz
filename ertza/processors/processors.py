@@ -6,7 +6,7 @@ from .abstract_processor import AbstractProcessor
 
 from ..commands import OscCommand, SerialCommand
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.processors')
 
 
 class OscProcessor(AbstractProcessor):
