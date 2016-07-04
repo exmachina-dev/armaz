@@ -115,7 +115,7 @@ class DriverFrontend(object):
             value *= self.application_coefficient
 
         if key in ('acceleration', 'deceleration') and self.acceleration_time_mode:
-            value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
+            value = (self.max_velocity / self.gearbox_ratio * self.application_coefficient) / value
 
         return value
 
@@ -127,10 +127,10 @@ class DriverFrontend(object):
             value *= self.gearbox_ratio
 
         if key in self._application_keys:
-            value /= self.application_coeff
+            value /= self.application_coefficient
 
         if key in ('acceleration', 'deceleration') and self.acceleration_time_mode:
-            value = (self.max_velocity / self.gearbox_ratio * self.application_coeff) / value
+            value = (self.max_velocity / self.gearbox_ratio * self.application_coefficient) / value
         elif key == 'torque_ref':
             value /= 100
             value *= self.drive_rated_current
