@@ -158,14 +158,13 @@ class ConfigProfileDump(UnbufferedCommand, OscCommand):
 
         try:
             if c.args:
-                profile = c.args
+                profile, = c.args
             else:
                 profile = None
 
             dump = self.machine.config.dump_profile(profile)
             for options, val in dump.items():
-                sec, opt = options
-                self.reply(c, sec, opt, val)
+                self.reply(c, profile, '{}:{}'.format(*options), val)
 
             self.ok(c, 'done')
         except Exception as e:
