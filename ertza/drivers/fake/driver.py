@@ -150,7 +150,11 @@ class FakeDriver(AbstractDriver):
         return attr_map
 
     def send_default_values(self):
-        pass
+        for key in self.frontend.DEFAULTS_KEYS:
+            try:
+                self[key] = self.frontend[key]
+            except KeyError as e:
+                logging.error('{!s}'.format(e))
 
     def __getitem__(self, key):
         try:
@@ -216,7 +220,7 @@ class FakeDriver(AbstractDriver):
             self._prev_data[seckey] = data
         else:
             ndk = self.netdata_map[seckey]
-            data = (self._output_value(key, ndk.vtype(value)),)
+            data = (self.frontend._output_value(key, ndk.vtype(value)),)
 
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
@@ -233,7 +237,7 @@ class FakeDriver(AbstractDriver):
         if not res:
             return
 
-        return self._input_value(key, vt(res[st]))
+        return self.frontend._input_value(key, vt(res[st]))
 
     def write_fake_data(self, addr, data, fmt=None):
         self.fake_data[addr] = data
