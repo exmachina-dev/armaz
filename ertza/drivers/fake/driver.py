@@ -6,6 +6,8 @@ from collections import namedtuple
 from ..abstract_driver import AbstractDriver, AbstractDriverError
 from ..frontend import DriverFrontend
 
+logging = logging.getLogger('ertza.drivers.fake')
+
 
 class FakeDriverError(AbstractDriverError):
     def __init__(self, exception=None):
