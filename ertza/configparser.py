@@ -278,8 +278,8 @@ class ConfigParser(AbstractConfigParser):
             raise ProfileError('No profile loaded or provided')
 
         if profile:
-            profile_path = '{}/{}.conf' % (_PROFILE_PATH, profile)
-            profile_config = configparser.ConfigParser(profile_path)
+            profile_path = '{}/{}.conf'.format(_PROFILE_PATH, profile)
+            profile_config = ProxyConfigParser(profile_path, profile)
             return profile_config.dump()
         else:
             return self.profile_config.dump()
