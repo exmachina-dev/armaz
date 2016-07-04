@@ -146,21 +146,24 @@ class DriverFrontend(object):
 
     def __getattr__(self, key):
         try:
-            super().__getattr__(key)
-        except AttributeError:
-            try:
-                vtype, fallback = self._frontend_keys[key]
-            except KeyError:
-                raise AttributeError('{} does not exist as a valid frontend key'.format(key))
+            vtype, fallback = self._frontend_keys[key]
+        except KeyError:
+            raise AttributeError('{} does not exist as a valid frontend key'.format(key))
 
-            try:
-                if vtype == bool:
-                    return True if self.frontend_config[self.frontend_section][key] \
-                        in ('True', 'true', 'y', '1') else False
-                else:
-                    return vtype(self.frontend_config[self.frontend_section][key])
-            except KeyError:
-                if fallback is not _UNSET:
-                    return fallback
-                else:
-                    raise ValueError('No value provided for {}'.format(key))
+        try:
+            if vtype == bool:
+                return True if self.frontend_config[self.frontend_section][key] \
+                    in ('True', 'true', 'y', '1') else False
+            else:
+                return vtype(self.frontend_config[self.frontend_section][key])
+        except KeyError:
+            if fallback is not _UNSET:
+                return fallback
+            else:
+                return _UNSET
+
+    def __getitem__(self, key):
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise KeyError
