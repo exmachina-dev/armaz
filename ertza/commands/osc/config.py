@@ -247,7 +247,8 @@ class ConfigGet(UnbufferedCommand, OscCommand):
 
         try:
             k, = c.args
-            v = self.machine[k]
+            s, o = k.split(':', maxsplit=1)
+            v = self.machine.config[s][o]
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, k, str(e))
