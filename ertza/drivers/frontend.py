@@ -72,7 +72,7 @@ class DriverFrontend(object):
 
     @property
     def gearbox_ratio(self):
-        return self.gearbox_ipnut_coefficient / self.gearbox_ouput_coefficient
+        return self.gearbox_input_coefficient / self.gearbox_output_coefficient
 
     def _output_value_limit(self, key, value):
         if 'acceleration' == key:
