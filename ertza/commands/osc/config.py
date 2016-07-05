@@ -4,7 +4,7 @@ from ertza.commands import UnbufferedCommand
 from ertza.commands import OscCommand
 
 
-class ConfigLoadProfile(UnbufferedCommand, OscCommand):
+class ConfigProfileLoad(UnbufferedCommand, OscCommand):
     """
     Load existing profile found in _PROFILE_PATH (usually /etc/ertza/profiles)
     """
@@ -33,7 +33,7 @@ class ConfigLoadProfile(UnbufferedCommand, OscCommand):
         return 'PROFILE'
 
 
-class ConfigUnloadProfile(UnbufferedCommand, OscCommand):
+class ConfigProfileUnload(UnbufferedCommand, OscCommand):
     """
     Unload loaded profile (if any)
     """

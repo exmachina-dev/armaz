@@ -3,7 +3,7 @@
 from ertza.commands import SerialCommand
 
 
-class ConfigLoadProfile(SerialCommand):
+class ConfigProfileLoad(SerialCommand):
     """
     Load existing profile found in _PROFILE_PATH (usually /etc/ertza/profiles)
     """
@@ -31,7 +31,8 @@ class ConfigLoadProfile(SerialCommand):
     def args(self):
         return 'PROFILE'
 
-class ConfigUnloadProfile(SerialCommand):
+
+class ConfigProfileUnload(SerialCommand):
     """
     Unload loaded profile (if any)
     """
@@ -50,6 +51,7 @@ class ConfigUnloadProfile(SerialCommand):
     @property
     def help_text(self):
         return 'Unload the loaded profile (if any)'
+
 
 class ConfigProfileSet(SerialCommand):
     """
@@ -145,6 +147,7 @@ class ConfigProfileDump(SerialCommand):
     @property
     def help_text(self):
         return 'Dump actual profile values '
+
 
 class ConfigProfileSave(SerialCommand):
     """
