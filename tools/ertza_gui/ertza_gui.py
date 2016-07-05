@@ -132,9 +132,8 @@ class ErtzaOSCServer(lo.ServerThread):
     @lo.make_method('/alive', None)
     def online_cb(self, path, args, types, sender):
         logging.info('{} is online, listening on {}'.format(*args))
-        if self.to.to['dev_addr'] == sender.get_hostname():
-            self.reply('/setup/dump', sender)
-            self.reply('/motor/status', sender)
+        if self.to.master.target_addr.text == args[1]:
+            self.to.request_status()
 
     @lo.make_method(None, None)
     def default_cb(self, path, args, types, sender):

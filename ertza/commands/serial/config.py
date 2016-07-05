@@ -9,11 +9,11 @@ class ConfigLoadProfile(SerialCommand):
     """
 
     def execute(self, c):
-        if self.check_args(c, 'ne', 1):
-            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+        if not self.check_args(c, 'eq', 1):
+            return
 
         try:
-            profile = c.args
+            profile, = c.args
             self.machine.config.load_profile(profile)
             self.ok(c)
         except Exception as e:
@@ -23,6 +23,13 @@ class ConfigLoadProfile(SerialCommand):
     def alias(self):
         return 'config.profile.load'
 
+    @property
+    def help_text(self):
+        return 'Load the specified PROFILE'
+
+    @property
+    def args(self):
+        return 'PROFILE'
 
 class ConfigUnloadProfile(SerialCommand):
     """
@@ -40,6 +47,9 @@ class ConfigUnloadProfile(SerialCommand):
     def alias(self):
         return 'config.profile.unload'
 
+    @property
+    def help_text(self):
+        return 'Unload the loaded profile (if any)'
 
 class ConfigProfileSet(SerialCommand):
     """
@@ -61,6 +71,14 @@ class ConfigProfileSet(SerialCommand):
     def alias(self):
         return 'config.profile.set'
 
+    @property
+    def help_text(self):
+        return 'Set the VALUE in SECTION:OPTION'
+
+    @property
+    def args(self):
+        return 'SECTION.OPTION VALUE'
+
 
 class ConfigProfileListOptions(SerialCommand):
     """
@@ -73,10 +91,13 @@ class ConfigProfileListOptions(SerialCommand):
     def execute(self, c):
 
         try:
-            opts = self.machine.config.profile_list_options()
-            for sec, opts in enumerate(list):
-                for opt, vtype in enumerate(opts):
-                    self.reply(c, sec, opt)
+            list_opts = self.machine.config.get_profile_options()
+            for sec, opts in list_opts.items():
+                for opt, data in opts.items():
+                    if data[1] is not None:
+                        self.reply(c, '{s}:{o}'.format(s=sec, o=opt), *data)
+                    else:
+                        self.reply(c, '{s}:{o}'.format(s=sec, o=opt), data[0])
 
             self.ok(c, 'done')
         except Exception as e:
@@ -94,7 +115,7 @@ class ConfigProfileListOptions(SerialCommand):
 class ConfigProfileDump(SerialCommand):
     """
     Dump profile content:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION:OPTION:VALUE\r\n
+    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION.OPTION:VALUE\r\n
 
     The command always send a ok reply at the end of the dump:
     ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
@@ -105,14 +126,13 @@ class ConfigProfileDump(SerialCommand):
 
         try:
             if c.args:
-                profile = c.args
+                profile, = c.args
             else:
                 profile = None
 
-            dump = self.machine.config.profile_dump(profile)
+            dump = self.machine.config.dump_profile(profile)
             for options, val in dump.items():
-                sec, opt = options
-                self.reply(c, sec, opt, val)
+                self.reply(c, profile, '{}.{}'.format(*options), val)
 
             self.ok(c, 'done')
         except Exception as e:
@@ -122,6 +142,9 @@ class ConfigProfileDump(SerialCommand):
     def alias(self):
         return 'config.profile.dump'
 
+    @property
+    def help_text(self):
+        return 'Dump actual profile values '
 
 class ConfigProfileSave(SerialCommand):
     """
@@ -139,7 +162,7 @@ class ConfigProfileSave(SerialCommand):
             else:
                 profile = None
 
-            self.machine.config.profile_save(profile)
+            self.machine.config.save_profile(profile)
             self.ok(c)
         except Exception as e:
             self.error(c, str(e))
@@ -147,6 +170,14 @@ class ConfigProfileSave(SerialCommand):
     @property
     def alias(self):
         return 'config.profile.save'
+
+    @property
+    def help_text(self):
+        return 'Save the specified PROFILE (or the loaded one if unspecified)'
+
+    @property
+    def args(self):
+        return '[PROFILE]'
 
 
 class ConfigSave(SerialCommand):
@@ -165,6 +196,10 @@ class ConfigSave(SerialCommand):
     def alias(self):
         return 'config.save'
 
+    @property
+    def help_text(self):
+        return 'Save the current config into the custom config file'
+
 
 class ConfigGet(SerialCommand):
     """
@@ -181,8 +216,8 @@ class ConfigGet(SerialCommand):
 
         try:
             k, = c.args
-            nk = k.decode().replace('.', ':')
-            v = self.machine[nk]
+            s, o = k.split('.', maxsplit=1)
+            v = self.machine.config[s][o]
             self.ok(c, k, v)
         except Exception as e:
             self.error(c, k, str(e))
@@ -190,3 +225,11 @@ class ConfigGet(SerialCommand):
     @property
     def alias(self):
         return 'config.get'
+
+    @property
+    def help_text(self):
+        return 'Returns the value of SECTION:OPTION'
+
+    @property
+    def args(self):
+        return 'SECTION.OPTION'
