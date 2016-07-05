@@ -8,6 +8,7 @@ ____ ____ ___ ___  ____
 # ertza
 
 [![Travis CI](https://travis-ci.org/exmachina-dev/ertza.svg?branch=dev)](https://travis-ci.org/exmachina-dev/ertza)
+[![Documentation Status](https://readthedocs.org/projects/ertza/badge/?version=latest)](http://ertza.readthedocs.io/en/latest/?badge=latest)
 
 Continuous integration is currently not working.
 

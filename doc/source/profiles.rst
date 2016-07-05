@@ -1,3 +1,6 @@
+Serial commands for profiles
+============================
+
 config.profile.load:PROFILE
 
 Load existing profile found in _PROFILE_PATH (usually /etc/ertza/profiles)
