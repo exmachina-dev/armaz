@@ -11,8 +11,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   config
+   commands
    profiles
-   objects
+   protocol-serial
 
 
 Indices and tables
