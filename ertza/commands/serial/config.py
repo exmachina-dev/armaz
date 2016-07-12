@@ -5,7 +5,7 @@ from ertza.commands import SerialCommand
 
 class ConfigProfileLoad(SerialCommand):
     """
-    Load existing profile found in _PROFILE_PATH (usually /etc/ertza/profiles)
+    Load existing profile found in ``_PROFILE_PATH`` (usually /etc/ertza/profiles)
     """
 
     def execute(self, c):
@@ -117,10 +117,10 @@ class ConfigProfileListOptions(SerialCommand):
 class ConfigProfileDump(SerialCommand):
     """
     Dump profile content:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION.OPTION:VALUE\r\n
+    ``ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.reply:SECTION.OPTION:VALUE\r\n``
 
     The command always send a ok reply at the end of the dump:
-    ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n
+    ``ExmEislaLLSSSSSSSSSSSSconfig.profile.dump.ok\r\n``
     """
     def execute(self, c):
         if not self.check_args(c, 'le', 1):
@@ -151,8 +151,8 @@ class ConfigProfileDump(SerialCommand):
 
 class ConfigProfileSave(SerialCommand):
     """
-    Save profile to a file in _PROFILE_PATH.
-    If PROFILE is empty, overwrites the loaded profile
+    Save profile to a file in ``_PROFILE_PATH``.
+    If ``PROFILE`` is empty, overwrites the loaded profile
     """
 
     def execute(self, c):
@@ -206,9 +206,7 @@ class ConfigSave(SerialCommand):
 
 class ConfigGet(SerialCommand):
     """
-    config.get:SECTION:OPTION
-
-    Returns the value of SECTION:OPTION. This allow to verify the behaviour of the config.
+    Returns the value of ``SECTION:OPTION``. This allow to verify the behaviour of the config.
     This behaviour can be changed by variant config or profile.
     """
 
