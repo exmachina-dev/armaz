@@ -849,7 +849,9 @@ class ErtzaGui(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
-    fstyle = open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), './style.qss'), 'r')
+    base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    os.chdir(base_path)
+    fstyle = open(os.path.join(base_path, './style.qss'), 'r')
     with fstyle as f:
         style = f.readlines()
     root = QtGui.QApplication(sys.argv)
