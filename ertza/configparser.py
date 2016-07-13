@@ -107,8 +107,8 @@ class AbstractConfigParser(configparser.ConfigParser):
 
         save_to = nfile or self.config_files[-1]
 
-        if not os.path.isfile(save_to):
-            raise FileNotFoundError
+        if os.path.isfile(save_to):
+            logger.info('{} already existing, overwriting'.format(save_to))
 
         if len(self.config_files) > 1:
             tmp_config = self - AbstractConfigParser(self.config_files[0:-1])
