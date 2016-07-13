@@ -192,8 +192,11 @@ class PushButton(QtGui.QPushButton):
 
 
 class UpdatableTableWidget(QtGui.QTableWidget):
+    valueChanged = QtCore.Signal(str, object)
+
     def __init__(self, *args, **kwargs):
         self._keys = list()
+        self._vtypes = {}
 
         super().__init__(*args, **kwargs)
 
@@ -233,5 +236,23 @@ class UpdatableTableWidget(QtGui.QTableWidget):
         if unit is not None:
             self.setItem(i, 2, QtGui.QTableWidgetItem(str(unit)))
 
-        self.verticalHeader().stretchLastSection()
+        if vtype is not None:
+            if hasattr(__builtins__, vtype):
+                self._vtypes[key] = getattr(__builtins__, vtype)
+
+        self.horizontalHeader().stretchLastSection()
         self.resizeColumnsToContents()
+
+    @QtCore.Slot(QtGui.QTableWidgetItem)
+    def update_value(self, item):
+        x, y = item.column(), item.row()
+        if x is not 1 or not item.isSelected():
+            return
+
+        key = self._keys[y]
+        value = item.text()
+
+        if key in self._vtypes.keys():
+            value = self._vtypes[key](value)
+
+        self.valueChanged.emit(key, value)
