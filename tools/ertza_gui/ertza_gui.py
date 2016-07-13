@@ -373,13 +373,22 @@ class ErtzaActions(object):
         else:
             self.send('/machine/set', 'machine:{}'.format(key), value)
 
-    def _instant_config(self, key, value=None):
+    def _instant_config(self, key, *args):
         if key.startswith('profile_'):
-            if 'profile_load' in key or 'profile_dump' in key:
+            if key in ('profile_load', 'profile_save', 'profile_dump'):
                 try:
                     value = self.config_get('profile_name')
                 except KeyError:
-                    pass
+                    value = None
+            elif 'profile_set' in key:
+                vkey, value = args
+                self.send('/config/profile/{}'.format(key[8:]), vkey, value)
+                return
+            else:
+                try:
+                    value = args[0]
+                except IndexError:
+                    value = None
 
             if value is not None:
                 self.send('/config/profile/{}'.format(key[8:]), value)
@@ -390,6 +399,7 @@ class ErtzaActions(object):
                 for k in self.profile_options._values.keys():
                     self.send('/config/get', k)
         else:
+            value = args[0]
             self.send('/machine/set', 'machine:{}'.format(key), value)
 
     def config_get(self, key, fallback=None):
