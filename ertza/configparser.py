@@ -304,6 +304,11 @@ class ConfigParser(AbstractConfigParser):
 
         return profiles
 
+    def profile_set(self, sec, opt, value):
+        if not self.profile.has_section(sec):
+            self.profile.add_section(sec)
+        self.profile[sec][opt] = value
+
     def find_cape(self, partnumber='ARMAZCAPE'):
         capes = self.get_cape_infos()
         for c in capes:
