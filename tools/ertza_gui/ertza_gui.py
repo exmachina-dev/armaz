@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os
 from PySide import QtGui
 from PySide import QtCore
 import functools
@@ -834,7 +835,7 @@ class ErtzaGui(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
-    fstyle = open('./style.qss', 'r')
+    fstyle = open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), './style.qss'), 'r')
     with fstyle as f:
         style = f.readlines()
     root = QtGui.QApplication(sys.argv)
