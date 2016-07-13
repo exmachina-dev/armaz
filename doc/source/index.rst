@@ -36,6 +36,7 @@ Contents:
    commands
    profiles
    protocol-serial
+   tools
 
 
 Indices and tables
