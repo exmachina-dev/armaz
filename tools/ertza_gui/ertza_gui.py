@@ -432,7 +432,7 @@ class ErtzaGui(QtGui.QMainWindow):
         self.statusBar().showMessage('Starting…')
 
         self.setGeometry(500, 900, 250, 150)
-        self.setWindowTitle('Ertza debug GUI')
+        self.setWindowTitle('Ertza GUI')
 
         main_frame = QtGui.QFrame(self)
         self._main_layout = QtGui.QGridLayout(main_frame)
