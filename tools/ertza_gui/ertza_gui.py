@@ -801,6 +801,9 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.actions.profile_options.signal.connect(self.stp_profile_options_table.update_content)
 
+        self.stp_profile_options_table.itemChanged.connect(self.stp_profile_options_table.update_value)
+        self.stp_profile_options_table.valueChanged.connect(self.actions.iconf_profile_set)
+
         pfl_grid.addWidget(self.stp_profile_list, 0, 0, 1, 2)
         pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 2)
         pfl_grid.addWidget(self.stp_load_pfl_but, 1, 0)
