@@ -777,6 +777,7 @@ class ErtzaGui(QtGui.QMainWindow):
         stp_options_grid = QtGui.QGridLayout()
         stp_options_box.setLayout(stp_options_grid)
         self.stp_profile_options_table = UpdatableTableWidget(0, 3)
+        self.stp_profile_options_table.setHorizontalHeaderLabels(('Key', 'Value', 'Unit'))
 
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_profile_list.setEditable(True)
@@ -829,6 +830,7 @@ class ErtzaGui(QtGui.QMainWindow):
         self.sts_refresh_but = PushButton('Refresh')
         self.sts_refresh_interval_input = QtGui.QComboBox()
         self.sts_status_table = UpdatableTableWidget(0, 2, parent=sts_frame)
+        self.sts_status_table.setHorizontalHeaderLabels(('Key', 'Value'))
 
         self.sts_refresh_interval_input.addItems(self.actions.REFRESH_VALUES)
 
