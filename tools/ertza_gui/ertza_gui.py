@@ -191,8 +191,12 @@ class ErtzaActions(object):
                 logging.info('Version for {}: {}'.format(sender, *args))
 
         elif '/config/profile/list_options' in path:
-            k, v = args
-            self.profile_options[k] = (v,)
+            if len(args) == 2:
+                k, v = args
+                self.profile_options[k] = (v,)
+            elif len(args) == 3:
+                k, v, vt = args
+                self.profile_options[k] = (v, vt)
         elif '/config/profile/dump' in path:
             p, k, v = args
             self.profile_options[k] = v
