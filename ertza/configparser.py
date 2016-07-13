@@ -288,11 +288,11 @@ class ConfigParser(AbstractConfigParser):
         return self.PROFILE_OPTIONS
 
     def save_profile(self, profile=None):
-        if not self.profile:
+        if self.profile is None:
             raise ProfileError('No profile loaded')
 
         if profile:
-            self.profile.save('{}/{}.conf' % (_PROFILE_PATH, profile))
+            self.profile.save('{}/{}.conf'.format(_PROFILE_PATH, profile))
         else:
             self.profile.save()
 
