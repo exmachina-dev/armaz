@@ -7,7 +7,7 @@ except ImportError:
 
 import codecs
 
-__version__ = '0.0.2'
+__version__ = '0.1.0'
 
 def file_content(filename):
     return codecs.open(filename, 'r', 'utf-8').read()
