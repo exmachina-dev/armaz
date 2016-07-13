@@ -248,8 +248,7 @@ class ConfigGet(UnbufferedCommand, OscCommand):
     """
 
     def execute(self, c):
-        if len(c.args) != 1:
-            self.error(c, 'Invalid number of arguments for %s' % self.alias)
+        if not self.check_args(c, 'eq', 1):
             return
 
         try:
