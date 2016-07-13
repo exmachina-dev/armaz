@@ -9,7 +9,7 @@ Welcome to Ertza's documentation
 Ertza is a python program providing a simple, yet powerful, gateway between motor drive and protocols such as OSC or DMX.
 
 It's designed to work on a BeagleBone Black with an ArmazCape on top.
-For ArmazCape schematics and PCB design, please refer to `eisla-electronics repository`_
+For ArmazCape schematics and PCB design, please refer to `eisla-electronics repository`_.
 
 Ertza is usually embedded into Elias distro which is build using `Yocto Project`_.
 Elias main layer can be found at `meta-exm-core repository`_
@@ -19,7 +19,7 @@ Ertza features:
 * Communication with motor drive (via an extensible driver nodule interface)
   Currently only ModBus TCP is supported. A debug fake driver is also provided.
 * Key events based on interrupts to expose basic actions or limit switches
-* Remote control via multiple protocols
+* Remote control via multiple protocols.
   Currently OSC and a serial protocol are implemented
 * Cascading configuration scheme
 * Configuration managed through profiles that allow quick reconfiguration
