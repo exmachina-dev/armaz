@@ -219,8 +219,15 @@ class ConfigSave(UnbufferedCommand, OscCommand):
     """
 
     def execute(self, c):
+        if not self.check_args(c, 'le', 1):
+            return
+
         try:
-            self.machine.config.save()
+            try:
+                profile, = c.args
+                self.machine.config.save(profile)
+            except ValueError:
+                self.machine.config.save()
             self.ok(c)
         except Exception as e:
             self.error(c, str(e))
