@@ -140,7 +140,7 @@ class ErtzaOSCServer(lo.ServerThread):
 
 
 class ErtzaActions(object):
-    REFRESH_VALUES = ('disable', '500 ms', '1 s' , '2 s', '5 s')
+    REFRESH_VALUES = ('disable', '500 ms', '1 s', '2 s', '5 s')
 
     def __init__(self, master):
         self.master = master
