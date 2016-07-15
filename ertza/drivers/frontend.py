@@ -96,10 +96,11 @@ class DriverFrontend(object):
         if key == 'velocity_ref' and self.custom_max_velocity is not _UNSET:
             value = value if value < self.custom_max_velocity else self.custom_max_velocity
             value = value if value > -self.custom_max_velocity else -self.custom_max_velocity
-        elif key == 'position_ref' and self.custom_max_position is not _UNSET:
-            value = value if value < self.custom_max_position else self.custom_max_position
-        elif key == 'opsition_ref' and self.custom_min_position is not _UNSET:
-            value = value if value > self.custom_min_position else self.custom_min_position
+        elif key == 'position_ref':
+            if self.custom_max_position is not _UNSET:
+                value = value if value < self.custom_max_position else self.custom_max_position
+            if self.custom_min_position is not _UNSET:
+                value = value if value > self.custom_min_position else self.custom_min_position
         elif key == 'acceleration' and self.custom_max_acceleration is not _UNSET:
             value = value if value < self.custom_max_acceleration else self.custom_max_acceleration
         elif key == 'deceleration' and self.custom_max_deceleration is not _UNSET:
