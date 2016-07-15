@@ -180,11 +180,16 @@ class AbstractConfigParser(configparser.ConfigParser):
 
 
 class ProxyConfigParser(AbstractConfigParser):
-    def __init__(self, path, name):
+    def __init__(self, path, name, **kwargs):
         if not isinstance(name, str):
             raise TypeError('Name must be a string')
 
         self._name = name
+        if path is None and kwargs.get('basedir', None):
+            self._basedir = str(kwargs['basedir'])
+        else:
+            self._basedir = os.path.dirname(path)
+
         super().__init__(path)
 
     @property
