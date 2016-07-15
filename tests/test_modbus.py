@@ -5,7 +5,7 @@ import configparser
 
 from ertza.drivers.modbus import ModbusDriver
 from ertza.drivers.modbus import ModbusDriverFrontend
-from ertza.drivers.modbus import ModbusDriverBackend
+from ertza.drivers.modbus import ModbusBackend
 
 class Test_ModbusDriver(object):
     def setup_class(self):
