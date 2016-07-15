@@ -8,7 +8,7 @@ class SwitchWidget(QtGui.QPushButton):
         super().__init__(parent=parent)
 
         self.setCheckable(True)
-        self.state = None
+        self.state = self.hilight = None
         self.step = 1
 
         self.setMinimumSize(1, 30)
@@ -21,9 +21,28 @@ class SwitchWidget(QtGui.QPushButton):
 
     def setChecked(self, value):
         self.checked = value
+        self.update()
 
     def isChecked(self):
         return self.checked
+
+    def getHilight(self):
+        return self.hilight
+
+    def setHilight(self, hi):
+        if self.hilight == hi:
+            return
+
+        self.hilight = hi
+        self.update()
+
+    def enterEvent(self, ev):
+        self.setHilight(True)
+        ev.accept()
+
+    def leaveEvent(self, ev):
+        self.setHilight(False)
+        ev.accept()
 
     def mousePressEvent(self, ev):
         self.setChecked(True)
@@ -34,7 +53,7 @@ class SwitchWidget(QtGui.QPushButton):
         self.setChecked(False)
 
     def mouseMoveEvent(self, ev):
-        diff = ev.pos() - self.pressPos
+        diff = ev.pos()
         self.setState(diff.x())
 
     def focusInEvent(self, ev):
@@ -65,7 +84,7 @@ class SwitchWidget(QtGui.QPushButton):
         self.drawWidget(qp)
 
     def drawWidget(self, qp):
-        font = QtGui.QFont('Monospace', 10, QtGui.QFont.Bold)
+        font = QtGui.QFont('Monospace', 10)
         qp.setFont(font)
         qp.setRenderHint(QtGui.QPainter.Antialiasing)
 
@@ -84,7 +103,7 @@ class SwitchWidget(QtGui.QPushButton):
         qp.setBrush(self.colors[self.state])
         qp.drawRoundedRect(begin_but + 1, 2, self.step - 2, h - 4, 5, 5)
 
-        if self.isChecked():
+        if self.isChecked() or self.getHilight():
             qp.setPen(QtGui.QPen(self.colors[self.state].lighter(150), 1))
             qp.setBrush(QtCore.Qt.NoBrush)
             qp.drawRoundedRect(begin_but + 2, 2, self.step - 4, h - 5, 3, 3)
@@ -94,6 +113,10 @@ class SwitchWidget(QtGui.QPushButton):
         qp.setPen(pen)
         qp.setBrush(QtCore.Qt.NoBrush)
         qp.drawRoundedRect(1, 1, w-2, h-2, 4, 4)
+
+        if self.isChecked():
+            font = QtGui.QFont('Monospace', 10, QtGui.QFont.Bold)
+            qp.setFont(font)
 
         for i, t in enumerate(self.choices):
             if i == self.state:
@@ -116,7 +139,7 @@ class PushButton(QtGui.QPushButton):
 
         self.step = 1
 
-        self.state = None
+        self.state = self.hilight = None
         self.setMinimumSize(1, 30)
         self.text = text
         self.color = QtGui.QColor(81, 122, 81)
@@ -138,6 +161,24 @@ class PushButton(QtGui.QPushButton):
         if self.state:
             self.clicked.emit()
 
+    def getHilight(self):
+        return self.hilight
+
+    def setHilight(self, hi):
+        if self.hilight == hi:
+            return
+
+        self.hilight = hi
+        self.update()
+
+    def enterEvent(self, ev):
+        self.setHilight(True)
+        ev.accept()
+
+    def leaveEvent(self, ev):
+        self.setHilight(False)
+        ev.accept()
+
     def mousePressEvent(self, ev):
         self.setState(True)
         ev.accept()
@@ -150,7 +191,7 @@ class PushButton(QtGui.QPushButton):
         self.drawWidget(qp)
 
     def drawWidget(self, qp):
-        font = QtGui.QFont('Monospace', 10, QtGui.QFont.Bold)
+        font = QtGui.QFont('Monospace', 10)
         qp.setFont(font)
         qp.setRenderHint(QtGui.QPainter.Antialiasing)
 
@@ -166,7 +207,7 @@ class PushButton(QtGui.QPushButton):
         qp.setBrush(self.color)
         qp.drawRoundedRect(1, 2, w - 2, h - 4, 5, 5)
 
-        if self.getState():
+        if self.getState() or self.getHilight():
             qp.setPen(QtGui.QPen(self.color.lighter(150), 1))
             qp.setBrush(QtCore.Qt.NoBrush)
             qp.drawRoundedRect(2, 2, w - 4, h - 5, 3, 3)
@@ -177,10 +218,12 @@ class PushButton(QtGui.QPushButton):
         qp.setBrush(QtCore.Qt.NoBrush)
         qp.drawRoundedRect(1, 1, w-2, h-2, 4, 4)
 
-        if not self.getState():
-            qp.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255, 200)))
-        else:
-            qp.setPen(QtGui.QPen(self.color.darker(300)))
+        qp.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255, 200)))
+
+        if self.getState():
+            font = QtGui.QFont('Monospace', 10, QtGui.QFont.Bold)
+            qp.setFont(font)
+
         metrics = qp.fontMetrics()
         fw = metrics.width(self.text)
         fh = metrics.height()
