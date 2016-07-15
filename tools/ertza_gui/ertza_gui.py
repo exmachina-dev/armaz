@@ -11,8 +11,6 @@ import collections
 import liblo as lo
 import logging as lg
 
-from ertza.processors.osc.message import OscMessage, OscAddress
-
 from ertza_widgets import SwitchWidget, PushButton, UpdatableTableWidget
 
 VERSION = '0.0.1'
