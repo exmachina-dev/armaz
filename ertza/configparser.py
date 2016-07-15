@@ -196,6 +196,11 @@ class ProxyConfigParser(AbstractConfigParser):
     def name(self):
         return self._name
 
+    @name.setter
+    def _set_name(self, name):
+        self._name = name
+        self.config_files[-1] = '{}/{}.conf'.format(self._basedir, name)
+
 
 class ConfigParser(AbstractConfigParser):
     """
