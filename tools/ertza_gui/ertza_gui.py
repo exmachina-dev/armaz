@@ -748,6 +748,7 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.stp_profile_list = QtGui.QComboBox()
         self.stp_refresh_pfl_but = PushButton('Refresh profile list')
+        self.stp_delete_pfl_but = PushButton('Delete profile')
         self.stp_load_pfl_but = PushButton('Load profile')
         self.stp_unload_pfl_but = PushButton('Unload profile')
         self.stp_save_pfl_but = PushButton('Save profile')
@@ -761,14 +762,20 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_profile_options_table = UpdatableTableWidget(0, 3)
         self.stp_profile_options_table.setHorizontalHeaderLabels(('Key', 'Value', 'Unit'))
 
+        self.stp_delete_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_profile_list.setEditable(True)
+        self.stp_delete_pfl_but.setEnabled(False)
 
         self.stp_profile_list.currentIndexChanged.connect(self.actions.set_profile_id)
         self.stp_profile_list.editTextChanged.connect(self.actions.set_profile_name)
 
         self.stp_refresh_pfl_but.clicked.connect(self.actions.iconf_profile_list)
         self.stp_refresh_pfl_but.clicked.connect(self.stp_profile_list.clear)
+
+        self.stp_delete_pfl_but.clicked.connect(self.actions.iconf_profile_delete)
+        self.stp_delete_pfl_but.clicked.connect(self.actions.iconf_profile_list)
+        self.stp_delete_pfl_but.clicked.connect(self.stp_profile_list.clear)
 
         self.stp_load_pfl_but.clicked.connect(self.actions.iconf_profile_load)
         self.stp_unload_pfl_but.clicked.connect(self.actions.iconf_profile_unload)
@@ -786,8 +793,9 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_profile_options_table.itemChanged.connect(self.stp_profile_options_table.update_value)
         self.stp_profile_options_table.valueChanged.connect(self.actions.iconf_profile_set)
 
-        pfl_grid.addWidget(self.stp_profile_list, 0, 0, 1, 2)
-        pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 2)
+        pfl_grid.addWidget(self.stp_profile_list, 0, 0)
+        pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 1)
+        pfl_grid.addWidget(self.stp_delete_pfl_but, 0, 2)
         pfl_grid.addWidget(self.stp_load_pfl_but, 1, 0)
         pfl_grid.addWidget(self.stp_unload_pfl_but, 1, 1)
         pfl_grid.addWidget(self.stp_save_pfl_but, 1, 2)
