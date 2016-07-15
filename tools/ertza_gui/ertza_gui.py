@@ -736,26 +736,6 @@ class ErtzaGui(QtGui.QMainWindow):
 
         stp_tabs = QtGui.QTabWidget()
 
-        cnf_grid = QtGui.QGridLayout()
-        cnf_grid.setSpacing(10)
-
-        cnf_frame = QtGui.QFrame()
-        cnf_frame.setLayout(cnf_grid)
-
-        self.stp_save_cnf_but = PushButton('Save Config')
-        self.stp_operation_mode_input = QtGui.QComboBox()
-
-        self.stp_operation_mode_input.addItem('Standalone')
-        self.stp_operation_mode_input.addItem('Master')
-        self.stp_operation_mode_input.addItem('Slave')
-
-        self.stp_save_cnf_but.clicked.connect(self.actions.iconf_save)
-
-        cnf_grid.addWidget(self.stp_save_cnf_but, 0, 1)
-
-        cnf_grid.addWidget(QtGui.QLabel('Operating mode'), 1, 0)
-        cnf_grid.addWidget(self.stp_operation_mode_input, 1, 1)
-
         pfl_grid = QtGui.QGridLayout()
         pfl_grid.setSpacing(10)
 
@@ -814,8 +794,27 @@ class ErtzaGui(QtGui.QMainWindow):
 
         stp_options_grid.addWidget(self.stp_profile_options_table, 0, 0)
 
-        stp_tabs.addTab(cnf_frame, '&Config')
+        # Config tab
+        cnf_grid = QtGui.QGridLayout()
+        cnf_grid.setSpacing(10)
+
+        cnf_frame = QtGui.QFrame()
+        cnf_frame.setLayout(cnf_grid)
+
+        self.stp_save_cnf_but = PushButton('Save Config')
+        self.stp_startup_profile_input = QtGui.QComboBox()
+
+        self.stp_save_cnf_but.clicked.connect(self.actions.iconf_save)
+
+        self.stp_startup_profile_input.currentIndexChanged.connect(self.actions.iconf_config_set_profile)
+
+        cnf_grid.addWidget(self.stp_save_cnf_but, 0, 1)
+
+        cnf_grid.addWidget(QtGui.QLabel('Operating mode'), 1, 0)
+        cnf_grid.addWidget(self.stp_startup_profile_input, 1, 1)
+
         stp_tabs.addTab(pfl_frame, 'P&rofile')
+        stp_tabs.addTab(cnf_frame, '&Config')
 
         grid.addWidget(stp_tabs, 0, 0)
 
