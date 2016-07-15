@@ -5,7 +5,7 @@ Commands defines a way for remotes to interact with ertza. They also defines the
 
 Commands are protocol dependant. This allow to customize behaviour and arguments required on a per-protocol basis.
 
-The two main protocols currently supported are OSC_ and a custom `serial protocol`_.
+The two main protocols currently supported are OSC_ and a custom :doc:`serial protocol<protocol-serial>`.
 
 OSC commands
 ------------
