@@ -374,7 +374,8 @@ class ConfigParser(AbstractConfigParser):
         try:
             return self._config_proxies[self.PROFILE_PRIORITY]
         except IndexError:
-            return None
+            self._config_proxies[self.PROFILE_PRIORITY] = ProxyConfigParser(None, '', basedir=_PROFILE_PATH)
+            return self._config_proxies[self.PROFILE_PRIORITY]
 
     def __getitem__(self, key):
         childs_sec = []
