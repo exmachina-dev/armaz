@@ -14,29 +14,29 @@ Protocol
 --------
 
 Each serial packet have a strict syntax.
-The first 8 bytes are a constant fixed to :code:`ExmEisla`.
+The first 8 bytes are a constant fixed to ``ExmEisla``.
 Next is two bytes defining the length of the packet.
 
 The following 16 bytes defines the serial number of the sender.
-For Eisla product range it is :code:`WWYYPPPPNNNN` where:
+For Eisla product range it is ``WWYYPPPPNNNN`` where:
 
-* :code:`WW` is the production week number in a ISO Format (1-53)
-* :code:`YY` is the production year
-* :code:`PPPP` is the part number (:code:`ARCP` for ArmazCape)
-* :code:`NNNN` is the unit number produced during the week
+* ``WW`` is the production week number in a ISO Format (1-53)
+* ``YY`` is the production year
+* ``PPPP`` is the part number (``ARCP`` for ArmazCape)
+* ``NNNN`` is the unit number produced during the week
 
 Next is the command itself. The command is formed by:
-Each part of a command is separated by a :code:`:`
+Each part of a command is separated by a ``:``
 
 * An alias
-  It is a text string (encoded in ASCII) defining the desired action. Sub levels can be specified by adding a `.` between levels
-  i.e. :code:`config.get`
+  It is a text string (encoded in ASCII) defining the desired action. Sub levels can be specified by adding a ``.`` between levels
+  i.e. ``config.get``
 * Zero or one or more argument
   Can be a string, an integer, a float or a boolean
 
-Finally all commands ends with :code:`\r\n`
+Finally all commands ends with ``\r\n``
 
-This give the following format: :code:`ExmEislaLLWWYYPPPPNNalias.level:parameter:parameter\r\n`
+This give the following format: ``ExmEislaLLWWYYPPPPNNalias.level:parameter:parameter\r\n``
 
 i.e.
 
@@ -68,4 +68,3 @@ Floats are encoded using `IEEE-754`_ using 32 bits.
 Boolean
 ^^^^^^^
 Boolean are encoded using 2 bits.
-    ``b'\
