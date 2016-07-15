@@ -200,6 +200,7 @@ class ErtzaActions(object):
             self.profile_options[k] = v
         elif '/config/profile/list' in path:
             self.master.stp_profile_list.addItem(args[0])
+            self.master.stp_startup_profile_input.addItem(args[0])
         else:
             logging.warn('Unexpected response: {} {}'.format(path, ' '.join([str(a) for a in args])))
 
@@ -396,6 +397,9 @@ class ErtzaActions(object):
             if 'get' in key:
                 for k in self.profile_options._values.keys():
                     self.send('/config/get', k)
+            elif 'set_profile' in key:
+                value = args[0]
+                self.send('/config/set', 'machine:profile', value)
         else:
             value = args[0]
             self.send('/machine/set', 'machine:{}'.format(key), value)
