@@ -98,6 +98,7 @@ class Ertza(object):
             SerialCommandString.SerialNumber = machine.serialnumber
 
         machine.config.load_variant()
+        machine.config.load_profile()
 
         try:
             i = machine.config.get('machine', 'interface', fallback='eth1')

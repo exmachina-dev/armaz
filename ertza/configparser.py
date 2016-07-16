@@ -262,7 +262,14 @@ class ConfigParser(AbstractConfigParser):
         except ParsingError as e:
             logger.warn("Couldn't parse variant file {0} : {1!s}" % (variant_config_file, e))
 
-    def load_profile(self, profile, **kwargs):
+    def load_profile(self, profile=None, **kwargs):
+
+        if not profile:
+            try:
+                profile = self['machine']['profile']
+            except (NoSectionError, NoOptionError):
+                raise ProfileError('No profile specified in config and none provided.')
+
         try:
             profile_path = kwargs.get('profile_path', None)
 
