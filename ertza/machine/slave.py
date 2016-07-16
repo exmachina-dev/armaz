@@ -17,6 +17,7 @@ from ..drivers.abstract_driver import AbstractDriverError
 logging = logging.getLogger(__name__)
 
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
+SlaveKey = namedtuple('SlaveKey', ('dest', 'source'))
 
 
 CONTROL_MODES = {
@@ -96,6 +97,25 @@ class SlaveMachine(AbstractMachine):
 
     machine = None
     fatal_event = None
+
+    SLAVE_MODES = {
+        'torque': (
+            SlaveKey('machine:torque_ref', 'machine:torque'),
+            SlaveKey('machine:torque_rise_time', 'machine:torque_rise_time'),
+            SlaveKey('machine:torque_fall_time', 'machine:torque_fall_time'),
+        ),
+        'enhanced_torque': (
+            SlaveKey('machine:torque_ref', 'machine:current_ratio'),
+            SlaveKey('machine:velocity_ref', 'machine:velocity'),
+            SlaveKey('machine:torque_rise_time', None),
+            SlaveKey('machine:torque_fall_time', None),
+        ),
+        'velocity_torque': (
+            SlaveKey('machine:velocity_ref', 'machine:velocity'),
+            SlaveKey('machine:acceleration', None),
+            SlaveKey('machine:deceleration', None),
+        ),
+    }
 
     def __init__(self, slave):
 
@@ -209,20 +229,13 @@ class SlaveMachine(AbstractMachine):
                 continue
 
             try:
-                if smode == 'torque':
-                    self._send_if_latest('machine:torque_ref', source='machine:torque')
-                    self._send_if_latest('machine:torque_rise_time', source='machine:torque_rise_time')
-                    self._send_if_latest('machine:torque_fall_time', source='machine:torque_fall_time')
-                elif smode == 'enhanced_torque':
-                    self._send_if_latest('machine:torque_ref', source='machine:current_ratio')
-                    self._send_if_latest('machine:velocity_ref', source='machine:velocity')
-                    self._send_if_latest('machine:torque_rise_time')
-                    self._send_if_latest('machine:torque_fall_time')
-                elif smode == 'velocity':
-                    self._send_if_latest('machine:velocity_ref', source='machine:velocity')
-                    self._send_if_latest('machine:acceleration')
-                    self._send_if_latest('machine:deceleration')
-                self.errors = 0
+                try:
+                    for skey in self.SLAVE_MODES[smode]:
+                        self._send_if_latest(skey.dest, source=skey.source)
+                    self.errors = 0
+                except KeyError:
+                    raise FatalSlaveMachineError(
+                        'Unrecognized mode for slave {!s}: {}'.format(self, smode))
             except AbstractFatalMachineError as e:
                 if self.errors > self.max_errors:
                     self.set_to_remote('machine:command:enable', False)
@@ -309,7 +322,7 @@ class SlaveMachine(AbstractMachine):
         return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
     def _send_if_latest(self, dest, source=None):
-        source = source or dest
+        source = source if source is not None else dest
         lvalue = self.last_values.get(dest, None)
 
         try:
