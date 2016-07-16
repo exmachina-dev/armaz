@@ -58,14 +58,24 @@ class ConfigParserError(Error):
 
 
 class FileNotFoundError(ConfigParserError):
+    """
+    Raised when a config file cannot be found or read.
+    """
     pass
 
 
 class VariantError(ConfigParserError):
+    """
+    Raised when an error happens during a variant operation.
+    """
     pass
 
 
 class ProfileError(ConfigParserError):
+    """
+    Raised when an error happens during a profile operation.
+    """
+
     pass
 
 
@@ -213,6 +223,12 @@ class ConfigParser(AbstractConfigParser):
     PROFILE_OPTIONS = _PROFILE_OPTIONS
 
     def load_config(self, config_file):
+        """
+        Load config file appending to *config_files*.
+
+        :param config_file: The config file to load
+        :raises FileNotFoundError: if file doesn't exist
+        """
         if not os.path.isfile(config_file):
             raise FileNotFoundError
 
@@ -224,9 +240,12 @@ class ConfigParser(AbstractConfigParser):
 
     def load_variant(self, variant=None, **kwargs):
         """
-        Load variant config file.
+        Load a variant config file.
 
         If variant is not specified, load variant value defined in config file.
+
+        :param str variant: The variant config file to load
+        :raises VariantError: if a variant is already loaded
         """
 
         if self.variant:
@@ -263,6 +282,15 @@ class ConfigParser(AbstractConfigParser):
             logger.warn("Couldn't parse variant file {0} : {1!s}" % (variant_config_file, e))
 
     def load_profile(self, profile=None, **kwargs):
+        """
+        Load profile file.
+
+        If *profile* is not specified, load profile defined in config file with ``machine:profile``.
+        Store the loaded profile in config.
+
+        :param str profile: The profile file to load
+        :raises ProfileError: if no profile is given and machine:profile doesn't exist in config
+        """
 
         if not profile:
             try:
