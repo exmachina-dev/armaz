@@ -132,8 +132,8 @@ class SlaveMachine(AbstractMachine):
         self.running_ev = Event()
         self.newdata_ev = Event()
 
-        self.timeout = float(self.config.get('slave_timeout', 2.0))
-        self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
+        self.timeout = float(self.config.get('slave_timeout', 1.0))
+        self.refresh_interval = float(self.config.get('refresh_interval', 0.25))
 
         self.bridge = Queue()
 
