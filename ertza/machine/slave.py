@@ -423,3 +423,12 @@ class SlaveMachine(AbstractMachine):
             'mode': self.slave.slave_mode,
         }
         return '{name}: {addr}:{port} via {prot} ({serial}) in {mode} mode'.format(**i)
+
+    def __str__(self):
+        i = {
+            'addr': self.slave.address,
+            'port': self.driver_config['target_port'],
+            'prot': self.slave.driver.lower(),
+            'serial': self.slave.serialnumber,
+        }
+        return '{addr}:{port} via {prot} ({serial})'.format(**i)
