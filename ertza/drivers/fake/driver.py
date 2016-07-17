@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from random import random
 
 from ..abstract_driver import AbstractDriver, AbstractDriverError
 from ..frontend import DriverFrontend
@@ -158,4 +159,7 @@ class FakeDriver(AbstractDriver):
         try:
             return self.fake_data[addr]
         except KeyError:
+            if addr in (21, 22):
+                return [random() * 100,]
+            logging.debug('Unrecognized address: {}'.format(addr))
             return None
