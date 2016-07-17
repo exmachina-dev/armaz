@@ -166,7 +166,7 @@ class FakeDriver(AbstractDriver):
             try:
                 return self.fake_data[key][sub]
             except KeyError:
-                if (key, sub) is ('status', 'drive_enable'):
+                if key == 'status':
                     return False
                 else:
                     logging.debug('Unrecognized key: {}:{}'.format(key, sub))
