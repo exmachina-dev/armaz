@@ -81,7 +81,7 @@ class SlaveRegister(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
         try:
-            self.machine.set_operation_mode('slave')
+            self.machine.set_operating_mode('slave')
             uid = c.args[0]
             self.ok(c, uid)
         except Exception as e:
@@ -98,7 +98,7 @@ class SlaveFree(SlaveCommand, UnbufferedCommand):
         super().execute(c)
 
         try:
-            self.machine.set_operation_mode()
+            self.machine.set_operating_mode()
             uid = c.args[0]
             self.ok(c, uid)
         except Exception as e:
