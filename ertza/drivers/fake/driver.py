@@ -140,7 +140,7 @@ class FakeDriver(AbstractDriver):
             self._prev_data[seckey][subkey] = ndk.vtype(value)
         else:
             ndk = self.netdata_map[seckey]
-            data = (self.frontend._output_value(key, ndk.vtype(value)),)
+            data = (self.frontend.output_value(key, ndk.vtype(value)),)
 
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
@@ -157,7 +157,7 @@ class FakeDriver(AbstractDriver):
         if not res:
             return
 
-        return self.frontend._input_value(key, vt(res[st]))
+        return self.frontend.input_value(key, vt(res[st]))
 
     def write_fake_data(self, key, data, sub=None):
         if sub is not None:

@@ -120,7 +120,7 @@ class DriverFrontend(object):
 
         return value
 
-    def _output_value(self, key, value):
+    def output_value(self, key, value):
         return self._output_value_limit(key, self._output_value_coefficient(key, value))
 
     def _input_value_coefficient(self, key, value):
@@ -142,7 +142,7 @@ class DriverFrontend(object):
 
         return value
 
-    def _input_value(self, key, value):
+    def input_value(self, key, value):
         return self._input_value_coefficient(key, value)
 
     def __getattr__(self, key):
