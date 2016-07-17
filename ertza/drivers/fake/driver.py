@@ -90,7 +90,7 @@ class FakeDriver(AbstractDriver):
             else:
                 ndk = self.netdata_map[seckey]
 
-            return self._get_value(ndk, seckey)
+            return self._get_value(ndk, seckey, sub=subkey)
         except Exception as e:
             logging.error('Got exception in {!r}: {!r}'.format(self, e))
             raise FakeDriverError(e)
@@ -140,13 +140,13 @@ class FakeDriver(AbstractDriver):
 
         return self.write_fake_data(seckey, data, sub=subkey)
 
-    def _get_value(self, ndk, key):
-        nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
+    def _get_value(self, ndk, key, sub=None):
+        st, vt, md = ndk.start, ndk.vtype, ndk.mode
 
         if 'r' not in md:
             raise ReadOnlyError(key)
 
-        res = self.read_fake_data(nd.addr, nd.fmt)
+        res = self.read_fake_data(key, sub=sub)
         if not res:
             return
 
