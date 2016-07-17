@@ -3,6 +3,8 @@
 import logging
 import time
 
+logging = logging.getLogger('ertza.drivers.utils')
+
 
 def retry(ExceptionToCatch, tries=3, wait=5, backoff=2):
     def decorator_retry(f):

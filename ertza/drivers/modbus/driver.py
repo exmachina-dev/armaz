@@ -10,6 +10,7 @@ from .backend import ModbusBackend, ModbusBackendError
 
 from ..utils import retry
 
+logging = logging.getLogger('ertza.drivers.modbus')
 
 class ModbusDriverError(AbstractDriverError):
     def __init__(self, exception=None):
@@ -150,7 +151,6 @@ class ModbusDriver(AbstractDriver):
                         data[cndk.start] = cndk.vtype(0)
 
             self._prev_data[seckey][subkey] = ndk.vtype(value)
-
         else:
             ndk = self.netdata_map[seckey]
             data = (self.frontend.output_value(key, ndk.vtype(value)),)
