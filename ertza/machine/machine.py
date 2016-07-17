@@ -410,6 +410,7 @@ class Machine(AbstractMachine):
         self['machine:command:enable'] = False
 
         self.activate_mode('standalone')
+        self._running_event.set()
 
     @property
     def slave_mode(self):
