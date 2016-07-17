@@ -27,7 +27,8 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
         if c.args[1] not in ('machine:operation_mode', 'machine:serialnumber'):
-            super().execute(c)
+            if super().execute(c):
+                return
 
         if not self.check_args(c, 'eq', 2):
             return
