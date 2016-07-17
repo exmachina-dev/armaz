@@ -56,6 +56,7 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
                 return
             else:
                 super().execute(c)
+                return
 
             uid, dst, *args = c.args
             self.machine[dst] = args
