@@ -758,7 +758,9 @@ class ErtzaGui(QtGui.QMainWindow):
         stp_options_box = QtGui.QGroupBox('Options')
         stp_options_grid = QtGui.QGridLayout()
         stp_options_box.setLayout(stp_options_grid)
-        self.stp_profile_options_table = UpdatableTableWidget(0, 3)
+        self.stp_clear_group = QtGui.QButtonGroup()
+        self.stp_profile_options_table = UpdatableTableWidget(
+            clear_column=True, clear_group=self.stp_clear_group)
         self.stp_profile_options_table.setHorizontalHeaderLabels(('Key', 'Value', 'Unit'))
 
         self.stp_delete_pfl_but.color = QtGui.QColor(156, 96, 96)
@@ -791,6 +793,8 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.stp_profile_options_table.itemChanged.connect(self.stp_profile_options_table.update_value)
         self.stp_profile_options_table.valueChanged.connect(self.actions.iconf_profile_set)
+
+        self.stp_clear_group.buttonClicked[int].connect(self.actions.iconf_profile_clear)
 
         pfl_grid.addWidget(self.stp_profile_list, 0, 0)
         pfl_grid.addWidget(self.stp_refresh_pfl_but, 0, 1)

@@ -241,6 +241,14 @@ class UpdatableTableWidget(QtGui.QTableWidget):
         self._keys = list()
         self._vtypes = {}
 
+        self.clear_column = kwargs.pop('clear_column', False)
+
+        if self.clear_column:
+            self.clear_group = kwargs.pop('clear_group')
+
+        if not len(args):
+            args = (0, 4) if self.clear_column else (0, 3)
+
         super().__init__(*args, **kwargs)
 
     @QtCore.Slot()
@@ -273,6 +281,12 @@ class UpdatableTableWidget(QtGui.QTableWidget):
             self.setItem(len(self._keys)-1, 0, QtGui.QTableWidgetItem(str(key)))
 
         i = self._keys.index(key)
+
+        if self.clear_column:
+            button = QtGui.QPushButton('Clear')
+            self.clear_group.addButton(button, i)
+            self.setCellWidget(i, 3, button)
+
         if value is not None:
             self.setItem(i, 1, QtGui.QTableWidgetItem(str(value)))
 
