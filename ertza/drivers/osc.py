@@ -7,7 +7,7 @@ from threading import Event
 from queue import Queue
 import uuid
 
-from .abstract_driver import AbstractDriver, AbstractDriverError
+from .abstract_driver import AbstractDriver, AbstractDriverError, AbstractTimeoutError
 from ..processors.osc import OscAddress, OscMessage
 
 
@@ -15,7 +15,7 @@ class OscDriverError(AbstractDriverError):
     pass
 
 
-class OscDriverTimeout(OscDriverError):
+class OscDriverTimeout(OscDriverError, AbstractTimeoutError):
     pass
 
 

@@ -27,3 +27,7 @@ class AbstractDriver(object):
 
 class AbstractDriverError(Exception):
     pass
+
+
+class AbstractTimeoutError(Exception):
+    pass

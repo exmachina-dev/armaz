@@ -12,7 +12,7 @@ from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
 
 from ..drivers import Driver
-from ..drivers.abstract_driver import AbstractDriverError
+from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
 
 logging = logging.getLogger(__name__)
 
@@ -211,6 +211,8 @@ class SlaveMachine(AbstractMachine):
                 except SlaveMachineError as e:
                     logging.error('Exception in {n} loop: {e}'.format(
                         n=self.__class__.__name__, e=e))
+                except AbstractTimeoutError as e:
+                    logging.error('Timeout for {!s}'.format(self))
                 except Exception as e:
                     logging.error('Uncatched exception in {n} loop: {e}'.format(
                         n=self.__class__.__name__, e=e))
