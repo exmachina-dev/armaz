@@ -251,15 +251,10 @@ class ErtzaActions(object):
 
         try:
             try:
-                cmd, args, = cmd.split(' ')
-                if not isinstance(args, tuple):
-                    args = (args,)
+                cmd, *args = cmd.split(' ')
 
                 self.send(cmd, *args)
                 logging.info('Command sent: {} {}'.format(cmd, ' '.join(args)))
-            except ValueError:
-                self.send(cmd)
-                logging.info('Command sent: {}'.format(cmd))
             finally:
                 self.master.cmd_line.clear()
         except Exception as e:
