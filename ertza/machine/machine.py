@@ -259,8 +259,9 @@ class Machine(AbstractMachine):
             s = Slave(None, address, driver.title(), mode, conf)
             sm = SlaveMachine(s)
             self.init_slave(sm)
-            sm.ping()
             sm.set_master(self.serialnumber, self.address(driver))
+            sm.enslave()
+            sm.ping()
 
             existing_s = self.get_slave(serialnumber=sm.serialnumber)
             if existing_s:
