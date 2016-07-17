@@ -174,6 +174,12 @@ class Machine(AbstractMachine):
     def ip_address(self):
         return self.ethernet_interface.ips[-1]
 
+    def get_address(self, driver):
+        if driver.lower() is 'osc':
+            return self.osc_address
+        else:
+            return self.ip_address
+
     def search_slaves(self):
         slaves_cf = self.config['slaves']
         slaves = []
