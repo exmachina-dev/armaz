@@ -58,7 +58,7 @@ class Machine(AbstractMachine):
 
         self.slaves = []
         self.master = None
-        self.operation_mode = None
+        self.operating_mode = None
         self._machine_keys = None
 
         self._profile_parameters = {
@@ -253,7 +253,7 @@ class Machine(AbstractMachine):
                 s.start(loop=True)
 
     def add_slave(self, driver, address, mode, conf={}):
-        self._check_operation_mode()
+        self._check_operating_mode()
 
         try:
             s = Slave(None, address, driver.title(), mode, conf)
@@ -277,7 +277,7 @@ class Machine(AbstractMachine):
             raise MachineError('Unable to add slave: %s' % repr(e))
 
     def remove_slave(self, sn):
-        self._check_operation_mode()
+        self._check_operating_mode()
 
         try:
             rm_slave = self.get_slave(sn)
@@ -357,7 +357,7 @@ class Machine(AbstractMachine):
 
                 self.activate_mode(mode)
         else:
-            logging.info('Deactivating %s mode' % self.operation_mode)
+            logging.info('Deactivating %s mode' % self.operating_mode)
 
             if self.operating_mode == 'slave':
                 self.free()
@@ -379,7 +379,7 @@ class Machine(AbstractMachine):
 
         if mode == 'standalone':
             self._machine_keys = StandaloneMachineMode(self)
-            self.operation_mode = mode
+            self.operating_mode = mode
         elif mode == 'master':
             if not self.slaves:
                 raise MachineError('No slaves found')
@@ -388,7 +388,7 @@ class Machine(AbstractMachine):
                 s.enslave()
 
             self._machine_keys = MasterMachineMode(self)
-            self.operation_mode = mode
+            self.operating_mode = mode
         elif mode == 'slave':
             if not self.master:
                 raise MachineError('No master specified')
@@ -397,7 +397,7 @@ class Machine(AbstractMachine):
                 raise MachineError('No port specified for master')
 
             self._machine_keys = SlaveMachineMode(self)
-            self.operation_mode = mode
+            self.operating_mode = mode
 
             self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
             self._timeout_thread = Thread(target=self._timeout_watcher)
@@ -406,15 +406,15 @@ class Machine(AbstractMachine):
 
     @property
     def slave_mode(self):
-        return self._check_operation_mode('slave', raise_exception=False)
+        return self._check_operating_mode('slave', raise_exception=False)
 
     @property
     def master_mode(self):
-        return self._check_operation_mode('master', raise_exception=False)
+        return self._check_operating_mode('master', raise_exception=False)
 
     @property
     def standalone_mode(self):
-        return self._check_operation_mode('standalone', raise_exception=False)
+        return self._check_operating_mode('standalone', raise_exception=False)
 
     @property
     def paramaters(self):
@@ -423,13 +423,13 @@ class Machine(AbstractMachine):
         if self.frontend:
             p += self.frontend.parameters
 
-    def _check_operation_mode(self, mode='slave', raise_exception=True):
-        if self.operation_mode == mode:
+    def _check_operating_mode(self, mode='slave', raise_exception=True):
+        if self.operating_mode == mode:
             return True
 
         if raise_exception:
             raise MachineError('Slave mode %s isn\'t activated: %s' % (
-                mode, self.operation_mode))
+                mode, self.operating_mode))
         return False
 
     def _switch_cb(self, sw_state):
