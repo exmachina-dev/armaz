@@ -14,7 +14,7 @@ from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
 from ..drivers import Driver
 from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.machine.slave')
 
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
 SlaveKey = namedtuple('SlaveKey', ('dest', 'source'))

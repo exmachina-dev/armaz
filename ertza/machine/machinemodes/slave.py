@@ -4,7 +4,7 @@ import logging
 
 from .standalone import StandaloneMachineMode
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.machine.modes.slave')
 
 
 class SlaveMachineMode(StandaloneMachineMode):

@@ -6,7 +6,7 @@ import logging
 from .abstract_machinemode import ContinueException, MachineModeException
 from .standalone import StandaloneMachineMode
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.machine.modes.master')
 
 
 class MasterMachineMode(StandaloneMachineMode):

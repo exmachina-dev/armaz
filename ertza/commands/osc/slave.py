@@ -5,7 +5,7 @@ import logging
 from ertza.commands import UnbufferedCommand
 from ertza.commands import OscCommand
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.commands.osc')
 
 
 class SlaveCommand(OscCommand):

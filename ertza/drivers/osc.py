@@ -10,6 +10,8 @@ import uuid
 from .abstract_driver import AbstractDriver, AbstractDriverError, AbstractTimeoutError
 from ..processors.osc import OscAddress, OscMessage
 
+logging = logging.getLogger('ertza.driver.osc')
+
 
 class OscDriverError(AbstractDriverError):
     pass

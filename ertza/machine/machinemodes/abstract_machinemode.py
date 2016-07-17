@@ -3,7 +3,7 @@
 import logging
 from collections import namedtuple
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.machine.modes')
 
 
 class ContinueException(BaseException):
