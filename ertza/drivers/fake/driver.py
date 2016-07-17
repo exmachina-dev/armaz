@@ -108,29 +108,36 @@ class FakeDriver(AbstractDriver):
             if subkey not in self.netdata_map[seckey]:
                 raise KeyError('Unable to find {0} in {1} '
                                'netdata map'.format(subkey, seckey))
+            pndk = self.netdata_map[seckey]
             ndk = self.netdata_map[seckey][subkey]
             seclen = len(self.netdata_map[seckey])
+
             if seckey not in self._prev_data.keys():
-                data = list((0,) * seclen)
-                data[ndk.start] = ndk.vtype(value)
-            else:
-                pdata = list(self._prev_data[seckey])
+                self._prev_data[seckey] = {}
 
-                forget_values = (0, 1, 4, 6,)
-                unique_values = (3,)
-                data = list((-1,) * seclen)
-                data[ndk.start] = ndk.vtype(value)
-                for i, pvalue in enumerate(pdata):
-                    if ndk.start == i and ndk.start in unique_values:
-                        if data[ndk.start] == pvalue:
+            forget_values = ('cancel', 'reset', 'go', 'set_home', 'go_home', 'stop')
+            unique_values = ('control_mode',)
+            data = list((-1,) * seclen)
+
+            for k, cndk in pndk.items():
+                data[cndk.start] = self._prev_data[seckey].get(k, cndk.vtype(0))
+            data[ndk.start] = ndk.vtype(value)
+
+            for k, cndk in pndk.items():
+                if k == subkey and subkey in unique_values:
+                    try:
+                        if ndk.vtype(value) == self._prev_data[seckey][k]:
                             return
-                    elif ndk.start != i:
-                        if i in forget_values:
-                            data[i] = 0
-                        else:
-                            data[i] = pvalue
+                    except KeyError:
+                        pass
+                elif ndk.start != cndk.start:
+                    if k in forget_values:
+                        data[cndk.start] = cndk.vtype(0)
+                        self._prev_data[seckey][k] = cndk.vtype(0)
+                    if k in unique_values:
+                        data[cndk.start] = cndk.vtype(0)
 
-            self._prev_data[seckey] = data
+            self._prev_data[seckey][subkey] = ndk.vtype(value)
         else:
             ndk = self.netdata_map[seckey]
             data = (self.frontend._output_value(key, ndk.vtype(value)),)
