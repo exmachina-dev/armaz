@@ -138,7 +138,7 @@ class FakeDriver(AbstractDriver):
         if 'w' not in ndk.mode:
             raise WriteOnlyError(key)
 
-        return self.write_fake_data(ndk.netdata.addr, data)
+        return self.write_fake_data(seckey, data, sub=subkey)
 
     def _get_value(self, ndk, key):
         nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
@@ -152,14 +152,30 @@ class FakeDriver(AbstractDriver):
 
         return self.frontend._input_value(key, vt(res[st]))
 
-    def write_fake_data(self, addr, data, fmt=None):
-        self.fake_data[addr] = data
+    def write_fake_data(self, key, data, sub=None):
+        if sub is not None:
+            try:
+                self.fake_data[key][sub] = data
+            except KeyError:
+                self.fake_data[key] = {sub: data, }
+        else:
+            self.fake_data[key] = data
 
-    def read_fake_data(self, addr, fmt=None):
-        try:
-            return self.fake_data[addr]
-        except KeyError:
-            if addr in (21, 22):
-                return [random() * 100,]
-            logging.debug('Unrecognized address: {}'.format(addr))
-            return None
+    def read_fake_data(self, key, sub=None):
+        if sub is not None:
+            try:
+                return self.fake_data[key][sub]
+            except KeyError:
+                if (key, sub) is ('status', 'drive_enable'):
+                    return False
+                else:
+                    logging.debug('Unrecognized key: {}:{}'.format(key, sub))
+                    return None
+        else:
+            try:
+                return self.fake_data[key]
+            except KeyError:
+                if key in ('velocity', 'current_ratio'):
+                    return random() * 100,
+                logging.debug('Unrecognized key: {}'.format(key))
+                return None
