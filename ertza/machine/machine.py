@@ -361,7 +361,6 @@ class Machine(AbstractMachine):
 
             if self.operating_mode == 'slave':
                 self.free()
-                self.master = None
 
             elif self.operating_mode == 'master':
                 pass
@@ -403,6 +402,14 @@ class Machine(AbstractMachine):
             self._timeout_thread = Thread(target=self._timeout_watcher)
             self._timeout_thread.daemon = True
             self._timeout_thread.start()
+
+    def free(self):
+        self.master = None
+        self.master_port = None
+
+        self['machine:command:enable'] = False
+
+        self.activate_mode('standalone')
 
     @property
     def slave_mode(self):
