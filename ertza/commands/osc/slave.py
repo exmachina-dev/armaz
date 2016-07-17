@@ -17,7 +17,7 @@ class SlaveCommand(OscCommand):
         if not self.machine.slave_mode:
             uid, *args = c.args
             self.error(c, uid, 'Slave mode not activated')
-            return
+            return True
 
 
 class SlaveGet(SlaveCommand, UnbufferedCommand):
@@ -56,8 +56,8 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
                 self.ok(c, uid, dst, *args)
                 return
             else:
-                super().execute(c)
-                return
+                if super().execute(c):
+                    return
 
             uid, dst, *args = c.args
             self.machine[dst] = args
