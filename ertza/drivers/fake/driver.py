@@ -81,7 +81,7 @@ class FakeDriver(AbstractDriver):
 
             if type(self.netdata_map[seckey]) == dict:
                 if subkey:
-                    if subkey not in self.netdata_map:
+                    if subkey not in self.netdata_map[seckey]:
                         raise KeyError(subkey)
                     ndk = self.netdata_map[seckey][subkey]
                 else:
