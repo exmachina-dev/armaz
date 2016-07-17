@@ -15,7 +15,8 @@ class SlaveCommand(OscCommand):
 
     def execute(self, c):
         if not self.machine.slave_mode:
-            self.error(c, 'Slave mode not activated')
+            uid, *args = c.args
+            self.error(c, uid, 'Slave mode not activated')
             return
 
 
