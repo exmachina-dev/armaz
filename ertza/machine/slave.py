@@ -110,7 +110,7 @@ class SlaveMachine(AbstractMachine):
             SlaveKey('machine:torque_rise_time', None),
             SlaveKey('machine:torque_fall_time', None),
         ),
-        'velocity_torque': (
+        'velocity': (
             SlaveKey('machine:velocity_ref', 'machine:velocity'),
             SlaveKey('machine:acceleration', None),
             SlaveKey('machine:deceleration', None),
