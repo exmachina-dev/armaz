@@ -61,7 +61,11 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
                     return
 
             uid, dst, *args = c.args
-            self.machine[dst] = args
+
+            if len(args) == 1:
+                self.machine[dst] = args[0]
+            else:
+                self.machine[dst] = args
 
             self.ok(c, uid, dst, *args)
         except Exception as e:
