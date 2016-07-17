@@ -14,7 +14,7 @@ def retry(ExceptionToCatch, tries=3, wait=5, backoff=2):
                 try:
                     return f(*args, **kwargs)
                 except ExceptionToCatch:
-                    logging.exception("Retrying in %d..." % mwait)
+                    logging.error("Retrying in %d..." % mwait)
 
                     time.sleep(mwait)
                     mtries -= 1
