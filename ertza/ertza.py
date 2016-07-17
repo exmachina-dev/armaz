@@ -101,7 +101,7 @@ class Ertza(object):
         try:
             machine.config.load_profile()
         except ProfileError as e:
-            logger.info('Unable to load profile: {!s}', e)
+            logger.info('Unable to load profile: {!s}'.format(e))
 
         try:
             i = machine.config.get('machine', 'interface', fallback='eth1')
