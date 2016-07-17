@@ -80,6 +80,9 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
 class SlaveRegister(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
+        if not self.check_args(c, 'le', 2):
+            return
+
         try:
             self.machine.set_operating_mode('slave')
             uid = c.args[0]
