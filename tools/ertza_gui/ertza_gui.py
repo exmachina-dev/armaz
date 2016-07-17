@@ -378,6 +378,10 @@ class ErtzaActions(object):
                 vkey, value = args
                 self.send('/config/profile/{}'.format(key[8:]), vkey, value)
                 return
+            elif 'profile_clear' in key:
+                kindex, = args
+                self.send('/config/profile/clear_option', list(self.profile_options.keys())[kindex])
+                return
             else:
                 try:
                     value = args[0]

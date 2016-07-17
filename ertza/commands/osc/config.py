@@ -116,6 +116,36 @@ class ConfigProfileListOptions(UnbufferedCommand, OscCommand):
         return 'Return a list of options that can be saved into a profile'
 
 
+class ConfigProfileClearOption(UnbufferedCommand, OscCommand):
+    """
+    Clear an assigned option:
+    """
+    def execute(self, c):
+
+        if not self.check_args(c, 'eq', 1):
+            return
+
+        try:
+            dest = c.args[0]
+            sec, opt = dest.split(':')
+            self.machine.config.profile_set(sec, opt, None)
+            self.ok(c)
+        except Exception as e:
+            self.error(c, str(e))
+
+    @property
+    def alias(self):
+        return '/config/profile/clear_option'
+
+    @property
+    def help_text(self):
+        return 'Clear an assigned option SECTION:OPTION'
+
+    @property
+    def args(self):
+        return 'SECTION:OPTION'
+
+
 class ConfigProfileList(UnbufferedCommand, OscCommand):
     """
     Return a list of available profils:
