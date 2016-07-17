@@ -295,7 +295,7 @@ class ConfigParser(AbstractConfigParser):
         if not profile:
             try:
                 profile = self['machine']['profile']
-            except (NoSectionError, NoOptionError):
+            except KeyError:
                 raise ProfileError('No profile specified in config and none provided.')
 
         try:

@@ -12,7 +12,7 @@ from threading import Thread
 from multiprocessing import JoinableQueue
 import queue
 
-from .configparser import ConfigParser
+from .configparser import ConfigParser, ProfileError
 from .machine import Machine, MachineError
 
 from .processors import OscProcessor, SerialProcessor
@@ -98,7 +98,10 @@ class Ertza(object):
             SerialCommandString.SerialNumber = machine.serialnumber
 
         machine.config.load_variant()
-        machine.config.load_profile()
+        try:
+            machine.config.load_profile()
+        except ProfileError as e:
+            logger.info('Unable to load profile: {!s}', e)
 
         try:
             i = machine.config.get('machine', 'interface', fallback='eth1')
