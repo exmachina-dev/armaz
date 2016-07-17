@@ -825,7 +825,7 @@ class ErtzaGui(QtGui.QMainWindow):
 
         cnf_grid.addWidget(self.stp_save_cnf_but, 0, 1)
 
-        cnf_grid.addWidget(QtGui.QLabel('Operating mode'), 1, 0)
+        cnf_grid.addWidget(QtGui.QLabel('Startup profile'), 1, 0)
         cnf_grid.addWidget(self.stp_startup_profile_input, 1, 1)
 
         stp_tabs.addTab(pfl_frame, 'P&rofile')
