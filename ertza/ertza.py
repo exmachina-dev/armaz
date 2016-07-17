@@ -219,9 +219,8 @@ class Ertza(object):
     def eventloop(self, machine_queue, name):
         """ When a new event comes in, execute the pending gcode """
 
-        try:
-
-            while self.running:
+        while self.running:
+            try:
                 # Returns False on timeout, else True
                 if self.machine.wait_until_sync_event():
                     try:
@@ -239,8 +238,8 @@ class Ertza(object):
                     logger.info("Event handled for %s from %s %s" % (
                         message.target, name, message))
                     machine_queue.task_done()
-        except Exception:
-            logger.exception("Exception in {} eventloop: ".format(name))
+            except Exception:
+                logger.exception("Exception in {} eventloop: ".format(name))
 
     def exit(self):
         self.running = False
