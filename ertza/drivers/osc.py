@@ -39,7 +39,7 @@ class OscDriver(AbstractDriver):
         self._waiting_futures = []
 
     def init_queue(self):
-        self.queue = Queue(maxsize=10)
+        self.queue = Queue(maxsize=45)
 
         return self.queue
 
