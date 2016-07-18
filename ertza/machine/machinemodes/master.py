@@ -9,6 +9,38 @@ from .standalone import StandaloneMachineMode
 logging = logging.getLogger('ertza.machine.modes.master')
 
 
+class SlavesConfig(object):
+    def __init__(self, config, slaves):
+        self._cf = config
+        self._slaves = slaves
+
+    def __getitem__(self, key):
+        try:
+            sn, opt = key.split(':', maxsplit=1)
+            opt = opt.replace(':', '.')
+            c = self._cf['slave_{}'.format(sn)]
+
+            try:
+                m = c['{}_mode'.format(opt)]
+            except KeyError:
+                m = 'forward'
+
+            try:
+                v = float(c['{}_value'.format(opt)])
+            except KeyError:
+                v = None
+
+            return m, v
+        except KeyError:
+            raise KeyError('No config found for {}'.format(key.split(':', maxsplit=1)[0]))
+
+    def keys(self):
+        slaves_sn = []
+        for s in self._slaves:
+            slaves_sn += (s.slave.serialnumber,)
+        return slaves_sn
+
+
 class MasterMachineMode(StandaloneMachineMode):
     _param = StandaloneMachineMode._param
 
@@ -59,15 +91,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
         self.guard_interval = 0.03
 
-        self._slv_config = {}
-        for s in self._machine.slaves:
-            s_cf = {}
-            for k, v in s.slave.config.items():
-                if k.endswith('_mode'):
-                    s_cf[k.replace('.', ':')] = v
-                else:
-                    s_cf[k.replace('.', ':')] = float(v)
-            self._slv_config[s.slave.serialnumber] = s_cf
+        self._slv_config = SlavesConfig(self._machine.config, self._machine.slaves)
 
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
@@ -85,14 +109,11 @@ class MasterMachineMode(StandaloneMachineMode):
             logging.warn('No config registered for slave {!s}'.format(slave))
             return
 
-        _cf = self._slv_config[slave.slave.serialnumber]
-        vl_mode = _cf.get('{}_mode'.format(key), 'forward')
+        vl_mode, vl_value = self._slv_config['{}:{}'.format(sn, key)]
 
         if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
-            logging.warn('Unrecognized mode {0} for {1}'.format(vl_mode, key))
-            return
+            raise MachineModeException('Unrecognized mode {0} for {1}'.format(vl_mode, key))
 
-        vl_value = _cf.get('{}_value'.format(key), None)
         if vl_mode in ('multiply', 'divide', 'add', 'substract', 'default',) and vl_value is None:
             raise MachineModeException('No value configured for '
                                        '{0} in {1!s}'.format(key, slave))
