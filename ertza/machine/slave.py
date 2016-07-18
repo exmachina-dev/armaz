@@ -127,12 +127,13 @@ class SlaveMachine(AbstractMachine):
         self.driver_config = {
             'target_address': self.slave.address,
             'target_port': int(self.config.get('reply_port', 6969)),
+            'timeout': float(self.config.get('slave_timeout', .5)),
         }
 
         self.running_ev = Event()
         self.newdata_ev = Event()
 
-        self.timeout = float(self.config.get('slave_timeout', 1.0))
+        self.timeout = float(self.config.get('slave_timeout', .5))
         self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
 
         self.bridge = Queue()

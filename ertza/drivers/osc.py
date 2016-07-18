@@ -34,7 +34,7 @@ class OscDriver(AbstractDriver):
         self.outlet, self.inlet = None, None
         self.osc_pipe = None
         self.running = Event()
-        self.timeout = 5.0
+        self.timeout = config.get('timeout', 0.25)
 
         self._waiting_futures = []
 
