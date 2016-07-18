@@ -35,7 +35,7 @@ class MasterMachineMode(StandaloneMachineMode):
             'torque_fall_time',
             'velocity_ref',
         ),
-        'speed': (
+        'velocity': (
             'velocity_ref',
             'acceleration',
             'deceleration',
