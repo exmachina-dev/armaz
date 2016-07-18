@@ -79,7 +79,9 @@ class MasterMachineMode(StandaloneMachineMode):
             slave.set_to_remote(key, value)
 
     def get_value_for_slave(self, slave, key, value=None):
-        if slave.slave.serialnumber not in self._slv_config.keys():
+        sn = slave.slave.serialnumber
+
+        if sn not in self._slv_config.keys():
             logging.warn('No config registered for slave {!s}'.format(slave))
             return
 
@@ -108,23 +110,19 @@ class MasterMachineMode(StandaloneMachineMode):
                                                '{0.slave.serialnumber} '
                                                '({1} asked)'.format(slave, key))
 
+        nvalue = None
         if vl_mode == 'forward':
-            return value
+            nvalue = value
         elif vl_mode == 'multiply':
-            return vl_value * value
+            nvalue = vl_value * value
         elif vl_mode == 'divide':
-            return vl_value / value
+            nvalue = vl_value / value
         elif vl_mode == 'add':
-            logging.debug('added {} to {}'.format(vl_value, value))
-            if value >= 0:
-                return vl_value + value
-            else:
-                return vl_value - value
+            nvalue = vl_value + value if value >= 0 else vl_value - value
         elif vl_mode == 'substract':
-            if value >= 0:
-                return vl_value - value
-            else:
-                return vl_value + value
+            nvalue = vl_value - value if value >= 0 else vl_value + value
+
+        return nvalue
 
     def get_guarded_value(self, key):
         gvalue, gtime = self.ValueGuard.get(key, (None, None,))
