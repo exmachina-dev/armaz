@@ -59,7 +59,7 @@ class DriverFrontend(object):
     _gearbox_keys = ('torque_ref', 'velocity_ref', 'position_ref',
                      'acceleration', 'deceleration',
                      'position', 'position_target', 'position_remaining',
-                     'torque')
+                     'torque', 'velocity')
     _application_keys = ('torque_ref', 'velocity_ref', 'position_ref',
                          'acceleration', 'deceleration',
                          'position', 'position_target', 'position_remaining')
