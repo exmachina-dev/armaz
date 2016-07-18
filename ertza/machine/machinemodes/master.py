@@ -49,38 +49,38 @@ class MasterMachineMode(StandaloneMachineMode):
     })
 
     DefaultForwardKeys = (
-        'command:enable',
-        'command:cancel',
-        'command:clear_errors',
-        'command:reset',
+        'machine:command:enable',
+        'machine:command:cancel',
+        'machine:command:clear_errors',
+        'machine:command:reset',
     )
 
     ForwardKeys = {
         'torque': (
-            'torque_ref',
-            'torque_rise_time',
-            'torque_fall_time',
+            'machine:torque_ref',
+            'machine:torque_rise_time',
+            'machine:torque_fall_time',
         ),
         'enhanced_torque': (
-            'torque_ref',
-            'torque_rise_time',
-            'torque_fall_time',
-            'velocity_ref',
+            'machine:torque_ref',
+            'machine:torque_rise_time',
+            'machine:torque_fall_time',
+            'machine:velocity_ref',
         ),
         'velocity': (
-            'velocity_ref',
-            'acceleration',
-            'deceleration',
+            'machine:velocity_ref',
+            'machine:acceleration',
+            'machine:deceleration',
         ),
         'position': (
-            'command:move_mode',
-            'command:go',
-            'command:set_home',
-            'command:go_home',
-            'velocity_ref',
-            'position_ref',
-            'acceleration',
-            'deceleration',
+            'machine:command:move_mode',
+            'machine:command:go',
+            'machine:command:set_home',
+            'machine:command:go_home',
+            'machine:velocity_ref',
+            'machine:position_ref',
+            'machine:acceleration',
+            'machine:deceleration',
         ),
     }
 
