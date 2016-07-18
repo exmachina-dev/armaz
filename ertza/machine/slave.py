@@ -269,7 +269,7 @@ class SlaveMachine(AbstractMachine):
         return rq
 
     def enslave(self):
-        self.set_to_remote('machine:operation_mode', 'slave', self.machine.get_address(self.slave.driver))
+        self.set_to_remote('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
 
     @property
     def infos(self):

@@ -26,7 +26,7 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
     """
 
     def execute(self, c):
-        if c.args[1] not in ('machine:operation_mode', 'machine:serialnumber'):
+        if c.args[1] not in ('machine:operating_mode', 'machine:serialnumber'):
             if super().execute(c):
                 return
 
@@ -52,7 +52,7 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
             return
 
         try:
-            if c.args[1] is 'machine:operation_mode':
+            if c.args[1] is 'machine:operating_mode':
                 self.machine.set_operating_mode(*c.args[2:])
                 self.ok(c, uid, dst, *args)
                 return
