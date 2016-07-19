@@ -6,7 +6,7 @@ from threading import Thread
 
 from .message import OscMessage
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.processors.osc.server')
 
 
 class OscServer(lo.Server):

@@ -19,6 +19,8 @@ Code modified by Benoit Rapidel:
 from threading import Thread
 import logging
 
+logging = logging.getLogger('ertza.switch')
+
 
 class Switch(object):
 

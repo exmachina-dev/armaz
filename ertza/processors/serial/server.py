@@ -6,7 +6,7 @@ from threading import Thread
 
 from .message import SerialMessage, SerialCommandString
 
-logging = logging.getLogger(__name__)
+logging = logging.getLogger('ertza.processors.serial.server')
 
 
 class SerialServer(sr.Serial):
