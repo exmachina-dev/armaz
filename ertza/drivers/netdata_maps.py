@@ -26,20 +26,20 @@ _mfe100 = {
     'entq_ki':              _n(16, 'float:32'),
     'entq_kd':              _n(17, 'float:32'),
 
-    'velocity':             _n(21, 'float:32'),
-    'position':             _n(22, 'float:32'),
-    'position_target':      _n(23, 'float:32'),
-    'position_remaining':   _n(24, 'float:32'),
-    'encoder_ticks':        _n(25, 'float:32'),
-    'encoder_velocity':     _n(26, 'float:32'),
-    'velocity_error':       _n(27, 'float:32'),
-    'follow_error':         _n(28, 'float:32'),
-    'torque':               _n(29, 'float:32'),
-    'current_ratio':        _n(30, 'float:32'),
-    'effort':               _n(31, 'float:32'),
+    'velocity':             _n(51, 'float:32'),
+    'position':             _n(52, 'float:32'),
+    'position_target':      _n(53, 'float:32'),
+    'position_remaining':   _n(54, 'float:32'),
+    'encoder_ticks':        _n(55, 'float:32'),
+    'encoder_velocity':     _n(56, 'float:32'),
+    'velocity_error':       _n(57, 'float:32'),
+    'follow_error':         _n(58, 'float:32'),
+    'torque':               _n(59, 'float:32'),
+    'current_ratio':        _n(60, 'float:32'),
+    'effort':               _n(61, 'float:32'),
 
-    'drive_temp':           _n(50, 'float:32'),
-    'dropped_frames':       _n(51, 'uint:32'),
+    'drive_temp':           _n(62, 'float:32'),
+    'dropped_frames':       _n(63, 'uint:32'),
 }
 
 MicroflexE100Map = {
