@@ -9,7 +9,7 @@ _p = namedtuple('parameter', ['netdata', 'start', 'vtype', 'mode'])
 _mfe100 = {
     'status':               _n(0, 'pad:24,bool,bool,bool,bool,'
                                'bool,bool,bool,bool'),
-    'command':              _n(1, 'pad:20,bool,bool,bool,bool,uint:1,uint:3,'
+    'command':              _n(1, 'pad:19,bool,bool,bool,bool,uint:1,uint:1,uint:3,'
                                'bool,bool,bool,bool'),
     'error_code':           _n(2, 'uint:32'),
     'jog':                  _n(3, 'float:32'),
@@ -53,11 +53,12 @@ MicroflexE100Map = {
     },
 
     'command': {
-        'enable':           _p(_mfe100['command'], 9, bool, 'w'),
-        'cancel':           _p(_mfe100['command'], 8, bool, 'w'),
-        'clear_errors':     _p(_mfe100['command'], 7, bool, 'w'),
-        'reset':            _p(_mfe100['command'], 6, bool, 'w'),
-        'control_mode':     _p(_mfe100['command'], 5, int, 'w'),
+        'enable':           _p(_mfe100['command'], 10, bool, 'w'),
+        'cancel':           _p(_mfe100['command'], 9, bool, 'w'),
+        'clear_errors':     _p(_mfe100['command'], 8, bool, 'w'),
+        'reset':            _p(_mfe100['command'], 7, bool, 'w'),
+        'control_mode':     _p(_mfe100['command'], 6, int, 'w'),
+        'position_mode':    _p(_mfe100['command'], 5, int, 'w'),
         'move_mode':        _p(_mfe100['command'], 4, int, 'w'),
         'go':               _p(_mfe100['command'], 3, bool, 'w'),
         'set_home':         _p(_mfe100['command'], 2, bool, 'w'),
