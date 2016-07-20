@@ -530,9 +530,9 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_tq_rise_time_input = QtGui.QDoubleSpinBox()
         self.ctl_tq_fall_time_input = QtGui.QDoubleSpinBox()
 
-        self.ctl_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
-        self.ctl_tq_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
-        self.ctl_tq_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
+        self.ctl_torque_ref_input.editingFinished.connect(self.actions.isend_torque_ref)
+        self.ctl_tq_rise_time_input.editingFinished.connect(self.actions.isend_torque_rise_time)
+        self.ctl_tq_fall_time_input.editingFinished.connect(self.actions.isend_torque_fall_time)
 
         self.ctl_torque_ref_input.setRange(-100, 100)
         self.ctl_tq_rise_time_input.setRange(0, 100000)
@@ -565,9 +565,9 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_vl_acceleration_input.setRange(0, 10000)
         self.ctl_vl_deceleration_input.setRange(0, 10000)
 
-        self.ctl_velocity_ref_input.valueChanged.connect(self.actions.isend_velocity_ref)
-        self.ctl_vl_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
-        self.ctl_vl_deceleration_input.valueChanged.connect(self.actions.isend_deceleration)
+        self.ctl_velocity_ref_input.editingFinished.connect(self.actions.isend_velocity_ref)
+        self.ctl_vl_acceleration_input.editingFinished.connect(self.actions.isend_acceleration)
+        self.ctl_vl_deceleration_input.editingFinished.connect(self.actions.isend_deceleration)
 
         self.ctl_velocity_ref_input.setSuffix(' rpm')
         self.ctl_vl_acceleration_input.setSuffix(' ms.s-1')
@@ -608,10 +608,10 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.ctl_ps_go_but.clicked.connect(self.actions.isend_command_go)
         self.ctl_ps_set_home_but.clicked.connect(self.actions.isend_command_set_home)
-        self.ctl_position_ref_input.valueChanged.connect(self.actions.isend_position_ref)
-        self.ctl_ps_velocity_input.valueChanged.connect(self.actions.isend_velocity_ref)
-        self.ctl_ps_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
-        self.ctl_ps_deceleration_input.valueChanged.connect(self.actions.isend_deceleration)
+        self.ctl_position_ref_input.editingFinished.connect(self.actions.isend_position_ref)
+        self.ctl_ps_velocity_input.editingFinished.connect(self.actions.isend_velocity_ref)
+        self.ctl_ps_acceleration_input.editingFinished.connect(self.actions.isend_acceleration)
+        self.ctl_ps_deceleration_input.editingFinished.connect(self.actions.isend_deceleration)
 
         self.ctl_position_ref_input.setSuffix(' ticks')
         self.ctl_ps_velocity_input.setSuffix(' rpm')
@@ -651,10 +651,10 @@ class ErtzaGui(QtGui.QMainWindow):
         self.ctl_et_rise_time_input = QtGui.QDoubleSpinBox()
         self.ctl_et_fall_time_input = QtGui.QDoubleSpinBox()
 
-        self.ctl_et_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
-        self.ctl_et_velocity_ref_input.valueChanged.connect(self.actions.isend_velocity_ref)
-        self.ctl_et_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
-        self.ctl_et_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
+        self.ctl_et_torque_ref_input.editingFinished.connect(self.actions.isend_torque_ref)
+        self.ctl_et_velocity_ref_input.editingFinished.connect(self.actions.isend_velocity_ref)
+        self.ctl_et_rise_time_input.editingFinished.connect(self.actions.isend_torque_rise_time)
+        self.ctl_et_fall_time_input.editingFinished.connect(self.actions.isend_torque_fall_time)
 
         self.ctl_et_torque_ref_input.setRange(-200, 200)
         self.ctl_et_velocity_ref_input.setRange(-10000, 10000)
