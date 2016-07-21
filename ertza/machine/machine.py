@@ -196,6 +196,8 @@ class Machine(AbstractMachine):
                 slave_cf = {}
                 if self.config.has_section('slave_%s' % slave_sn):
                     slave_cf = self.config['slave_%s' % slave_sn]
+                    logging.info('Found config for slave with S/N {}'.format(
+                        slave_sn))
 
                 s = Slave(slave_sn, slave_ip, slave_dv, slave_md, slave_cf)
                 logging.info('Found {2} slave at {1} '
