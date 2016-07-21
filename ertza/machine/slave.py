@@ -328,6 +328,8 @@ class SlaveMachine(AbstractMachine):
         source = source if source is not None else dest
         lvalue = self.last_values.get(dest, None)
 
+        value = None
+
         try:
             value = self.machine.machine_keys.get_value_for_slave(self, source)
         except SlaveMachineError as e:
