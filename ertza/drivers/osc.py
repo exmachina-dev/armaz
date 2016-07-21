@@ -65,8 +65,6 @@ class OscDriver(AbstractDriver):
         self['machine:command:stop'] = True
         self['machine:command:enable'] = False
 
-        m = self.message('/slave/free')
-        self.to_machine(m)
 
         self.running.set()
 
