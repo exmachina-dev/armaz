@@ -54,6 +54,7 @@ End If
 
 Dim cmdTime As Time
 Dim cmdTimeoutStatus As Integer = 0
+Dim positionMode As Integer
 Dim moveMode As Integer
 Dim enTqMode As Integer = 0
 Dim enTq As Float = 0
@@ -320,7 +321,16 @@ Event NETDATA1
         command.control_mode = 0
     End If
 
-    moveMode = command.move_mode '0: Absolute 1: Relative
+    positionMode = command.position_mode 'O: Absolute 1: Relative
+
+    If command.move_mode <> 0 Then '0: Accumulative 1: Replace
+    	'CONTOURMODE(_axis) = _ctmCONTOUR_OFF
+    	moveMode = 0
+  	Else
+    	'CONTOURMODE(_axis) = _ctmCONTOUR_ON
+    	moveMode = 1
+   	End If
+
 
     If command.go_command <> 0 AndAlso CONTROLMODE(_axis) = 3 Then
         GO(_axis)
@@ -411,7 +421,7 @@ Event NETDATA6
     Dim cmdPosRef As Float
     cmdPosRef = NETFLOAT(6)
     
-    If moveMode <> 0 Then
+    If positionMode <> 0 Then
         MOVER(_axis) = cmdPosRef
     Else
         MOVEA(_axis) = cmdPosRef
