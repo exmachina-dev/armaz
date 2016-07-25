@@ -558,4 +558,7 @@ Startup
     MODBUSPARAMETER(_bus, _mpREGISTER_MAPPING) = _rmNET_DATA         'Use Net data for data exchange
     MODBUSPARAMETER(_bus, _mpENABLE) = 1                             'Finally enable Modbus TCP communication
     
+    ENCODERPRESCALE(_axis) = 32
+    SCALEFACTOR(_axis) = 10000 / 60 / 32
+    
 End Startup
