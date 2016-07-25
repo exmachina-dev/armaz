@@ -15,11 +15,12 @@ Bitfield CommandNetData
     clear_errors As 2 To 2
     reset_command As 3 To 3
     control_mode  As 4 To 6
-    move_mode As 7 To 7
-    go_command As 8 To 8
-    set_home As 9 To 9
-    go_home As 10 To 10
-    stop_command As 11 To 11
+    position_mode As 7 To 7
+    move_mode As 8 To 8
+    go_command As 9 To 9
+    set_home As 10 To 10
+    go_home As 11 To 11
+    stop_command As 12 To 12
 End Bitfield
 
 Const _bus = _busETHERNET
@@ -209,26 +210,27 @@ Sub Status()
     NETFLOAT(15) = enTqKPVel
     NETFLOAT(16) = enTqKI
     NETFLOAT(17) = enTqKD
+
 End Sub
 
 Sub StatusSlow()
-    NETFLOAT(50) = TEMPERATURE(0)
-    NETINTEGER(51) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
+    NETFLOAT(62) = TEMPERATURE(0)
+    NETINTEGER(63) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
 End Sub
 
 Sub NetdataValues()
-    NETFLOAT(20) = CURRENTMEAS(_axis, 5)
-    NETFLOAT(21) = VEL(_axis)
-    NETFLOAT(22) = POS(_axis)
-    NETFLOAT(23) = POSTARGET(_axis)
-    NETFLOAT(24) = POSREMAINING(_axis)
-    NETFLOAT(25) = ENCODER(0)
-    NETFLOAT(26) = ENCODERVEL(0)
-    NETFLOAT(27) = VELERROR(_axis)
-    NETFLOAT(28) = FOLERROR(_axis)
-    NETFLOAT(29) = CurrentToTorque(CURRENTMEAS(_axis, 5))
-    NETFLOAT(30) = CurrentRatio(CURRENTMEAS(_axis, 5))
-    NETFLOAT(31) = EFFORT(_axis)
+    NETFLOAT(50) = CURRENTMEAS(_axis, 5)
+    NETFLOAT(51) = VEL(_axis)
+    NETFLOAT(52) = POS(_axis)
+    NETFLOAT(53) = POSTARGET(_axis)
+    NETFLOAT(54) = POSREMAINING(_axis)
+    NETFLOAT(55) = ENCODER(0)
+    NETFLOAT(56) = ENCODERVEL(0)
+    NETFLOAT(57) = VELERROR(_axis)
+    NETFLOAT(58) = FOLERROR(_axis)
+    NETFLOAT(59) = CurrentToTorque(CURRENTMEAS(_axis, 5))
+    NETFLOAT(60) = CurrentRatio(CURRENTMEAS(_axis, 5))
+    NETFLOAT(61) = EFFORT(_axis)
 End Sub
 
 Sub CommandTimeout()
