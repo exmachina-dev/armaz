@@ -6,9 +6,24 @@ import bitstring
 from pylibmodbus import ModbusTcp as ModbusClient
 from pylibmodbus import ModbusException
 
+logging = logging.getLogger('ertza.drivers.modbus.backend')
 
 class ModbusBackendError(Exception):
     pass
+
+class ModbusCommunicationError(ModbusBackendError):
+    _trigger = None
+    _max_errors = 2
+    _errors = 0
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self._errors >= self._max_errors:
+            if self._trigger:
+                self._trigger()
+            logging.error('Max errors exceed: {}'.format(self._errors))
+            self._errors = 0
 
 
 class ModbusBackend(object):
@@ -17,6 +32,8 @@ class ModbusBackend(object):
     register_nb_by_netdata = 2
 
     def __init__(self, target_addr, target_port, target_nodeid):
+        ModbusCommunicationError._trigger = self.reconnect
+
         self.address = target_addr
         self.port = target_port
         self.nodeid = target_nodeid
@@ -64,7 +81,7 @@ class ModbusBackend(object):
         try:
             response = self.rhr(start)
             if response is None:
-                raise ModbusBackendError('No data in response.')
+                raise ModbusCommunicationError('No data in response.')
             res = bitstring.pack('uintbe:16, uintbe:16', *response).unpack(fmt)
         except Exception as e:
             logging.error('Unexpected error: {!s}'.format(e))
@@ -111,4 +128,4 @@ class ModbusBackend(object):
             rpt = rq_func(*args)
             return rpt
         except ModbusException as e:
-            raise ModbusBackendError('Error while executing {}: {!s}'.format(rq_func, e))
+            raise ModbusCommunicationError('Error while executing {}: {!s}'.format(rq_func, e))
