@@ -6,6 +6,7 @@ from threading import Thread
 from threading import Event
 from queue import Queue
 import uuid
+import asyncoro as asc
 
 from .abstract_driver import AbstractDriver, AbstractDriverError, AbstractTimeoutError
 from ..processors.osc import OscAddress, OscMessage
@@ -19,6 +20,28 @@ class OscDriverError(AbstractDriverError):
 
 class OscDriverTimeout(OscDriverError, AbstractTimeoutError):
     pass
+
+
+class _OscRequest(object):
+    __slots__ = ('path', 'args', 'reply', 'exception', 'uuid', 'timeout')
+
+    def __init__(self, path, *args, **kwargs):
+        self.path = path
+        self.args = args
+        self.reply = None
+        self.uuid = None
+        self.timeout = None
+        self.exception = None
+
+    def __getstate__(self):
+        st = {'path': self.path, 'args': self.args, 'reply': self.reply,
+              'uuid': self.uuid, 'timeout': self.timeout,
+              'exception': self.exception}
+        return st
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
 
 
 class OscDriver(AbstractDriver):
@@ -36,7 +59,9 @@ class OscDriver(AbstractDriver):
         self.running = Event()
         self.timeout = config.get('timeout', 0.25)
 
-        self._waiting_futures = []
+        self._waiting_reqs = {}
+
+        self.slave_channel = asc.Channel('{0.target_address}:{0.target_port}'.format(self))
 
     def init_queue(self):
         self.queue = Queue(maxsize=45)
@@ -65,7 +90,6 @@ class OscDriver(AbstractDriver):
         self['machine:command:stop'] = True
         self['machine:command:enable'] = False
 
-
         self.running.set()
 
     def message(self, *args, **kwargs):
@@ -82,45 +106,42 @@ class OscDriver(AbstractDriver):
             logging.error(e)
             return reply, e
 
-    def to_machine(self, request, uid=None):
+    def to_machine(self, coro=None):
         try:
-            if not uid:
-                uid = uuid.uuid4().hex
-            event = Event()
-            future = OscFutureResult(uid)
-            future.set_callback(self.done_cb)
-            future.set_event(event)
-            self._waiting_futures.append(future)
-            self._send(request, uid)
-            return future
+            request = yield coro.receive()
+            if not isinstance(request, _OscRequest):
+                raise TypeError('Unexpected request type: {}'.format(type(request)))
+
+            if not request.uuid:
+                request.uuid = uuid.uuid4().hex
+            request.event = asc.Event()
+            future = OscFutureResult(uuid)
+            future.callback = self.done_cb
+            future.event = request.event
+            request.future = future
+            self._waiting_reqs[request.uuid] = request
+            yield coro.send(request)
         except:
             raise
 
-    def from_machine(self):
+    def from_machine(self, coro=None):
         while not self.running.is_set():
             try:
-                recv_item = self.queue.get(block=True)
+                recv_item = yield coro.receive()
 
-                future = None
-                for i, f in enumerate(self._waiting_futures):
-                    if recv_item == f:
-                        future = f
-                        f_id = i
-                        break
-
-                if not future:
+                if recv_item.uuid not in self._waiting_reqs:
                     logging.error('Unable to find waiting future '
-                                  'for %s' % str(f))
+                                  'for %s' % str(recv_item.uuid))
                     continue
 
-                del self._waiting_futures[f_id]
+                areq = self._waiting_reqs.pop(recv_item.uuid)
 
                 if self._check_error(recv_item):
-                    future.set_result((recv_item, OscDriverError(str(recv_item))))
+                    areq.reply = recv_item
+                    areq.exception = OscDriverError(str(recv_item))
                 else:
-                    future.set_result(recv_item)
+                    areq.reply = recv_item
 
-                self.queue.task_done()
             except OscDriverTimeout as e:
                 logging.error('Timeout in %s: %s' % (self.__class__.__name__,
                                                      repr(e)))
@@ -131,7 +152,8 @@ class OscDriver(AbstractDriver):
     def done_cb(self, *args):
         pass
 
-    def wait_for_future(self, fut):
+    def wait_for_future(self, req):
+        fut = req.future
         if fut.event.wait(self.timeout):
             return fut.result
         raise OscDriverTimeout('Timeout while waiting for %s' % repr(fut))
@@ -160,9 +182,10 @@ class OscDriver(AbstractDriver):
         except OscDriverError as e:
             logging.error(e)
 
-    def _send(self, message, uid, *args, **kwargs):
+    def _send(self, coro=None):
         try:
-            m = self.message(message.path, uid, *message.args)
+            rq = yield coro.receive()
+            m = self.message(rq.path, rq.uid, *rq.args)
             m.receiver = self.target
             lo.send((m.receiver.hostname, m.receiver.port), m.message)
         except OSError as e:

@@ -4,6 +4,7 @@ import sys
 import time
 import logging
 
+import asyncoro as asc
 from threading import Event, Thread
 
 from .abstract_machine import AbstractMachine
@@ -15,7 +16,7 @@ from .machinemodes import MasterMachineMode
 from .machinemodes import SlaveMachineMode
 
 from ..drivers import Driver
-from ..drivers import AbstractDriverError
+from ..drivers import AbstractDriverError, AbstractTimeoutError
 
 from .slave import Slave, SlaveMachine
 from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
@@ -57,7 +58,11 @@ class Machine(AbstractMachine):
         self.unbuffered_commands = None
 
         self.slaves = []
+        self.slaves_channel = asc.Channel('slaves')
+        self.slave_values_set = set()
+
         self.master = None
+
         self.operating_mode = None
         self._machine_keys = None
 
@@ -66,10 +71,10 @@ class Machine(AbstractMachine):
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-
         self._last_command_time = time.time()
         self._running_event = Event()
         self._timeout_event = Event()
+        self._master_running_event = Event()
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -119,7 +124,7 @@ class Machine(AbstractMachine):
         logging.info('Loading {} operating mode'.format(m))
 
         if m == 'master':
-            self.load_slaves()
+            self.init_slaves()
         if m == 'slave':
             master = self.config.get('machine', 'master')
             self.set_operating_mode(m, master)
@@ -153,9 +158,6 @@ class Machine(AbstractMachine):
         if self.config.get('machine', 'force_serialnumber', fallback=False):
             return self.config.get('machine', 'force_serialnumber')
 
-        if not self.cape_infos:
-            return
-
         sn = self.cape_infos['serialnumber'] if self.cape_infos \
             else '000000000000'
 
@@ -180,7 +182,7 @@ class Machine(AbstractMachine):
         else:
             return self.ip_address
 
-    def search_slaves(self):
+    def load_slaves_from_config(self):
         slaves_cf = self.config['slaves']
         slaves = []
 
@@ -200,8 +202,7 @@ class Machine(AbstractMachine):
                         slave_sn))
 
                 s = Slave(slave_sn, slave_ip, slave_dv, slave_md, slave_cf)
-                logging.info('Found {2} slave at {1} '
-                             'with S/N {0}'.format(*s))
+                logging.info('Found {2} slave at {1} with S/N {0}'.format(*s))
                 slaves.append(s)
 
         if not slaves:
@@ -227,10 +228,10 @@ class Machine(AbstractMachine):
             raise MachineError('Unexpected result while pinging {!s}'.format(slave))
 
     @retry(MachineError, 5, 5, 2)
-    def load_slaves(self):
+    def init_slaves(self):
         if not self.slaves:
-            if not self.search_slaves():
-                logging.info('No slaves found')
+            if not self.load_slaves_from_config():
+                logging.info('No slaves found in config')
                 return
 
         for s in self.slaves:
@@ -311,6 +312,8 @@ class Machine(AbstractMachine):
 
     def init_slave(self, slave_machine):
         try:
+            def _slave_coro(machine=slave_machine, coro=None):
+                yield coro.send(slave_machine)
             slave_machine.init_driver()
             slave_machine.start()
         except SlaveMachineError as e:
@@ -385,8 +388,7 @@ class Machine(AbstractMachine):
             if not self.slaves:
                 raise MachineError('No slaves found')
 
-            for s in self.slaves:
-                s.enslave()
+            self.init_master_mode()
 
             self._machine_keys = MasterMachineMode(self)
             self.operating_mode = mode
@@ -397,13 +399,25 @@ class Machine(AbstractMachine):
             if not self.master_port:
                 raise MachineError('No port specified for master')
 
-            self._machine_keys = SlaveMachineMode(self)
             self.operating_mode = mode
+            self._machine_keys = SlaveMachineMode(self)
 
-            self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
-            self._timeout_thread = Thread(target=self._timeout_watcher)
-            self._timeout_thread.daemon = True
-            self._timeout_thread.start()
+            self.init_slave_mode()
+
+    def init_master_mode(self):
+        for s in self.slaves:
+            s.enslave()
+
+        self._master_running_event.clear()
+        self.master_refresh_interval = self.config.get('machine', 'refresh_interval', fallback=5)
+
+        self.slave_server = asc.Coro(self._send_values_to_slaves)
+
+    def init_slave_mode(self):
+        self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
+        self._timeout_thread = Thread(target=self._timeout_watcher)
+        self._timeout_thread.daemon = True
+        self._timeout_thread.start()
 
     def free(self):
         self.master = None
@@ -427,7 +441,7 @@ class Machine(AbstractMachine):
         return self._check_operating_mode('standalone', raise_exception=False)
 
     @property
-    def paramaters(self):
+    def parameters(self):
         p = {}
         p += self._profile_parameters
         if self.frontend:
@@ -518,3 +532,42 @@ class Machine(AbstractMachine):
                 logging.error('Timeout detected, disabling drive')
 
             self._running_event.wait(self._slave_timeout)
+
+    def _slaves_values_loop(self, coro=None):
+        while not self._running_event.is_set():
+            try:
+                recv_obj = self._slave_bridge.get(block=True, timeout=2)
+                if not isinstance(recv_obj, SlaveRequest):
+                    logging.error('Unsupported object in queue: {!s}'.format(recv_obj))
+                    continue
+
+                try:
+                    if recv_obj.getitem:
+                        res = self.driver[recv_obj.item]
+                    elif recv_obj.setitem:
+                        res = self.driver.__setitem__(recv_obj.item, *recv_obj.args)
+                    else:
+                        res = getattr(self.driver, recv_obj.attribute)(
+                            *recv_obj.args)
+                    recv_obj.callback(res)
+                except AttributeError:
+                    logging.exception('''Can't find %s in driver''' % recv_obj.attribute)
+                except SlaveMachineError as e:
+                    logging.error('Exception in {n} loop: {e}'.format(
+                        n=self.__class__.__name__, e=e))
+                except AbstractTimeoutError as e:
+                    logging.error('Timeout for {!s}'.format(self))
+                except Exception as e:
+                    logging.error('Uncatched exception in {n} loop: {e}'.format(
+                        n=self.__class__.__name__, e=e))
+                self.bridge.task_done()
+            except Empty:
+                pass
+
+    def _send_values_to_slaves(self, coro=None):
+        coro.set_daemon()
+
+        while not self._master_running_event.is_set():
+            for key in self.slave_values_set:
+                yield self.slaves_channel.send(key, self[key])
+                yield coro.suspend(self.master_refresh_interval)
