@@ -7,7 +7,6 @@ from collections import namedtuple
 from datetime import datetime
 import logging
 import functools
-import asyncoro as asc
 
 from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
@@ -44,48 +43,39 @@ class FatalSlaveMachineError(AbstractFatalMachineError):
 
 
 class SlaveRequest(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, attr, *args, **kwargs):
         self._args = ()
         self._attr = None
+        if 'getitem' in kwargs and kwargs['getitem']:
+            self._item = attr
+        elif 'setitem' in kwargs and kwargs['setitem']:
+            self._item = attr
+            self._args = args
+        else:
+            self._attr = attr
+            self._args = args
 
         self._kwargs = {
             'getitem': False,
             'setitem': False,
-            'block': False,
-            'event': True,
         }
         self._kwargs.update(kwargs)
         self._callback = None
 
+    def set_callback(self, cb):
+        self._callback = cb
+
     @property
     def attribute(self):
-        if not self.getitem and not self.setitem:
-            return self._args[0]
+        return self._attr
 
     @property
     def item(self):
-        if self.getitem or self.setitem:
-            return self._args[0]
-
-    @item.setter
-    def _set_item(self, value):
-        if self.getitem or self.setitem:
-            self._args[0] = value
-        else:
-            raise KeyError("SlaveRequest doesn't have item.")
+        return self._item
 
     @property
     def args(self):
-        if self.getitem or self.setitem:
-            return self._args[1:]
         return self._args
-
-    @args.setter
-    def _set_args(self, value):
-        if self.getitem or self.setitem:
-            self._args[1:] = tuple(value)
-        else:
-            self._args = tuple(value)
 
     @property
     def kwargs(self):
@@ -95,18 +85,12 @@ class SlaveRequest(object):
     def callback(self):
         return self._callback
 
-    @callback.setter
-    def _set_callback(self, cb):
-        self._callback = cb
-
     def __getattr__(self, name):
         return self._kwargs[name]
 
-    def __setattr__(self, name, value):
-        self._kwargs[name] = value
-
     def __repr__(self):
-        return 'RQ {} {} {}'.format(self.attribute, ' '.join(self.args), self.callback)
+        return '{} {} {} {}'.format('RQ', self.attribute,
+                                    ' '.join(self.args), self.callback)
 
 
 class SlaveMachine(AbstractMachine):
@@ -142,15 +126,15 @@ class SlaveMachine(AbstractMachine):
 
         self.driver_config = {
             'target_address': self.slave.address,
-            'target_port': int(self.config.get('reply_port', fallback=6969)),
-            'timeout': float(self.config.get('slave_timeout', fallback=.5)),
+            'target_port': int(self.config.get('reply_port', 6969)),
+            'timeout': float(self.config.get('slave_timeout', .5)),
         }
 
         self.running_ev = Event()
         self.newdata_ev = Event()
 
-        self.timeout = float(self.config.get('slave_timeout', fallback=.5))
-        self.refresh_interval = float(self.config.get('refresh_interval', fallback=0.5))
+        self.timeout = float(self.config.get('slave_timeout', .5))
+        self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
 
         self.bridge = Queue()
 
@@ -183,9 +167,6 @@ class SlaveMachine(AbstractMachine):
         logging.debug("%s driver loaded" % drv)
         return drv
 
-    def init_communication(self):
-        asc.Coro(self.loop)
-
     def start(self, loop=False):
         if not loop:
             self._thread = Thread(target=self.loop)
@@ -209,12 +190,10 @@ class SlaveMachine(AbstractMachine):
         self._thread.join()
         self.driver.exit()
 
-    def loop(self, coro=None):
-        coro.set_daemon()
-
+    def loop(self):
         while not self.running_ev.is_set():
             try:
-                recv_item = yield coro.receive()
+                recv_item = self.bridge.get(block=True, timeout=2)
                 if not isinstance(recv_item, SlaveRequest):
                     logging.error('Unsupported object in queue: %s' % repr(recv_item))
                     continue
@@ -238,6 +217,7 @@ class SlaveMachine(AbstractMachine):
                 except Exception as e:
                     logging.error('Uncatched exception in {n} loop: {e}'.format(
                         n=self.__class__.__name__, e=e))
+                self.bridge.task_done()
             except Empty:
                 pass
 
@@ -278,12 +258,16 @@ class SlaveMachine(AbstractMachine):
 
             self.running_ev.wait(self.refresh_interval)
 
-    def request_from_remote(self, coro=None):
-        rq = yield coro.receive()
-        if not isinstance(rq, SlaveRequest):
-            raise TypeError('Wrong request type (not SlaveRequest)')
+    def request_from_remote(self, callback, attribute, *args, **kwargs):
+        event = kwargs.pop('event', None)
+        rq = SlaveRequest(attribute, *args, **kwargs)
+        if event:
+            callback = functools.partial(callback, event=event)
 
-        yield coro.send(rq)
+        rq.set_callback(callback)
+
+        self.bridge.put(rq)
+        return rq
 
     def enslave(self):
         self.set_to_remote('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
@@ -325,19 +309,14 @@ class SlaveMachine(AbstractMachine):
             return self._get_dict[key]
         return rq
 
-    def set_to_remote(self, coro=None):
-        rq = yield coro.receive()
-        if not isinstance(rq, SlaveRequest):
-            raise TypeError('Wrong request type (not SlaveRequest)')
-        ev = asc.Event() if rq.block is True else None
+    def set_to_remote(self, key, *args, **kwargs):
+        ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
 
-        rq.setitem = True
-        rq.callback = self._set_cb
-        yield coro.send(rq)
+        rq = self.request_from_remote(self._set_cb, key, *args, setitem=True, event=ev)
 
-        if ev is not None:
-            yield ev.wait(self.timeout)
-            yield self._set_dict[rq.item]
+        if ev is not None and ev.wait(self.timeout):
+            return self._set_dict[key]
+        return rq
 
     def set_control_mode(self, mode):
         if mode not in CONTROL_MODES.keys():
@@ -345,7 +324,7 @@ class SlaveMachine(AbstractMachine):
 
         return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
-    def _send_if_latest(self, dest, source=None, coro=None):
+    def _send_if_latest(self, dest, source=None):
         source = source if source is not None else dest
         lvalue = self.last_values.get(dest, None)
 
@@ -364,11 +343,13 @@ class SlaveMachine(AbstractMachine):
         if value is None:
             raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
 
-        if lvalue and value == lvalue:
-            return
-
-        self.last_values[dest] = value
-        yield coro.send((dest, value))
+        if lvalue:
+            if value != lvalue:
+                self.set_to_remote(dest, value)
+                self.last_values[dest] = value
+        else:
+            self.set_to_remote(dest, value)
+            self.last_values[dest] = value
 
     def _ping_cb(self, start_time, data, event=None):
         rtn = self._default_cb(data, event)
