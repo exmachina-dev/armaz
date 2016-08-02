@@ -15,11 +15,12 @@ Bitfield CommandNetData
     clear_errors As 2 To 2
     reset_command As 3 To 3
     control_mode  As 4 To 6
-    move_mode As 7 To 7
-    go_command As 8 To 8
-    set_home As 9 To 9
-    go_home As 10 To 10
-    stop_command As 11 To 11
+    position_mode As 7 To 7
+    move_mode As 8 To 8
+    go_command As 9 To 9
+    set_home As 10 To 10
+    go_home As 11 To 11
+    stop_command As 12 To 12
 End Bitfield
 
 Const _bus = _busETHERNET
@@ -53,6 +54,7 @@ End If
 
 Dim cmdTime As Time
 Dim cmdTimeoutStatus As Integer = 0
+Dim positionMode As Integer
 Dim moveMode As Integer
 Dim enTqMode As Integer = 0
 Dim enTq As Float = 0
@@ -209,26 +211,27 @@ Sub Status()
     NETFLOAT(15) = enTqKPVel
     NETFLOAT(16) = enTqKI
     NETFLOAT(17) = enTqKD
+
 End Sub
 
 Sub StatusSlow()
-    NETFLOAT(50) = TEMPERATURE(0)
-    NETINTEGER(51) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
+    NETFLOAT(62) = TEMPERATURE(0)
+    NETINTEGER(63) = MODBUSPARAMETER(_busETHERNET, _mpDROPPED_FRAMES)
 End Sub
 
 Sub NetdataValues()
-    NETFLOAT(20) = CURRENTMEAS(_axis, 5)
-    NETFLOAT(21) = VEL(_axis)
-    NETFLOAT(22) = POS(_axis)
-    NETFLOAT(23) = POSTARGET(_axis)
-    NETFLOAT(24) = POSREMAINING(_axis)
-    NETFLOAT(25) = ENCODER(0)
-    NETFLOAT(26) = ENCODERVEL(0)
-    NETFLOAT(27) = VELERROR(_axis)
-    NETFLOAT(28) = FOLERROR(_axis)
-    NETFLOAT(29) = CurrentToTorque(CURRENTMEAS(_axis, 5))
-    NETFLOAT(30) = CurrentRatio(CURRENTMEAS(_axis, 5))
-    NETFLOAT(31) = EFFORT(_axis)
+    NETFLOAT(50) = CURRENTMEAS(_axis, 5)
+    NETFLOAT(51) = VEL(_axis)
+    NETFLOAT(52) = POS(_axis)
+    NETFLOAT(53) = POSTARGET(_axis)
+    NETFLOAT(54) = POSREMAINING(_axis)
+    NETFLOAT(55) = ENCODER(0)
+    NETFLOAT(56) = ENCODERVEL(0)
+    NETFLOAT(57) = VELERROR(_axis)
+    NETFLOAT(58) = FOLERROR(_axis)
+    NETFLOAT(59) = CurrentToTorque(CURRENTMEAS(_axis, 5))
+    NETFLOAT(60) = CurrentRatio(CURRENTMEAS(_axis, 5))
+    NETFLOAT(61) = EFFORT(_axis)
 End Sub
 
 Sub CommandTimeout()
@@ -318,7 +321,16 @@ Event NETDATA1
         command.control_mode = 0
     End If
 
-    moveMode = command.move_mode '0: Absolute 1: Relative
+    positionMode = command.position_mode 'O: Absolute 1: Relative
+
+    If command.move_mode <> 0 Then '0: Accumulative 1: Replace
+    	'CONTOURMODE(_axis) = _ctmCONTOUR_OFF
+    	moveMode = 0
+  	Else
+    	'CONTOURMODE(_axis) = _ctmCONTOUR_ON
+    	moveMode = 1
+   	End If
+
 
     If command.go_command <> 0 AndAlso CONTROLMODE(_axis) = 3 Then
         GO(_axis)
@@ -409,7 +421,7 @@ Event NETDATA6
     Dim cmdPosRef As Float
     cmdPosRef = NETFLOAT(6)
     
-    If moveMode <> 0 Then
+    If positionMode <> 0 Then
         MOVER(_axis) = cmdPosRef
     Else
         MOVEA(_axis) = cmdPosRef
@@ -555,5 +567,8 @@ Startup
     MODBUSPARAMETER(_bus, _mpWORD_ORDER) = 0                         'Use big endian word order (default: little endian)
     MODBUSPARAMETER(_bus, _mpREGISTER_MAPPING) = _rmNET_DATA         'Use Net data for data exchange
     MODBUSPARAMETER(_bus, _mpENABLE) = 1                             'Finally enable Modbus TCP communication
+    
+    ENCODERPRESCALE(_axis) = 32
+    SCALEFACTOR(_axis) = 10000 / 60 / 32
     
 End Startup
