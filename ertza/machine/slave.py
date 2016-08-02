@@ -14,6 +14,8 @@ from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
 from ..drivers import Driver
 from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
 
+from ..async_utils import coroutine
+
 logging = logging.getLogger('ertza.machine.slave')
 
 Slave = namedtuple('Slave', ('serialnumber', 'address', 'driver', 'slave_mode', 'config'))
@@ -43,39 +45,51 @@ class FatalSlaveMachineError(AbstractFatalMachineError):
 
 
 class SlaveRequest(object):
-    def __init__(self, attr, *args, **kwargs):
-        self._args = ()
-        self._attr = None
-        if 'getitem' in kwargs and kwargs['getitem']:
-            self._item = attr
-        elif 'setitem' in kwargs and kwargs['setitem']:
-            self._item = attr
-            self._args = args
-        else:
-            self._attr = attr
-            self._args = args
+    def __init__(self, *args, **kwargs):
+        self._args = args
 
         self._kwargs = {
             'getitem': False,
             'setitem': False,
+            'ping': False,
+            'block': False,
+            'event': True,
+            'uuid': None,
+            'reply': None,
+            'exception': None,
         }
         self._kwargs.update(kwargs)
         self._callback = None
 
-    def set_callback(self, cb):
-        self._callback = cb
-
     @property
     def attribute(self):
-        return self._attr
+        if not self.getitem and not self.setitem:
+            return self._args[0]
 
     @property
     def item(self):
-        return self._item
+        if self.getitem or self.setitem:
+            return self._args[0]
+
+    @item.setter
+    def _set_item(self, value):
+        if self.getitem or self.setitem:
+            self._args[0] = value
+        else:
+            raise KeyError("SlaveRequest doesn't have item.")
 
     @property
     def args(self):
+        if self.getitem or self.setitem:
+            return self._args[1:]
         return self._args
+
+    @args.setter
+    def _set_args(self, value):
+        if self.getitem or self.setitem:
+            self._args[1:] = tuple(value)
+        else:
+            self._args = tuple(value)
 
     @property
     def kwargs(self):
@@ -85,12 +99,18 @@ class SlaveRequest(object):
     def callback(self):
         return self._callback
 
+    @callback.setter
+    def _set_callback(self, cb):
+        self._callback = cb
+
     def __getattr__(self, name):
         return self._kwargs[name]
 
+    def __setattr__(self, name, value):
+        self._kwargs[name] = value
+
     def __repr__(self):
-        return '{} {} {} {}'.format('RQ', self.attribute,
-                                    ' '.join(self.args), self.callback)
+        return 'RQ {} {} {}'.format(self.attribute, ' '.join(self.args), self.callback)
 
 
 class SlaveMachine(AbstractMachine):
@@ -166,6 +186,9 @@ class SlaveMachine(AbstractMachine):
 
         logging.debug("%s driver loaded" % drv)
         return drv
+
+    def init_pipe(self, outlet):
+        pass
 
     def start(self, loop=False):
         if not loop:
@@ -324,32 +347,65 @@ class SlaveMachine(AbstractMachine):
 
         return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
-    def _send_if_latest(self, dest, source=None):
-        source = source if source is not None else dest
-        lvalue = self.last_values.get(dest, None)
+    @coroutine
+    def filter_by_operating_mode(self, outlet_coro):
+        while not self.running_event.is_set():
+            request = (yield)
 
-        value = None
+            if not request.setitem:     # Only check if it is a setitem request
+                outlet_coro.send(request)
+                continue
 
-        try:
-            value = self.machine.machine_keys.get_value_for_slave(self, source)
-        except SlaveMachineError as e:
-            logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
-        except AbstractMachineError:
-            logging.warn('Machine is not ready')
-        except Exception as e:
-            logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
-            raise SlaveMachineError('{!s}'.format(e))
+            if request.dest not in self.SLAVE_MODES[self.slave.slave_mode]:
+                continue
 
-        if value is None:
-            raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
+            outlet_coro.send(request)
 
-        if lvalue:
-            if value != lvalue:
-                self.set_to_remote(dest, value)
+    @coroutine
+    def get_value_for_slave(self, outlet_coro):
+        while not self.running_event.is_set():
+            request = (yield)
+
+            if not request.setitem:     # Only check if it is a setitem request
+                outlet_coro.send(request)
+                continue
+
+            dest = request.kwargs.get('dest')
+            source = request.kwargs.get('source', dest)
+            try:
+                value = self.machine.machine_keys(self, source)
+                if value is None:
+                    raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
+
+                request.kwargs['value'] = value
+                outlet_coro.send(request)
+            except SlaveMachineError as e:
+                logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
+            except AbstractMachineError:
+                logging.warn('Machine is not ready')
+            except Exception as e:
+                logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
+                raise SlaveMachineError('{!s}'.format(e))
+
+    @coroutine
+    def send_if_latest(self, outlet_coro):
+        while not self.running_event.is_set():
+            request = (yield)
+
+            if not request.setitem:     # Only check if it is a setitem request
+                outlet_coro.send(request)
+                continue
+
+            dest = request.kwargs.get('dest')
+            lvalue = self.last_values.get(dest, None)
+
+            value = request.value
+
+            if lvalue is not None and value != lvalue:
+                outlet_coro.send(request)
                 self.last_values[dest] = value
-        else:
-            self.set_to_remote(dest, value)
-            self.last_values[dest] = value
+            else:
+                continue
 
     def _ping_cb(self, start_time, data, event=None):
         rtn = self._default_cb(data, event)
