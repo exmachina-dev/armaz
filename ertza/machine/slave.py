@@ -87,7 +87,7 @@ class SlaveRequest(object):
             return self._args[0]
 
     @item.setter
-    def _set_item(self, value):
+    def item(self, value):
         if self.getitem or self.setitem:
             self._args[0] = value
         else:
