@@ -160,6 +160,9 @@ class OscDriver(AbstractDriver):
         logging.error('Timeout for request {!s}'.format(request))
 
     def wait_for_reply(self, request):
+        if request.event is None:
+            raise OscDriverError('Cannot wait for reply, no event specified')
+
         if request.event.wait(self.timeout):
             return request.reply
         raise OscDriverTimeout('Timeout while waiting for {!s}'.format(request))
