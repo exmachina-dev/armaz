@@ -59,7 +59,7 @@ class Machine(AbstractMachine):
         self.synced_commands = None
         self.unbuffered_commands = None
 
-        self.slave_machines = []
+        self.slave_machines = {}
         self.master = None
         self.operating_mode = None
         self._machine_keys = None
@@ -111,8 +111,8 @@ class Machine(AbstractMachine):
         self._running_event.set()
 
         if self.master_mode:
-            for sm in self.slave_machines:
-                sm.exit()
+            for s in self.slave_machines.values():
+                s.exit()
 
         for n, c in self.comms.items():
             c.exit()
@@ -210,24 +210,23 @@ class Machine(AbstractMachine):
         if not slaves:
             return False
 
-        self.slave_machines = []
+        self.slave_machines = {}
         for s in slaves:
             sm = SlaveMachine(s)
-            self.slave_machines.append(sm)
+            self.slave_machines[(slave_sn, slave_ip)] = sm
 
-        self.slave_machines = tuple(self.slave_machines)
         return self.slave_machines
 
     @retry(SlaveMachineError, 20, 10, 1.5)
-    def slave_block_ping(self, slave):
-        p = slave.ping()
+    def slave_block_ping(self, sm):
+        p = sm.ping()
         if isinstance(p, SlaveRequest):
-            raise SlaveMachineError('Unable to ping slave {!r} !'.format(slave))
+            raise SlaveMachineError('Unable to ping slave {!r} !'.format(sm))
 
         if isinstance(p, float):
             return p
         else:
-            raise MachineError('Unexpected result while pinging {!s}'.format(slave))
+            raise MachineError('Unexpected result while pinging {!s}'.format(sm))
 
     @retry(MachineError, 5, 5, 2)
     def load_slaves(self):
@@ -236,7 +235,7 @@ class Machine(AbstractMachine):
                 logging.info('No slaves found')
                 return
 
-        for sm in self.slave_machines:
+        for sm in self.slave_machines.values():
             logging.debug('Initializing {2} slave at {1} ({0})'.format(*sm.slave))
             try:
                 self.init_slave(sm)
@@ -273,7 +272,7 @@ class Machine(AbstractMachine):
                 raise MachineError('Already existing {2} at {1} '
                                    'with S/N {0}'.format(*existing_s.slave))
 
-            self.slave_machines.append(sm)
+            self.slaves[(sm.serialnumber, sm.address)] = sm
             s = sm.slave
             logging.info('New {2} slave at {1} '
                          'with S/N {0}'.format(*s))
@@ -285,32 +284,29 @@ class Machine(AbstractMachine):
         self._check_operating_mode()
 
         try:
-            rm_slave = self.get_slave(sn)
-            if not rm_slave:
+            sm = self.get_slave(sn)
+            if not sm:
                 raise MachineError('Slave with S/N %s not found' % sn)
 
-            slave_id, slave = rm_slave
-
-            slave.unslave()
-            slave.exit()
-            slave_instance = self.slave_machines.pop(slave_id)
-            del slave_instance
+            sm.unslave()
+            sm.exit()
+            self.slave_machines.pop((sm.slave.serialnumber, sm.slave.address))
         except Exception as e:
             raise MachineError('Unable to remove slave: %s' % str(e))
 
     def get_slave(self, serialnumber=None, address=None):
-        if serialnumber:
-            for i, sm in enumerate(self.slave_machines):
-                if serialnumber == sm.slave.serialnumber:
-                    return i, sm
-            logging.error('Unable to find slave by S/N {}'.format(serialnumber))
-        elif address:
-            for i, sm in enumerate(self.slave_machines):
-                if address == sm.slave.address:
-                    return i, sm
-            logging.error('Unable to find slave by address {}'.format(address))
+        for sn, ad in self.slave_machines.keys():
+            if serialnumber == sn:
+                return self.slave_machines[(sn, ad)]
+            elif address == ad:
+                return self.slave_machines[(sn, ad)]
+        else:
+            if serialnumber is not None:
+                logging.error('Unable to find slave by S/N {}'.format(serialnumber))
+            else:
+                logging.error('Unable to find slave by address {}'.format(address))
 
-        return None, None
+        return None
 
     def init_slave(self, slave_machine):
         try:
@@ -378,8 +374,8 @@ class Machine(AbstractMachine):
             if not self.slave_machines:
                 raise MachineError('No slaves found')
 
-            for sm in self.slave_machines:
-                sm.enslave()
+            for s in self.slave_machines.values():
+                s.enslave()
 
             self._machine_keys = MasterMachineMode(self)
             self.operating_mode = mode

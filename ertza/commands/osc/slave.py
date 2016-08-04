@@ -159,7 +159,7 @@ class SlavePing(OscCommand, UnbufferedCommand):
 
 class SlaveResponse(OscCommand, UnbufferedCommand):
     def execute(self, c):
-        i, sl = self.machine.get_slave(address=c.sender.hostname)
+        sl = self.machine.get_slave(address=c.sender.hostname)
         if not sl:
             raise ValueError('No slave returned')
         sl.inlet.put(c)
