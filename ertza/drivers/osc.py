@@ -154,6 +154,8 @@ class OscDriver(AbstractDriver):
         pass
 
     def timeout_cb(self, request):
+        request.kwargs['exception'] = OscDriverTimeout('Timeout for {!s}'.format(request))
+        request.kwargs['timeout'] = True
         self.timeout_event.set()
         logging.error('Timeout for request {!s}'.format(request))
 
