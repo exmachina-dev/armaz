@@ -73,8 +73,8 @@ class OscDriver(AbstractDriver):
     def message(self, *args, **kwargs):
         return OscMessage(*args, receiver=self.target, **kwargs)
 
-    def ping(self):
-        rq = SlaveRequest(ping=True, block=True)
+    def ping(self, **kwargs):
+        rq = SlaveRequest(ping=True, block=True, **kwargs)
         reply = None
         try:
             reply = self.wait_for_reply(rq)
