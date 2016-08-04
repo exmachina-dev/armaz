@@ -53,7 +53,7 @@ class SlaveRequest(object):
             'setitem': False,
             'ping': False,
             'block': False,
-            'event': True,
+            'event': None,
             'uuid': None,
             'reply': None,
             'exception': None,
@@ -64,7 +64,10 @@ class SlaveRequest(object):
     @property
     def attribute(self):
         if not self.getitem and not self.setitem:
-            return self._args[0]
+            try:
+                return self._args[0]
+            except IndexError:
+                return
 
     @property
     def item(self):
@@ -85,7 +88,7 @@ class SlaveRequest(object):
         return self._args
 
     @args.setter
-    def _set_args(self, value):
+    def args(self, value):
         if self.getitem or self.setitem:
             self._args[1:] = tuple(value)
         else:
@@ -100,14 +103,14 @@ class SlaveRequest(object):
         return self._callback
 
     @callback.setter
-    def _set_callback(self, cb):
+    def callback(self, cb):
         self._callback = cb
 
     def __getattr__(self, name):
-        return self._kwargs[name]
-
-    def __setattr__(self, name, value):
-        self._kwargs[name] = value
+        try:
+            return self._kwargs[name]
+        except KeyError:
+            return False
 
     def __repr__(self):
         return 'RQ {} {} {}'.format(self.attribute, ' '.join(self.args), self.callback)
