@@ -44,15 +44,12 @@ class OscDriver(AbstractDriver):
         self._timeout_timers = {}
         self.timeout_event = Event()
 
-    def init_pipe(self):
-        self.queue = Queue(maxsize=45)
-
-        return self.queue
+    def init_pipes(self):
+        self.outlet = self.gen_future(self._send(), self.gen_timeout_timer())
+        self.inlet = self.inlet_pipe()
 
     def connect(self):
-        self._thread = Thread(target=self.from_machine)
-        self._thread.daemon = True
-        self._thread.start()
+        self.init_pipes()
 
     def register(self):
         try:
