@@ -180,7 +180,7 @@ class SlaveMachine(AbstractMachine):
             try:
                 driver = Driver().get_driver(drv)
                 self.driver = driver(self.driver_config, self.machine)
-                self.inlet = self.driver.init_queue()
+                self.inlet = self.driver.init_pipes()
             except KeyError:
                 logging.error("Unable to get %s driver, aborting." % drv)
                 return
