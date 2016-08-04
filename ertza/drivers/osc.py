@@ -140,7 +140,8 @@ class OscDriver(AbstractDriver):
                     continue
 
                 future.request.reply = message
-                if self._check_error(message):
+
+                if message.path.endswith('/error'):
                     future.request.exception = OscDriverError(str(message))
             except OscDriverTimeout as e:
                 logging.error('Timeout in %s: %s' % (self.__class__.__name__,
@@ -208,10 +209,6 @@ class OscDriver(AbstractDriver):
                 lo.send((m.receiver.hostname, m.receiver.port), m.message)
             except OSError as e:
                 raise OscDriverError(str(e))
-
-    def _check_error(self, command):
-        if command.path.endswith('/error'):
-            return True
 
 
 class OscFutureResult(object):
