@@ -61,6 +61,9 @@ class SlaveRequest(object):
         self._kwargs.update(kwargs)
         self._callback = None
 
+        if self.block is True:
+            self._kwargs['event'] = Event()
+
     @property
     def attribute(self):
         if not self.getitem and not self.setitem:
