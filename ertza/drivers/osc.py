@@ -201,8 +201,8 @@ class OscDriver(AbstractDriver):
                         path = '/slave/set'
                     elif request.ping:
                         path = '/slave/ping'
-
-                    raise ValueError('Unable to guess path from request')
+                    else:
+                        raise ValueError('Unable to guess path from request')
 
                 m = self.message(path, request.uid, *request.args)
                 m.receiver = self.target
