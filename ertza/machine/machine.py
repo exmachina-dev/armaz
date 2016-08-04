@@ -163,7 +163,7 @@ class Machine(AbstractMachine):
     @property
     def osc_address(self):
         try:
-            a = self.ip_address
+            a = self.ip_address.split('/')[0]
             p = self.config.getint('osc', 'listen_port')
             return '{addr}:{port}'.format(addr=a, port=p)
         except (IndexError, KeyError):
