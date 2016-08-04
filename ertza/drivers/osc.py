@@ -36,12 +36,12 @@ class OscDriver(AbstractDriver):
         self.machine = machine
 
         self.outlet, self.inlet = None, None
-        self.osc_pipe = None
-        self.running_event = Event()
         self.timeout = config.get('timeout', 0.25)
 
         self._waiting_futures = {}
         self._timeout_timers = {}
+
+        self.running_event = Event()
         self.timeout_event = Event()
 
     def init_pipes(self):

@@ -66,7 +66,6 @@ class Machine(AbstractMachine):
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-
         self._last_command_time = time.time()
         self._running_event = Event()
         self._timeout_event = Event()
@@ -310,9 +309,9 @@ class Machine(AbstractMachine):
             slave_machine.init_driver()
             slave_machine.start()
         except SlaveMachineError as e:
-            raise FatalMachineError('Couldn\'t initialize {2} slave at {1} '
-                                    'with S/N {0}: {exc}'
-                                    .format(*slave_machine.slave, exc=e))
+            raise FatalMachineError(
+                'Couldn\'t initialize {2} slave at {1} with S/N {0}: {exc}'
+                .format(*slave_machine.slave, exc=e))
 
     def set_operating_mode(self, *args):
         if len(args) >= 1:
