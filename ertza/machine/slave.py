@@ -293,7 +293,7 @@ class SlaveMachine(AbstractMachine):
         if event:
             callback = functools.partial(callback, event=event)
 
-        rq.set_callback(callback)
+        rq.callback = callback
 
         self.bridge.put(rq)
         return rq
@@ -323,7 +323,7 @@ class SlaveMachine(AbstractMachine):
 
         start_time = datetime.now()
         cb = functools.partial(self._ping_cb, start_time)
-        rq = self.request_from_remote(cb, 'ping', event=ev)
+        rq = self.driver.ping()
 
         if ev is not None and ev.wait(self.timeout):
             return self._latency
