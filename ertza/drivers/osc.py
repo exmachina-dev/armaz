@@ -4,6 +4,7 @@ import liblo as lo
 import logging
 from threading import Thread
 from threading import Event
+from threading import Timer
 from queue import Queue
 import uuid
 
@@ -40,6 +41,8 @@ class OscDriver(AbstractDriver):
         self.timeout = config.get('timeout', 0.25)
 
         self._waiting_futures = {}
+        self._timeout_timers = {}
+        self.timeout_event = Event()
 
     def init_pipe(self):
         self.queue = Queue(maxsize=45)
@@ -106,12 +109,33 @@ class OscDriver(AbstractDriver):
                 raise
 
     @coroutine
+    def gen_timeout_timer(self):
+        while not self.running_event.is_set():
+            request = (yield)
+            if not isinstance(request, SlaveRequest):
+                raise TypeError('Wrong request type: {!s}'.format(type(request)))
+
+            try:
+                if not request.uuid:
+                    request.uuid = uuid.uuid4().hex
+
+                timer = Timer(self.timeout, self.timeout_cb, args=(request,))
+                timer.start()
+                self._timeout_timers[request.uuid] = timer
+            except:
+                raise
+
+    @coroutine
     def inlet_pipe(self):
         while not self.running_event.is_set():
             try:
                 message = (yield)
 
                 future = self._waiting_futures.pop(message.uuid, None)
+                timer = self._timeout_timers.pop(message.uuid, None)
+
+                if timer:
+                    timer.cancel()
 
                 if future is None:
                     logging.error('Unable to find waiting future '
@@ -130,6 +154,10 @@ class OscDriver(AbstractDriver):
 
     def done_cb(self, *args):
         pass
+
+    def timeout_cb(self, request):
+        self.timeout_event.set()
+        logging.error('Timeout for request {!s}'.format(request))
 
     def wait_for_reply(self, request):
         if request.event.wait(self.timeout):
