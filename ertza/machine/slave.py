@@ -45,13 +45,20 @@ class FatalSlaveMachineError(AbstractFatalMachineError):
 
 
 class SlaveRequest(object):
+    _actions = ('ping', 'getitem', 'setitem')
+
     def __init__(self, *args, **kwargs):
         self._args = args
 
+        self._action = None
+
+        for action in SlaveRequest._actions:
+            if kwargs.pop(action, False):
+                if self.action is not None:
+                    raise ValueError('Action already defined for SlaveRequest')
+                self.action = action
+
         self._kwargs = {
-            'getitem': False,
-            'setitem': False,
-            'ping': False,
             'block': False,
             'event': None,
             'uuid': None,
@@ -61,16 +68,18 @@ class SlaveRequest(object):
         self._kwargs.update(kwargs)
         self._callback = None
 
-        if self.block is True:
+        if self.block is True and self._kwargs['event'] is None:
             self._kwargs['event'] = Event()
 
     @property
-    def attribute(self):
-        if not self.getitem and not self.setitem:
-            try:
-                return self._args[0]
-            except IndexError:
-                return
+    def action(self):
+        return self._action
+
+    @action.setter
+    def action(self, value):
+        if value not in SlaveRequest._actions:
+            raise ValueError('Unrecognized action')
+        self._action = value
 
     @property
     def item(self):
@@ -111,12 +120,18 @@ class SlaveRequest(object):
 
     def __getattr__(self, name):
         try:
+            if name in SlaveRequest._actions:
+                if name == self.action:
+                    return True
+                return False
+
             return self._kwargs[name]
         except KeyError:
             return False
 
     def __repr__(self):
-        return 'RQ {} {} {}'.format(self.attribute, ' '.join(self.args), self.callback)
+        return 'RQ {} {} {}'.format(
+            self.action, ' '.join(self._args), 'with callback' if self.callback is not None else '')
 
 
 class SlaveMachine(AbstractMachine):
