@@ -10,9 +10,9 @@ from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError
 from .abstract_machine import AbstractFatalMachineError
 
-from .machinemodes import StandaloneMachineMode
-from .machinemodes import MasterMachineMode
-from .machinemodes import SlaveMachineMode
+from .modes import StandaloneMachineMode
+from .modes import MasterMachineMode
+from .modes import SlaveMachineMode
 
 from ..drivers import Driver
 from ..drivers import AbstractDriverError
