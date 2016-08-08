@@ -135,7 +135,10 @@ class SlaveResponse(OscCommand, UnbufferedCommand):
         sl = self.machine.get_slave(address=c.sender.hostname)
         if not sl:
             raise ValueError('No slave returned')
-        sl.inlet.put(c)
+        if sl.inlet is None:
+            logging.error('Slave isn\'t started yet')
+        else:
+            sl.inlet.send(c)
 
 
 class SlaveRegisterResponse(SlaveResponse):
