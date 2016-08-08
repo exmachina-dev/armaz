@@ -18,6 +18,12 @@ class AbstractDriver(object):
     def execute(self):
         raise NotImplementedError
 
+    def get(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def set(self, *args, **kwargs):
+        raise NotImplementedError
+
     def __getitem__(self, key):
         raise NotImplementedError
 
