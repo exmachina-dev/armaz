@@ -2,27 +2,20 @@
 
 import liblo as lo
 import logging
-from threading import Thread
+#from threading import Thread
 from threading import Event
 from threading import Timer
-from queue import Queue
 import uuid
 
-from .abstract_driver import AbstractDriver, AbstractDriverError, AbstractTimeoutError
-from ..machine.slave import SlaveRequest
-from ..processors.osc import OscAddress, OscMessage
+from .utils import OscFutureResult
+from .errors import OscDriverError, OscDriverTimeout
+from ..abstract_driver import AbstractDriver, AbstractDriverError
+from ...machine.slave import SlaveRequest
+from ...processors.osc import OscAddress, OscMessage
 
-from ..async_utils import coroutine
+from ...async_utils import coroutine
 
 logging = logging.getLogger('ertza.driver.osc')
-
-
-class OscDriverError(AbstractDriverError):
-    pass
-
-
-class OscDriverTimeout(OscDriverError, AbstractTimeoutError):
-    pass
 
 
 class OscDriver(AbstractDriver):
@@ -43,6 +36,7 @@ class OscDriver(AbstractDriver):
 
         self.running_event = Event()
         self.timeout_event = Event()
+        self.fault_event = Event()
 
     def init_pipes(self):
         self.outlet = self.gen_future(self._send(), self.gen_timeout_timer())
@@ -167,30 +161,41 @@ class OscDriver(AbstractDriver):
             return request.reply
         raise OscDriverTimeout('Timeout while waiting for {!s}'.format(request))
 
-    def __getitem__(self, key):
-        rq = SlaveRequest(key, getitem=True)
-        self.outlet.send(rq)
+    def get(self, key, **kwargs):
+        block = kwargs.get('block', False)
         try:
-            ret = self.wait_for_reply(rq)
-            return ret
+            rq = SlaveRequest(key, getitem=True, **kwargs)
+            self.outlet.send(rq)
+
+            if block:
+                return self.wait_for_reply(rq)
+
         except OscDriverTimeout as e:
             logging.error(e)
-            raise e
+            raise
         except OscDriverError as e:
             logging.error(e)
+
+    def set(self, key, *args, **kwargs):
+        block = kwargs.get('block', False)
+        try:
+            rq = SlaveRequest(key, *args, setitem=True, **kwargs)
+            self.outlet.send(rq)
+
+            if block:
+                return self.wait_for_reply(rq)
+
+        except OscDriverTimeout as e:
+            logging.error(e)
+            raise
+        except OscDriverError as e:
+            logging.error(e)
+
+    def __getitem__(self, key):
+        return self.get(key, block=True)
 
     def __setitem__(self, key, *args):
-        rq = SlaveRequest(*args, setitem=True)
-        self.outlet.send(rq)
-
-        try:
-            ret = self.wait_for_reply(rq)
-            return ret
-        except OscDriverTimeout as e:
-            logging.error(e)
-            raise e
-        except OscDriverError as e:
-            logging.error(e)
+        return self.set(key, *args, block=True)
 
     @coroutine
     def _send(self):
@@ -214,24 +219,3 @@ class OscDriver(AbstractDriver):
                 lo.send((m.receiver.hostname, m.receiver.port), m.message)
             except OSError as e:
                 raise OscDriverError(str(e))
-
-
-class OscFutureResult(object):
-    def __init__(self, request):
-        self._request = request
-
-    def __eq__(self, other):
-        try:
-            if self.uuid == other.uuid:
-                return True
-            return False
-        except AttributeError as e:
-            raise TypeError('%s is not comparable with %s: %s' % (
-                self.__class__.__name__, other.__class__.__name__, str(e)))
-
-    @property
-    def uuid(self):
-        return self._request.uuid
-
-    def __repr__(self):
-        return 'WF {}'.format(self.uid)
