@@ -302,19 +302,8 @@ class SlaveMachine(AbstractMachine):
 
             self.running_ev.wait(self.refresh_interval)
 
-    def request_from_remote(self, callback, attribute, *args, **kwargs):
-        event = kwargs.pop('event', None)
-        rq = SlaveRequest(attribute, *args, **kwargs)
-        if event:
-            callback = functools.partial(callback, event=event)
-
-        rq.callback = callback
-
-        self.bridge.put(rq)
-        return rq
-
     def enslave(self):
-        self.set_to_remote('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
+        self.driver.set('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
 
     @property
     def infos(self):
@@ -331,42 +320,23 @@ class SlaveMachine(AbstractMachine):
         return self.slave.serialnumber
 
     def get_serialnumber(self):
-        return self.get_from_remote('machine:serialnumber', block=True)
+        return self.driver.get('machine:serialnumber', block=True)
 
     def ping(self, block=True):
-        ev = Event() if block is True else None
-
+        ev = Event()
         start_time = datetime.now()
         cb = functools.partial(self._ping_cb, start_time)
-        rq = self.driver.ping()
+        rq = self.driver.ping(callback=cb, event=ev)
 
         if ev is not None and ev.wait(self.timeout):
             return self._latency
-        return rq
-
-    def get_from_remote(self, key, **kwargs):
-        ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
-
-        rq = self.request_from_remote(self._get_cb, key, getitem=True, event=ev)
-
-        if ev is not None and ev.wait(self.timeout):
-            return self._get_dict[key]
-        return rq
-
-    def set_to_remote(self, key, *args, **kwargs):
-        ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
-
-        rq = self.request_from_remote(self._set_cb, key, *args, setitem=True, event=ev)
-
-        if ev is not None and ev.wait(self.timeout):
-            return self._set_dict[key]
         return rq
 
     def set_control_mode(self, mode):
         if mode not in CONTROL_MODES.keys():
             raise KeyError('Unexpected mode: {0}'.format(mode))
 
-        return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
+        return self.driver.set('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
     @coroutine
     def filter_by_operating_mode(self, outlet_coro):
