@@ -10,6 +10,11 @@ from ..netdata_maps import MicroflexE100Map
 logging = logging.getLogger('ertza.drivers.fake')
 
 
+RANDOM_VALUES = ('velocity', 'position', 'position_target', 'position_remaining',
+                 'torque', 'current_ratio', 'effort')
+MAIN_FACTOR = 4000
+
+
 class FakeDriverError(AbstractDriverError):
     def __init__(self, exception=None):
         self._parent_exception = exception
@@ -182,7 +187,7 @@ class FakeDriver(AbstractDriver):
             try:
                 return self.fake_data[key]
             except KeyError:
-                if key in ('velocity', 'current_ratio'):
-                    return random() * 100,
+                if key in RANDOM_VALUES:
+                    return random() * MAIN_FACTOR,
                 logging.debug('Unrecognized key: {}'.format(key))
                 return None
