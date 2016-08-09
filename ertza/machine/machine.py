@@ -63,6 +63,7 @@ class Machine(AbstractMachine):
         self.operating_mode = None
         self._machine_keys = None
 
+        # TODO: Not working yet
         self._profile_parameters = {
             'ip_address': _p(str, None, self.set_ip_address),
             'operating_mode': _p(str, None, self.set_operating_mode),

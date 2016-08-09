@@ -36,4 +36,7 @@ class AbstractDriverError(Exception):
 
 
 class AbstractTimeoutError(Exception):
+    """
+    Raised when a command times out.
+    """
     pass
