@@ -53,3 +53,12 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# TagList plugin
+tags
+
+# RopeProject
+.ropeproject/
+
+# Temp files
+tmp/
