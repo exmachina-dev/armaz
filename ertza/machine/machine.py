@@ -91,8 +91,9 @@ class Machine(AbstractMachine):
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
         else:
-            logging.error("Machine driver is not defined, aborting.")
-            return False
+            e = FatalMachineError("Machine driver is not defined, aborting.")
+            logging.error(e)
+            raise e
 
         logging.debug("%s driver loaded" % drv)
 
