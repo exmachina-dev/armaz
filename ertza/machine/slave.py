@@ -320,7 +320,7 @@ class SlaveMachine(AbstractMachine):
         return self.slave.serialnumber
 
     def get_serialnumber(self):
-        return self.driver.get('machine:serialnumber', block=True)
+        return self.get('machine:serialnumber', block=True)
 
     def ping(self, block=True):
         ev = Event()
@@ -336,7 +336,13 @@ class SlaveMachine(AbstractMachine):
         if mode not in CONTROL_MODES.keys():
             raise KeyError('Unexpected mode: {0}'.format(mode))
 
-        return self.driver.set('machine:command:control_mode', CONTROL_MODES[mode], block=True)
+        return self.set('machine:command:control_mode', CONTROL_MODES[mode], block=True)
+
+    def get(self, key, **kwargs):
+        return self.driver.get(key, **kwargs)
+
+    def set(self, key, *args, **kwargs):
+        return self.driver.set(key, *args, **kwargs)
 
     @coroutine
     def filter_by_operating_mode(self, outlet_coro):
