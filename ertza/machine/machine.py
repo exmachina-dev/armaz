@@ -124,7 +124,7 @@ class Machine(AbstractMachine):
             self.load_slaves()
         if m == 'slave':
             master = self.config.get('machine', 'master')
-            self.set_operating_mode(m, master)
+            self.set_operating_mode(m, master=master)
         else:
             self.set_operating_mode(m)
 
@@ -316,54 +316,44 @@ class Machine(AbstractMachine):
                 'Couldn\'t initialize {2} slave at {1} with S/N {0}: {exc}'
                 .format(*slave_machine.slave, exc=e))
 
-    def set_operating_mode(self, *args):
-        if len(args) >= 1:
-            mode = args[0]
-            if mode not in ('standalone', 'master', 'slave'):
-                raise MachineError('Unexpected mode: {}'.format(mode))
-
-            logging.info('Setting operating mode to {}'.format(mode))
-
-            if mode == 'master':
-                if self.master_mode:
-                    logging.info('Operating mode {} already active'.format(mode))
-                    return
-
-                self.activate_mode(mode)
-            elif mode == 'slave':
-                if self.slave_mode:
-                    raise MachineError('Operating mode {0} already active. '
-                                       'You must disable {0} mode before '
-                                       'reactiving it'.format(mode))
-                if len(args) >= 2:
-                    master = args[1]
-                else:
-                    raise MachineError('No master supplied')
-
-                if ':' in master:
-                    master, port = master.split(':')
-                else:
-                    port = None
-
-                self.master = master
-                self.master_port = port if port else \
-                    self.config.get('driver_Osc', 'port', fallback=6969)
-
-                self.activate_mode(mode)
-            elif mode == 'standalone':
-                if self.standalone_mode:
-                    logging.info('Operating mode {} already active'.format(mode))
-                    return
-
-                self.activate_mode(mode)
-        else:
+    def set_operating_mode(self, mode=None, **kwargs):
+        if mode is None:
             logging.info('Deactivating %s mode' % self.operating_mode)
 
             if self.operating_mode == 'slave':
                 self.free()
-
             elif self.operating_mode == 'master':
                 pass
+            return
+
+        if mode not in OPERATING_MODES:
+            raise MachineError('Unexpected mode: {}'.format(mode))
+
+        if self._check_operating_mode(mode, raise_exception=False):
+            logging.info('Operating mode {} already active'.format(mode))
+            return
+
+        logging.info('Setting operating mode to {}'.format(mode))
+
+        if mode == 'master':
+            self.activate_mode(mode)
+        elif mode == 'slave':
+            master = kwargs.get('master')
+            if master is None:
+                raise MachineError('No master supplied')
+
+            if ':' in master:
+                master, port = master.split(':')
+            else:
+                port = None
+
+            self.master = master
+            self.master_port = port if port else \
+                self.config.get('osc', 'reply_port', fallback=6969)
+
+            self.activate_mode(mode)
+        elif mode == 'standalone':
+            self.activate_mode(mode)
 
     def set_ip_address(self, new_ip):
         if '/' not in new_ip:
