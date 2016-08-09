@@ -26,6 +26,8 @@ from ..configparser import parameter as _p
 
 logging = logging.getLogger('ertza.machine')
 
+OPERATING_MODES = ('standalone', 'master', 'slave')
+
 
 class MachineError(AbstractMachineError):
     pass
@@ -370,7 +372,7 @@ class Machine(AbstractMachine):
         self.ethernet_interface.del_ip(self.ip_address)
 
     def activate_mode(self, mode):
-        if mode not in ('standalone', 'master', 'slave'):
+        if mode not in OPERATING_MODES:
             raise MachineError('Unexpected mode: {}'.format(mode))
 
         if mode == 'standalone':
