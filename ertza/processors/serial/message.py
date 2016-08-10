@@ -60,12 +60,12 @@ class SerialCommandString(object):
 
         if isinstance(value, str):
             value = value.encode()
-        elif isinstance(value, int):
-            value = bs.Bits(int=value, length=self.IntLength).tobytes()
-        elif isinstance(value, float):
-            value = bs.Bits(float=value, length=self.FloatLength).tobytes()
         elif isinstance(value, bool):
-            value = bs.Bits(uint=value, length=1).tobytes()
+            value = bs.Bits(uintle=value, length=8).tobytes()
+        elif isinstance(value, int):
+            value = bs.Bits(intle=value, length=self.IntLength).tobytes()
+        elif isinstance(value, float):
+            value = bs.Bits(floatle=value, length=self.FloatLength).tobytes()
 
         return value
 
