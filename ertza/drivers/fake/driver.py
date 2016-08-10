@@ -179,7 +179,7 @@ class FakeDriver(AbstractDriver):
                 return self.fake_data[key][sub]
             except KeyError:
                 if key == 'status':
-                    return False
+                    return (bool(round(random())),) * 8
                 else:
                     logging.debug('Unrecognized key: {}:{}'.format(key, sub))
                     return None
