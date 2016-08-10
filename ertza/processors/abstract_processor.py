@@ -35,7 +35,11 @@ class AbstractProcessor(object):
             if inspect.isclass(obj) and issubclass(obj, self.abstract_class):
                 try:
                     cmd = obj(self.machine)
-                    cmd.alias
+                    if not isinstance(cmd.alias, str):
+                        logging.error('Bad command alias, expected str, '
+                                      'found {}. Skipped command.'
+                                      .format(type(cmd.alias)))
+                        continue
                     self.commands[cmd.alias] = cmd
                 except NotImplementedError:
                     # This is an abstract class, skip it
