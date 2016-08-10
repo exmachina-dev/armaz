@@ -11,6 +11,8 @@ from queue import PriorityQueue
 from ..commands.abstract_commands import BufferedCommand
 from ..commands.abstract_commands import SyncedCommand
 
+logging = logging.getLogger('ertza.processors')
+
 
 class PrioritizedSyncQueue(PriorityQueue):
     pass
