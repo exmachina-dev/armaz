@@ -36,7 +36,7 @@ class MachineSet(SerialCommand):
             if nk in self._float_keys:
                 v = struct.unpack('f', v)[0]
             elif nk in self._uint_keys:
-                v = struct.unpack('H', v)[0]
+                v = struct.unpack('I', v)[0]
             elif nk in self._bool_keys:
                 v = struct.unpack('?', v)[0]
 
