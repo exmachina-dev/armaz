@@ -59,6 +59,7 @@ class Machine(AbstractMachine):
         self.unbuffered_commands = None
 
         self.slave_machines = {}
+        self.alive_machines = {}
         self.master = None
         self.operating_mode = None
         self._machine_keys = None
