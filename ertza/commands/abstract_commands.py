@@ -22,10 +22,10 @@ class AbstractCommand(object):
         """
         raise NotImplementedError
 
-    def check_args(self, c, comp_op='eq', v=1):
+    def check_args(self, c, comp_op='eq', v=1, reply=True):
         op = getattr(operator, comp_op)
         comp = op(len(c.args), v)
-        if not comp:
+        if not comp and reply:
             self.error(c, 'Invalid number of arguments for %s (%d %s %d: %s)' % (
                 self.alias, len(c.args), comp_op, v, ' '.join(map(str, c.args))))
 
