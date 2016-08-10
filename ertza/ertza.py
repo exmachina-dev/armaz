@@ -147,11 +147,13 @@ class Ertza(object):
         self.machine.unbuffered_commands = JoinableQueue(10)
         self.machine.sync_commands = JoinableQueue()
 
-        machine.processors['OSC'] = OscProcessor(self.machine)
-        machine.processors['Serial'] = SerialProcessor(self.machine)
+        if not machine.config.get('osc', 'disable', fallback=False):
+            machine.processors['OSC'] = OscProcessor(self.machine)
+            machine.comms['OSC'] = OscServer(self.machine)
 
-        machine.comms['OSC'] = OscServer(self.machine)
-        machine.comms['Serial'] = SerialServer(self.machine)
+        if not machine.config.get('serial', 'disable', fallback=False):
+            machine.processors['Serial'] = SerialProcessor(self.machine)
+            machine.comms['Serial'] = SerialServer(self.machine)
 
     def start(self):
         """ Start the processes """
