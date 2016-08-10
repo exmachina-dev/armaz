@@ -35,7 +35,7 @@ Ertza features:
 - Modular command structure allow to rapidly add a functionality in a protocol
 - OSC Protocol
 - Custom serial protocol for remote control
-- Cortrol loop with slaves in different modes
+- Control loop with slaves in different modes
 
 ## Things to do
 
