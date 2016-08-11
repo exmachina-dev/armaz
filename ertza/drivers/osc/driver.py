@@ -214,7 +214,7 @@ class OscDriver(AbstractDriver):
                     else:
                         raise ValueError('Unable to guess path from request')
 
-                m = self.message(path, request.uid, *request.args)
+                m = self.message(path, request.uuid, *request.args)
                 m.receiver = self.target
                 lo.send((m.receiver.hostname, m.receiver.port), m.message)
             except OSError as e:

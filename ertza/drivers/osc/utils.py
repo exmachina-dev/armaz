@@ -18,4 +18,4 @@ class OscFutureResult(object):
         return self._request.uuid
 
     def __repr__(self):
-        return 'WF {}'.format(self.uid)
+        return 'WF {}'.format(self.uuid)
