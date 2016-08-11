@@ -52,7 +52,8 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
 class SlaveSet(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
-        if not self.check_args(c, 'ge', 3):
+        if not self.check_args(c, 'ge', 3) and \
+                not self.check_args(c, 'le', 4):
             return
 
         try:
