@@ -72,9 +72,16 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
             return
 
         try:
-            if c.args[1] is 'machine:operating_mode':
-                self.machine.set_operating_mode(*c.args[2:])
-                self.ok(c, uid, dst, *args)
+            uuid, *args = c.args
+            key, *values = args
+            if key == 'machine:operating_mode':
+
+                if len(c.args[2:]) == 1:
+                    mode, master = c.args[2], None
+                else:
+                    mode, master = c.args[2:4]
+                self.machine.set_operating_mode(mode, master=master)
+                self.ok(c, uuid, *args)
                 return
             else:
                 if super().execute(c):
