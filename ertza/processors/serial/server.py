@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import time
 import serial as sr
 from threading import Thread
 
@@ -40,6 +41,7 @@ class SerialServer(sr.Serial):
         self.data_buffer = b''
 
         self.running = False
+        self._last_read_time = time.time()
 
     def run(self):
         try:
@@ -52,9 +54,12 @@ class SerialServer(sr.Serial):
             try:
                 # read all that is there or wait for one byte
                 data = self.read(self.inWaiting() or 1)
-                if data:
-                    self.data_buffer += (data)
-                    self.find_serial_packets()
+                if time.time() > (self._last_read_time + self.timeout):     # Empty buffer if data is older than timeout
+                    self.data_buffer = b''
+
+                self._last_read_time = time.time()
+                self.data_buffer += (data)
+                self.find_serial_packets()
 
             except sr.SerialException as e:
                 logging.error(e)
