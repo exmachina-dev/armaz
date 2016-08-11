@@ -48,7 +48,12 @@ Data-types (WIP)
 ----------------
 ExmEisla protocol does not provides a way to transmit data types along with data. Therefore, all devices must know what data type is expected.
 
-For simplification, the following data types are recognized.
+Numeric data is transmitted little-endian. However, bytes are encoded with MSBit first.
+
+i.e.
+    ``>>> 3 # is transmitted as b'\x03\x00\x00\x00'``
+
+For simplification, only the following data types are recognized.
 
 String
 ^^^^^^
@@ -58,7 +63,6 @@ Integer
 ^^^^^^^
 Integers are signed 32-bit integers.
 
-
 Float
 ^^^^^
 Floats are encoded using `IEEE-754`_ using 32 bits.
@@ -67,4 +71,4 @@ Floats are encoded using `IEEE-754`_ using 32 bits.
 
 Boolean
 ^^^^^^^
-Boolean are encoded using 2 bits.
+Boolean are encoded using 8 bits (= 1 byte).
