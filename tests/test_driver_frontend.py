@@ -42,22 +42,22 @@ class Test_DriverFrontend(object):
         with pytest.raises(KeyError):
             self.fe['nonexistingkey']
 
-        assert self.fe._output_value('nonexistingkey', 500) == 500
+        assert self.fe.output_value('nonexistingkey', 500) == 500
 
-        assert self.fe._output_value('velocity_ref', 400) == 4000   # divided by gearbox_ratio
+        assert self.fe.output_value('velocity_ref', 400) == 4000   # divided by gearbox_ratio
 
-        assert self.fe._output_value('postion_ref', 400) == 400
+        assert self.fe.output_value('postion_ref', 400) == 400
 
-        assert self.fe._output_value('torque_ref', 10) == 1000.0
+        assert self.fe.output_value('torque_ref', 10) == 1000.0
 
     def test_input(self):
-        assert self.fe._input_value('nonexistingkey', 500) == 500
+        assert self.fe.input_value('nonexistingkey', 500) == 500
 
-        assert self.fe._input_value('velocity_ref', 400) == 40      # multiplied by gearbox_ratio
+        assert self.fe.input_value('velocity_ref', 400) == 40      # multiplied by gearbox_ratio
 
-        assert self.fe._input_value('position_ref', 4000) == 400.0
+        assert self.fe.input_value('position_ref', 4000) == 400.0
 
-        assert self.fe._input_value('torque_ref', 100) == 1.0
+        assert self.fe.input_value('torque_ref', 100) == 1.0
 
     def test_coeff(self):
         keys = ('velocity_ref', 'position_ref', 'torque_ref', 'acceleration', 'deceleration')
@@ -65,14 +65,14 @@ class Test_DriverFrontend(object):
         ivalues = (10.0, 10.0, 1.0, 10, 10)
 
         for i, k in enumerate(keys):
-            assert self.fe._output_value(k, 10) == ovalues[i]
-            assert self.fe._input_value(k, 100) == ivalues[i]
+            assert self.fe.output_value(k, 10) == ovalues[i]
+            assert self.fe.input_value(k, 100) == ivalues[i]
 
         self.conf['motor']['application_coefficient'] = '2'
 
         for i, k in enumerate(keys):
-            assert self.fe._output_value(k, 10) == ovalues[i] * 2
-            assert self.fe._input_value(k, 100) == ivalues[i] / 2
+            assert self.fe.output_value(k, 10) == ovalues[i] * 2
+            assert self.fe.input_value(k, 100) == ivalues[i] / 2
 
         self.conf['motor']['application_coefficient'] = '1.0'
 
@@ -84,14 +84,14 @@ class Test_DriverFrontend(object):
         self.conf['motor']['application_coefficient'] = '1.0'
 
         for i, k in enumerate(keys):
-            assert self.fe._output_value(k, 10) == ovalues[i]
-            assert self.fe._input_value(k, 100) == ivalues[i]
+            assert self.fe.output_value(k, 10) == ovalues[i]
+            assert self.fe.input_value(k, 100) == ivalues[i]
 
         self.conf['motor']['invert'] = 'true'
 
         for i, k in enumerate(keys):
-            assert self.fe._output_value(k, 10) == ovalues[i] * -1
-            assert self.fe._input_value(k, 100) == ivalues[i] * -1
+            assert self.fe.output_value(k, 10) == ovalues[i] * -1
+            assert self.fe.input_value(k, 100) == ivalues[i] * -1
 
         self.conf['motor']['invert'] = 'false'
 
@@ -105,7 +105,7 @@ class Test_DriverFrontend(object):
         self.conf['motor']['max_deceleration'] = 8000
 
         for i, k in enumerate(keys):
-            assert self.fe._output_value(k, 10000) == values[i]
+            assert self.fe.output_value(k, 10000) == values[i]
 
         keys = ('torque_rise_time', 'torque_fall_time')
         values = (80, 80)
@@ -114,4 +114,4 @@ class Test_DriverFrontend(object):
         self.conf['motor']['min_torque_fall_time'] = 80
 
         for i, k in enumerate(keys):
-            assert self.fe._output_value(k, 10) == values[i]
+            assert self.fe.output_value(k, 10) == values[i]
