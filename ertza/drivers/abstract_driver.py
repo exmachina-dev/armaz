@@ -30,6 +30,22 @@ class AbstractDriver(object):
     def __setitem__(self, key, value):
         raise NotImplementedError
 
+    def __repr__(self):
+        i = {
+            'name': self.__class__.__name__,
+            'target': None,
+        }
+        try:
+            i['target'] = self.target
+        except AttributeError:
+            try:
+                i['target'] = '{0.target_address!s}:{0.target_port}'.format(self)
+            except AttributeError:
+                pass
+        return '{name}: {target!s}'.format(**i)
+
+    __str__ = __repr__
+
 
 class AbstractDriverError(Exception):
     pass
