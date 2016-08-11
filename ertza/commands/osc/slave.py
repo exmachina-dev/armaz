@@ -13,10 +13,8 @@ class SlaveCommand(OscCommand):
     Ensure machine is in slave mode.
     """
 
-    def execute(self, c):
-        if not self.machine.slave_mode:
-            uid, *args = c.args
-            self.error(c, uid, 'Slave mode not activated')
+    def check_slave_mode(self, c, reply=True):
+        if self.machine.slave_mode:
             return True
 
         if reply:
@@ -45,19 +43,20 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
     """
 
     def execute(self, c):
-        if c.args[1] not in ('machine:operating_mode', 'machine:serialnumber'):
-            if super().execute(c):
-                return
+        uuid, *args = c.args
+        if args[0] not in ('machine:operating_mode', 'machine:serialnumber') \
+                and not self.check_slave_mode(c):
+            return
 
         if not self.check_args(c, 'eq', 1):
             return
 
         try:
-            uid, dst = c.args
-            self.ok(c, uid, dst, self.machine[dst])
+            dst = args[0]
+            self.ok(c, uuid, dst, self.machine[dst])
         except Exception as e:
             logging.error(repr(e))
-            self.error(c, uid, dst, repr(e))
+            self.error(c, uuid, dst, repr(e))
 
     @property
     def alias(self):
@@ -84,20 +83,20 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
                 self.ok(c, uuid, *args)
                 return
             else:
-                if super().execute(c):
+                if not self.check_slave_mode(c):
                     return
 
-            uid, dst, *args = c.args
+            uuid, dst, *args = c.args
 
             if len(args) == 1:
                 self.machine[dst] = args[0]
             else:
                 self.machine[dst] = args
 
-            self.ok(c, uid, dst, *args)
+            self.ok(c, uuid, dst, *args)
         except Exception as e:
             logging.error(repr(e))
-            self.error(c, uid, dst, *(list(args) + [repr(e),]))
+            self.error(c, uuid, dst, *(list(args) + [repr(e),]))
 
     @property
     def alias(self):
@@ -112,10 +111,10 @@ class SlaveRegister(SlaveCommand, UnbufferedCommand):
 
         try:
             self.machine.set_operating_mode('slave')
-            uid = c.args[0]
-            self.ok(c, uid)
+            uuid = c.args[0]
+            self.ok(c, uuid)
         except Exception as e:
-            self.error(c, uid, e)
+            self.error(c, uuid, e)
 
     @property
     def alias(self):
@@ -125,14 +124,15 @@ class SlaveRegister(SlaveCommand, UnbufferedCommand):
 class SlaveFree(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
-        super().execute(c)
+        if not self.check_slave_mode(c, reply=False):
+            self.error(c, uuid, 'Cannot free slave: Slave mode not activated')
 
         try:
             self.machine.set_operating_mode()
-            uid = c.args[0]
-            self.ok(c, uid)
+            uuid = c.args[0]
+            self.ok(c, uuid)
         except Exception as e:
-            self.error(c, uid, e)
+            self.error(c, uuid, e)
 
     @property
     def alias(self):
