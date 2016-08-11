@@ -94,7 +94,7 @@ class Test_SerialCommand(object):
         assert len(c) == 28
 
         c = self.cmd.send('test', 1, 2, 3)
-        assert c.tobytes == b'ExmEisla\x00\x2bYYWWPPPPNNNNtest:\x00\x00\x00\x01:\x00\x00\x00\x02:\x00\x00\x00\x03\r\n'
+        assert c.tobytes == b'ExmEisla\x00\x2bYYWWPPPPNNNNtest:\x01\x00\x00\x00:\x02\x00\x00\x00:\x03\x00\x00\x00\r\n'
         assert len(c) == 43
 
         c = self.cmd.send('test', 'string')
@@ -102,13 +102,13 @@ class Test_SerialCommand(object):
         assert len(c) == 35
 
         c = self.cmd.send('test', 0.1)
-        assert c.tobytes == b'ExmEisla\x00\x21YYWWPPPPNNNNtest:=\xcc\xcc\xcd\r\n'
+        assert c.tobytes == b'ExmEisla\x00\x21YYWWPPPPNNNNtest:\xcd\xcc\xcc=\r\n'
         assert len(c) == 33
 
         c = self.cmd.send('test', True)
-        assert c.tobytes == b'ExmEisla\x00!YYWWPPPPNNNNtest:\x00\x00\x00\x01\r\n'
-        assert len(c) == 33
+        assert c.tobytes == b'ExmEisla\x00\x1eYYWWPPPPNNNNtest:\x01\r\n'
+        assert len(c) == 30
 
         c = self.cmd.send('test', False)
-        assert c.tobytes == b'ExmEisla\x00!YYWWPPPPNNNNtest:\x00\x00\x00\x00\r\n'
-        assert len(c) == 33
+        assert c.tobytes == b'ExmEisla\x00\x1eYYWWPPPPNNNNtest:\x00\r\n'
+        assert len(c) == 30
