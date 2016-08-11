@@ -13,7 +13,7 @@ class EthernetInterface(object):
     def update_table(self):
         c = ['ip', 'addr', 'show', 'dev', self.interface]
 
-        output = subprocess.check_output(c)
+        output = subprocess.check_output(c, stderr=subprocess.DEVNULL)
         r = [l.lstrip() for l in output.splitlines()]
 
         self._ips = []
@@ -29,7 +29,7 @@ class EthernetInterface(object):
 
         c = ['ip', 'addr', 'add', ip, 'dev', self.interface]
         try:
-            subprocess.check_call(c)
+            subprocess.check_call(c, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             raise e
         finally:
@@ -40,7 +40,7 @@ class EthernetInterface(object):
 
         c = ['ip', 'addr', 'delete', ip, 'dev', self.interface]
         try:
-            subprocess.check_call(c)
+            subprocess.check_call(c, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             raise e
         finally:
@@ -62,11 +62,11 @@ class EthernetInterface(object):
 
     def link_up(self):
         c = ['ip', 'link', 'set', 'dev', self.interface, 'up']
-        subprocess.check_call(c)
+        subprocess.check_call(c, stderr=subprocess.DEVNULL)
 
     def link_down(self):
         c = ['ip', 'link', 'set', 'dev', self.interface, 'down']
-        subprocess.check_call(c)
+        subprocess.check_call(c, stderr=subprocess.DEVNULL)
 
     def _check_ip(self, ip):
         try:
