@@ -450,6 +450,28 @@ class Machine(AbstractMachine):
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
 
+    def _get_destination(self, key):
+        if key.startswith('drive:'):
+            return self.driver
+        elif key.startswith('machine:'):
+            return self
+
+        raise ValueError('Unable to find target %s' % key)
+
+    def _timeout_watcher(self):
+        self._running_event.clear()
+        while not self._running_event.is_set():
+            if self['machine:status:drive_enable'] is False:
+                self._running_event.wait(self._slave_timeout)
+                continue
+
+            if time.time() - self._last_command_time > self._slave_timeout:
+                self._timeout_event.set()
+                self['machine:command:enable'] = False
+                logging.error('Timeout detected, disabling drive')
+
+            self._running_event.wait(self._slave_timeout)
+
     def __getitem__(self, key):
         dst = self._get_destination(key)
         key = key.split(':', maxsplit=1)[1]
@@ -480,31 +502,3 @@ class Machine(AbstractMachine):
             self._last_command_time = time.time()
 
         self.machine_keys[key] = value
-
-    def _get_destination(self, key):
-        if key.startswith('drive:'):
-            return self.driver
-        elif key.startswith('machine:'):
-            return self
-
-        raise ValueError('Unable to find target %s' % key)
-
-    def getitem(self, key):
-        return getattr(self, key)
-
-    def setitem(self, key, value):
-        setattr(self, key, value)
-
-    def _timeout_watcher(self):
-        self._running_event.clear()
-        while not self._running_event.is_set():
-            if self['machine:status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
-                continue
-
-            if time.time() - self._last_command_time > self._slave_timeout:
-                self._timeout_event.set()
-                self['machine:command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
-
-            self._running_event.wait(self._slave_timeout)

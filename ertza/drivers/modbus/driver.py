@@ -82,6 +82,19 @@ class ModbusDriver(AbstractDriver):
         for key in self.frontend.DEFAULTS_KEYS:
             self[key] = self.frontend[key]
 
+    def _get_value(self, ndk, key):
+        nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
+
+        if 'r' not in md:
+            raise ReadOnlyError(key)
+
+        try:
+            res = self.back.read_netdata(nd.addr, nd.fmt)
+            return self.frontend.input_value(key, vt(res[st]))
+        except ModbusBackendError as e:
+            raise ModbusDriverError('No data returned from backend '
+                                    'for {}: {!s}'.format(key, e))
+
     def __getitem__(self, key):
         try:
             if len(key.split(':')) == 2:
@@ -159,19 +172,6 @@ class ModbusDriver(AbstractDriver):
             raise WriteOnlyError(key)
 
         return self.back.write_netdata(ndk.netdata.addr, data, ndk.netdata.fmt)
-
-    def _get_value(self, ndk, key):
-        nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
-
-        if 'r' not in md:
-            raise ReadOnlyError(key)
-
-        try:
-            res = self.back.read_netdata(nd.addr, nd.fmt)
-            return self.frontend.input_value(key, vt(res[st]))
-        except ModbusBackendError as e:
-            raise ModbusDriverError('No data returned from backend '
-                                    'for {}: {!s}'.format(key, e))
 
     def __repr__(self):
         return '{0.__class__.__name__}'.format(self)

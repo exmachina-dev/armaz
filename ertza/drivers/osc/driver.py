@@ -191,12 +191,6 @@ class OscDriver(AbstractDriver):
         except OscDriverError as e:
             logging.error(e)
 
-    def __getitem__(self, key):
-        return self.get(key, block=True)
-
-    def __setitem__(self, key, *args):
-        return self.set(key, *args, block=True)
-
     @coroutine
     def _send(self):
         while not self.running_event.is_set():
@@ -219,3 +213,9 @@ class OscDriver(AbstractDriver):
                 lo.send((m.receiver.hostname, m.receiver.port), m.message)
             except OSError as e:
                 raise OscDriverError(str(e))
+
+    def __getitem__(self, key):
+        return self.get(key, block=True)
+
+    def __setitem__(self, key, *args):
+        return self.set(key, *args, block=True)

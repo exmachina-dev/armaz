@@ -74,6 +74,46 @@ class FakeDriver(AbstractDriver):
             except KeyError as e:
                 logging.error('{!s}'.format(e))
 
+    def write_fake_data(self, key, data, sub=None):
+        if sub is not None:
+            try:
+                self.fake_data[key][sub] = data
+            except KeyError:
+                self.fake_data[key] = {sub: data, }
+        else:
+            self.fake_data[key] = data
+
+    def read_fake_data(self, key, sub=None):
+        if sub is not None:
+            try:
+                return self.fake_data[key][sub]
+            except KeyError:
+                if key == 'status':
+                    return (bool(round(random())),) * 8
+                else:
+                    logging.debug('Unrecognized key: {}:{}'.format(key, sub))
+                    return None
+        else:
+            try:
+                return self.fake_data[key]
+            except KeyError:
+                if key in RANDOM_VALUES:
+                    return random() * MAIN_FACTOR,
+                logging.debug('Unrecognized key: {}'.format(key))
+                return None
+
+    def _get_value(self, ndk, key, sub=None):
+        st, vt, md = ndk.start, ndk.vtype, ndk.mode
+
+        if 'r' not in md:
+            raise ReadOnlyError(key)
+
+        res = self.read_fake_data(key, sub=sub)
+        if not res:
+            return
+
+        return self.frontend.input_value(key, vt(res[st]))
+
     def __getitem__(self, key):
         try:
             if len(key.split(':')) == 2:
@@ -151,43 +191,3 @@ class FakeDriver(AbstractDriver):
             raise WriteOnlyError(key)
 
         return self.write_fake_data(seckey, data, sub=subkey)
-
-    def _get_value(self, ndk, key, sub=None):
-        st, vt, md = ndk.start, ndk.vtype, ndk.mode
-
-        if 'r' not in md:
-            raise ReadOnlyError(key)
-
-        res = self.read_fake_data(key, sub=sub)
-        if not res:
-            return
-
-        return self.frontend.input_value(key, vt(res[st]))
-
-    def write_fake_data(self, key, data, sub=None):
-        if sub is not None:
-            try:
-                self.fake_data[key][sub] = data
-            except KeyError:
-                self.fake_data[key] = {sub: data, }
-        else:
-            self.fake_data[key] = data
-
-    def read_fake_data(self, key, sub=None):
-        if sub is not None:
-            try:
-                return self.fake_data[key][sub]
-            except KeyError:
-                if key == 'status':
-                    return (bool(round(random())),) * 8
-                else:
-                    logging.debug('Unrecognized key: {}:{}'.format(key, sub))
-                    return None
-        else:
-            try:
-                return self.fake_data[key]
-            except KeyError:
-                if key in RANDOM_VALUES:
-                    return random() * MAIN_FACTOR,
-                logging.debug('Unrecognized key: {}'.format(key))
-                return None
