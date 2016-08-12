@@ -241,7 +241,7 @@ class Machine(AbstractMachine):
         self.slave_machines = {}
         for s in slaves:
             sm = SlaveMachine(s)
-            self.slave_machines[(slave_sn, slave_ip)] = sm
+            self.slave_machines[(s.serialnumber, s.address)] = sm
 
         return self.slave_machines
 
