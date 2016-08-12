@@ -151,6 +151,10 @@ class OscDriver(AbstractDriver):
         request.kwargs['timeout'] = True
         self.timeout_event.set()
         logging.error('Timeout for request {!s}'.format(request))
+        self._timeout_timers.pop(request.uuid, None)
+        orphan_future = self._waiting_futures.pop(request.uuid, None)
+        if orphan_future:
+            logging.error('Removed orphan future: {!s}'.format(orphan_future))
 
     def wait_for_reply(self, request):
         if request.event is None:
