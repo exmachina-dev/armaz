@@ -112,7 +112,11 @@ class MasterMachineMode(StandaloneMachineMode):
         if key is None:
             raise MachineModeException('Key cannot be None')
 
-        vl_mode, vl_value = self._slv_config['{}:{}'.format(sn, key)]
+        try:
+            vl_mode, vl_value = self._slv_config['{}:{}'.format(sn, key)]
+        except KeyError as e:
+            vl_mode, vl_value = 'forward', None
+            logging.debug('{!s}'.format(e))
 
         if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
             raise MachineModeException('Unrecognized mode {0} for {1}'.format(vl_mode, key))
