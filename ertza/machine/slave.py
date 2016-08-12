@@ -43,10 +43,11 @@ class FatalSlaveMachineError(AbstractFatalMachineError):
 
 
 class SlaveRequest(object):
+    __slots__ = ('_args', '_action', '_kwargs', '__dict__')
     _actions = ('ping', 'getitem', 'setitem')
 
     def __init__(self, *args, **kwargs):
-        self._args = args
+        self._args = list(args)
 
         self._action = None
 
@@ -62,9 +63,9 @@ class SlaveRequest(object):
             'uuid': None,
             'reply': None,
             'exception': None,
+            'callback': None,
         }
         self._kwargs.update(kwargs)
-        self._callback = None
 
         if self.block is True and self._kwargs['event'] is None:
             self._kwargs['event'] = Event()
@@ -82,27 +83,31 @@ class SlaveRequest(object):
     @property
     def item(self):
         if self.getitem or self.setitem:
-            return self._args[0]
+            try:
+                return self._args[0]
+            except IndexError:
+                return None
 
     @item.setter
     def item(self, value):
         if self.getitem or self.setitem:
-            self._args[0] = value
+            if len(self._args) < 1:
+                self._args.append(value)
+            else:
+                self._args[0] = value
         else:
             raise KeyError("SlaveRequest doesn't have item.")
 
     @property
     def args(self):
-        if self.getitem or self.setitem:
-            return self._args[1:]
         return self._args
 
     @args.setter
     def args(self, value):
         if self.getitem or self.setitem:
-            self._args[1:] = tuple(value)
+            self._args[1:] = list(value)
         else:
-            self._args = tuple(value)
+            self._args = list(value)
 
     @property
     def kwargs(self):
