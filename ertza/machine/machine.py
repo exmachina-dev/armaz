@@ -107,7 +107,6 @@ class Machine(AbstractMachine):
         logging.debug("%s driver loaded" % drv)
 
         self.driver.frontend.load_config(self.config, 'motor')
-        return drv
 
     def start(self):
         self.driver.connect()
