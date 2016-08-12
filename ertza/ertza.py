@@ -38,7 +38,7 @@ _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
 console_logger = lg.StreamHandler()
-console_formatter = lg.Formatter('%(asctime)s %(name)-36s '
+console_formatter = lg.Formatter('%(asctime)s %(name)-30s '
                                  '%(levelname)-8s %(message)s',
                                  datefmt='%Y%m%d %H:%M:%S')
 
