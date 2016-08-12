@@ -146,8 +146,8 @@ class SlaveRequest(object):
             return False
 
     def __repr__(self):
-        return 'RQ {} {} {}'.format(
-            self.action, ' '.join(map(str, self._args)),
+        return 'RQ {} {} {} {}'.format(
+            self.action, ' '.join(map(str, self._args)), self.uuid or '',
             'with callback' if self.callback is not None else '')
 
 
@@ -430,7 +430,6 @@ class SlaveMachine(AbstractMachine):
             raise SlaveMachineError('No data in {}'.format(rtn))
 
     def _default_cb(self, rq):
-        print('def_cb', rq)
         if rq.exception is not None:
             raise rq.exception
 

@@ -249,12 +249,12 @@ class Machine(AbstractMachine):
     def slave_block_ping(self, sm):
         p = sm.ping()
         if isinstance(p, SlaveRequest):
-            raise SlaveMachineError('Unable to ping slave {!r} !'.format(sm))
+            raise SlaveMachineError('Unable to ping slave: {!s} !'.format(sm))
 
         if isinstance(p, float):
             return p
         else:
-            raise MachineError('Unexpected result while pinging {!s}'.format(sm))
+            raise MachineError('Unexpected result while pinging: {!s}'.format(sm))
 
     @retry(AbstractMachineError, 5, 5, 2)
     def load_slaves(self):
@@ -268,12 +268,12 @@ class Machine(AbstractMachine):
             try:
                 self.init_slave(sm)
                 ping_time = self.slave_block_ping(sm)
-                logging.info('Slave at {2} took {0:.2} ms to respond'.format(
+                logging.info('Slave at {2} took {0:.2f} ms to respond'.format(
                     ping_time, *sm.slave))
             except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *sm.slave))
-                raise
+                raise e
 
             sn = sm.get('machine:serialnumber', block=True)
             if type(sn) == str and sm.serialnumber != sn:

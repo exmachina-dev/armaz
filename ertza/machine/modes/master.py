@@ -147,8 +147,10 @@ class MasterMachineMode(StandaloneMachineMode):
             nvalue = vl_value - value if value >= 0 else vl_value + value
 
         if nvalue is not None and value != nvalue:
-            logging.debug('Modified value {} to {} ({} {})'.format(
-                value, nvalue, vl_mode, vl_value))
+            logging.debug('Modified value for key {}: '
+                          '{} to {} ({} {})'
+                          .format(key, value,
+                                  nvalue, vl_mode, vl_value))
         return nvalue
 
     def get_guarded_value(self, key):
