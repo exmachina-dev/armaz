@@ -375,6 +375,9 @@ class Machine(AbstractMachine):
             else:
                 port = None
 
+            if '/' in master:
+                master = master.split('/')[0]
+
             self.master = master
             self.master_port = port if port else \
                 self.config.get('osc', 'reply_port', fallback=6969)
