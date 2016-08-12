@@ -140,14 +140,17 @@ class Machine(AbstractMachine):
         m = self.config.get('machine', 'operating_mode', fallback='standalone')
         logging.info('Loading {} operating mode'.format(m))
 
-        if m == 'master':
-            self.load_slaves()
+        try:
+            if m == 'master':
+                self.load_slaves()
 
-        if m == 'slave':
-            master = self.config.get('machine', 'master')
-            self.set_operating_mode(m, master=master)
-        else:
-            self.set_operating_mode(m)
+            if m == 'slave':
+                master = self.config.get('machine', 'master')
+                self.set_operating_mode(m, master=master)
+            else:
+                self.set_operating_mode(m)
+        except AbstractMachineError as e:
+            logging.error('Error while loading startup mode {}: {!s}'.format(m, e))
 
     def reply(self, command):
         if command.answer is not None:
