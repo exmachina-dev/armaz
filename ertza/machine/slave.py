@@ -344,6 +344,9 @@ class SlaveMachine(AbstractMachine):
                 logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
             except AbstractMachineError:
                 logging.warn('Machine is not ready')
+            except StopIteration:
+                self.running_event.set()
+                break
             except Exception as e:
                 logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
                 raise SlaveMachineError('{!s}'.format(e))
