@@ -28,7 +28,7 @@ class OscDriver(AbstractDriver):
         self.machine = machine
 
         self.outlet, self.inlet = None, None
-        self.timeout = config.get('timeout', 0.25)
+        self.timeout = config.get('timeout', 0.5)
 
         self._waiting_futures = {}
         self._timeout_timers = {}
