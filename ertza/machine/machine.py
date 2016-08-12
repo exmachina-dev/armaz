@@ -79,7 +79,7 @@ class Machine(AbstractMachine):
         self._slaves_running_event = Event()
         self._timeout_event = Event()
 
-        self.slave_refresh_interval = 1
+        self.slave_refresh_interval = None
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -367,6 +367,8 @@ class Machine(AbstractMachine):
         logging.info('Setting operating mode to {}'.format(mode))
 
         if mode == 'master':
+            self.slave_refresh_interval = float(self.config.get(
+                'slaves', 'refresh_interval', fallback=0.5))
             self.activate_mode(mode)
         elif mode == 'slave':
             master = kwargs.get('master')
