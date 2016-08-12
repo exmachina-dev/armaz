@@ -13,7 +13,8 @@ from multiprocessing import JoinableQueue
 import queue
 
 from .configparser import ConfigParser, ProfileError
-from .machine import Machine, MachineError
+from .machine import Machine
+from .machine.abstract_machine import AbstractMachineError
 
 from .processors import OscProcessor, SerialProcessor
 
@@ -179,7 +180,7 @@ class Ertza(object):
 
         try:
             self.machine.load_startup_mode()
-        except MachineError as e:
+        except AbstractMachineError as e:
             logger.error(str(e))
 
         for l in self.machine.leds:
