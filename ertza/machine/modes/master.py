@@ -10,9 +10,12 @@ logging = logging.getLogger('ertza.machine.modes.master')
 
 
 class SlavesConfig(object):
-    def __init__(self, config, slaves):
+    def __init__(self, config, slave_machines):
         self._cf = config
-        self._slaves = slaves
+        self.update_slave_configs(slave_machines)
+
+    def update_slave_configs(self, slave_machines):
+        self._slaves = [sm.slave for sm in slave_machines.values()]
 
     def __getitem__(self, key):
         try:
@@ -35,10 +38,7 @@ class SlavesConfig(object):
             raise KeyError('No config found for {}'.format(key.split(':', maxsplit=1)[0]))
 
     def keys(self):
-        slaves_sn = []
-        for s in self._slaves:
-            slaves_sn += (s.slave.serialnumber,)
-        return slaves_sn
+        return [s.serialnumber for s in self._slaves]
 
 
 class MasterMachineMode(StandaloneMachineMode):
