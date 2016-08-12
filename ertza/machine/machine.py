@@ -186,16 +186,21 @@ class Machine(AbstractMachine):
 
         for key, item in slaves_cf.items():
             if key.startswith('slave_serialnumber_'):
-                slave_id = int(key.split('_')[2])
-                slave_sn = item
-                slave_ip = slaves_cf['slave_address_%d' % slave_id]
-                slave_md = slaves_cf['slave_mode_%d' % slave_id]
-                slave_dv = slaves_cf.get('slave_driver_%d' % slave_id,
-                                         fallback='Osc').title()
+                try:
+                    slave_id = int(key.split('_')[2])
+                    slave_sn = item
+                    slave_ip = slaves_cf['slave_address_{}'.format(slave_id)]
+                    slave_md = slaves_cf['slave_mode_{}'.format(slave_id)]
+                    slave_dv = slaves_cf.get('slave_driver_{}'.format(slave_id),
+                                             fallback='Osc').title()
+                except KeyError as e:
+                    m = 'Missing required option for {}: {!s}'.format(item, e)
+                    logging.error(m)
+                    raise FatalMachineError(m)
 
                 slave_cf = {}
-                if self.config.has_section('slave_%s' % slave_sn):
-                    slave_cf = self.config['slave_%s' % slave_sn]
+                if self.config.has_section('slave_{}'.format(slave_sn)):
+                    slave_cf = self.config['slave_{}'.format(slave_sn)]
                     logging.info('Found config for slave with S/N {}'.format(
                         slave_sn))
 
