@@ -253,7 +253,7 @@ class Machine(AbstractMachine):
         else:
             raise MachineError('Unexpected result while pinging {!s}'.format(sm))
 
-    @retry(MachineError, 5, 5, 2)
+    @retry(AbstractMachineError, 5, 5, 2)
     def load_slaves(self):
         if not self.slave_machines:
             if not self.search_slaves():
