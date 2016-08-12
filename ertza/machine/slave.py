@@ -323,14 +323,18 @@ class SlaveMachine(AbstractMachine):
         return self.get('machine:serialnumber', block=True)
 
     def ping(self, block=True):
-        ev = Event()
-        start_time = datetime.now()
-        cb = functools.partial(self._ping_cb, start_time)
-        rq = self.driver.ping(callback=cb, event=ev)
-
-        if ev is not None and ev.wait(self.timeout):
+        try:
+            start_time = datetime.now()
+            ev = Event() if block else None
+            rq = self.driver.ping(block=block, event=ev)
+            if not rq.path.endswith('/ok'):
+                raise SlaveMachineError('Unexpected reply while pinging: {}'
+                                        .format(rq.path))
+            time_delta = datetime.now() - start_time
+            self._latency = time_delta.microseconds / 1000
             return self._latency
-        return rq
+        except AbstractTimeoutError as e:
+            raise SlaveMachineError('Timeout while pinging: {}!s'.format(e))
 
     def set_control_mode(self, mode):
         if mode not in CONTROL_MODES.keys():

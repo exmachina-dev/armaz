@@ -68,14 +68,13 @@ class OscDriver(AbstractDriver):
         return OscMessage(*args, receiver=self.target, **kwargs)
 
     def ping(self, **kwargs):
-        rq = SlaveRequest(ping=True, block=True, **kwargs)
-        reply = None
-        try:
-            reply = self.wait_for_reply(rq)
-            return reply
-        except OscDriverTimeout as e:
-            logging.error(e)
-            return reply, e
+        rq = SlaveRequest(ping=True, **kwargs)
+        self.outlet.send(rq)
+
+        if kwargs.get('block', True):
+            return self.wait_for_reply(rq)
+        else:
+            return rq
 
     @coroutine
     def gen_future(self, *outlet_coros):
