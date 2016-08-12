@@ -109,6 +109,9 @@ class MasterMachineMode(StandaloneMachineMode):
             logging.warn('No config registered for slave {!s}'.format(slave))
             return
 
+        if key is None:
+            raise MachineModeException('Key cannot be None')
+
         vl_mode, vl_value = self._slv_config['{}:{}'.format(sn, key)]
 
         if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
