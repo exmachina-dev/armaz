@@ -131,10 +131,11 @@ class OscDriver(AbstractDriver):
                                   'for {!s}'.format(message.uuid))
                     continue
 
-                future.request.reply = message
-
                 if message.path.endswith('/error'):
                     future.request.exception = OscDriverError(str(message))
+
+                future.request.reply = message
+
             except OscDriverTimeout as e:
                 logging.error('Timeout in %s: %s' % (self.__class__.__name__,
                                                      repr(e)))
