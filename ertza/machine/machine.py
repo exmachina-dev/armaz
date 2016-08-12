@@ -526,8 +526,8 @@ class Machine(AbstractMachine):
                         keys_to_send.append(key)
 
             for key in keys_to_send:
-                rq = SlaveRequest(dest=key.dest,
-                                  source=key.source, setitem=True)
+                rq = SlaveRequest(dest=key.dest, source=key.source,
+                                  setitem=True, broadcast_request=True)
                 try:
                     self.slaves_channel.send(rq)
                 except StopIteration:

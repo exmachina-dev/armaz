@@ -64,11 +64,20 @@ class SlaveRequest(object):
             'reply': None,
             'exception': None,
             'callback': None,
+            'broadcast_request': False,
+            'parent_request': None,
         }
         self._kwargs.update(kwargs)
 
         if self.block is True and self._kwargs['event'] is None:
             self._kwargs['event'] = Event()
+
+    def copy(self):
+        kw = self.kwargs
+        kw.pop('uuid', None)
+        kw[self.action] = True
+
+        return SlaveRequest(*self.args, **kw)
 
     @property
     def action(self):
@@ -221,9 +230,8 @@ class SlaveMachine(AbstractMachine):
 
     def init_pipes(self):
         self.driver.init_pipes()
-        self.outlet = self.filter_by_operating_mode(
-            self.get_value_for_slave(
-                self.send_if_latest(self.driver.outlet)))
+        self.outlet = self.make_request(self.filter_by_operating_mode(
+            self.get_value_for_slave(self.send_if_latest(self.driver.outlet))))
         self.inlet = self.driver.inlet
 
     def start(self, **kwargs):
@@ -300,6 +308,23 @@ class SlaveMachine(AbstractMachine):
 
     def set(self, key, *args, **kwargs):
         return self.driver.set(key, *args, **kwargs)
+
+    @coroutine
+    def make_request(self, outlet_coro):
+        while not self.running_event.is_set():
+            try:
+                request = (yield)
+
+                if request.broadcast_request:     # Copy request if it is broadcasted
+                    rq = request.copy()
+                    rq.parent_request = request
+                    outlet_coro.send(rq)
+                    continue
+
+                outlet_coro.send(request)
+            except StopIteration:
+                self.running_event.set()
+                break
 
     @coroutine
     def filter_by_operating_mode(self, outlet_coro):
