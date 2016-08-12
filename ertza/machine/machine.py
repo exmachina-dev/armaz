@@ -24,6 +24,8 @@ from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
+from ..async_utils import Channel
+
 logging = logging.getLogger('ertza.machine')
 
 OPERATING_MODES = ('standalone', 'master', 'slave')
@@ -59,6 +61,8 @@ class Machine(AbstractMachine):
         self.unbuffered_commands = None
 
         self.slave_machines = {}
+        self.slaves_channel = Channel('slave_machines')
+        self._slaves_thread = None
         self.alive_machines = {}
         self.master = None
         self.operating_mode = None
@@ -72,7 +76,10 @@ class Machine(AbstractMachine):
 
         self._last_command_time = time.time()
         self._running_event = Event()
+        self._slaves_running_event = Event()
         self._timeout_event = Event()
+
+        self.slave_refresh_interval = 1
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -107,6 +114,18 @@ class Machine(AbstractMachine):
 
         self.driver.send_default_values()
 
+    def start_slaves_loop(self):
+        if self._slaves_thread is not None:
+            self._slaves_running_event.set()
+            self._slaves_thread.join()
+            self._slaves_thread = None
+
+        self._slaves_running_event.clear()
+        self._slaves_thread = Thread(target=self._slaves_loop)
+        self._slaves_thread.daemon = True
+
+        self._slaves_thread.start()
+
     def exit(self):
         self.driver.exit()
         self._running_event.set()
@@ -124,6 +143,7 @@ class Machine(AbstractMachine):
 
         if m == 'master':
             self.load_slaves()
+
         if m == 'slave':
             master = self.config.get('machine', 'master')
             self.set_operating_mode(m, master=master)
@@ -256,6 +276,7 @@ class Machine(AbstractMachine):
 
             else:
                 sm.start()
+                self.slaves_channel.suscribe(sm.outlet)
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operating_mode()
@@ -381,6 +402,8 @@ class Machine(AbstractMachine):
 
             self._machine_keys = MasterMachineMode(self)
             self.operating_mode = mode
+
+            self.start_slaves_loop()
         elif mode == 'slave':
             if not self.master:
                 raise MachineError('No master specified')
@@ -472,6 +495,27 @@ class Machine(AbstractMachine):
                 logging.error('Timeout detected, disabling drive')
 
             self._running_event.wait(self._slave_timeout)
+
+    def _slaves_loop(self):
+        while not self._slaves_running_event.is_set():
+            if not self.slaves_channel:
+                logging.error('Missing channel for slaves')
+
+            keys_to_send = []
+            for sm in self.slave_machines.values():
+                for key in sm.forward_keys:
+                    if key not in keys_to_send:
+                        keys_to_send.append(key)
+
+            for key in keys_to_send:
+                rq = SlaveRequest(dest=key.dest,
+                                  source=key.source, setitem=True)
+                try:
+                    self.slaves_channel.send(rq)
+                except StopIteration:
+                    pass
+
+            self._slaves_running_event.wait(self.slave_refresh_interval)
 
     def __getitem__(self, key):
         dst = self._get_destination(key)
