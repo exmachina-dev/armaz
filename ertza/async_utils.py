@@ -54,7 +54,10 @@ class Channel(object):
             coros = list(self.coros.values())
 
         for coro in coros:
-            coro.send(message)
+            try:
+                coro.send(message)
+            except StopIteration:
+                raise
 
     def close(self, end_message):
         pass

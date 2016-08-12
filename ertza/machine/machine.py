@@ -246,16 +246,16 @@ class Machine(AbstractMachine):
             except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
                               '{0}'.format(str(e), *sm.slave))
-                return
+                raise
 
-            sn = sm.get_from_remote('machine:serialnumber', block=True)
+            sn = sm.get('machine:serialnumber', block=True)
             if type(sn) == str and sm.serialnumber != sn:
                 infos = sm.slave + (sm.get_serialnumber(),)
                 raise MachineError('S/N don\'t match for {2} slave '
                                    'at {1} ({0} vs {4})'.format(*infos))
 
             else:
-                sm.start(loop=True)
+                sm.start()
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operating_mode()
@@ -275,6 +275,7 @@ class Machine(AbstractMachine):
 
             self.slaves[(sm.serialnumber, sm.address)] = sm
             s = sm.slave
+            self.slaves_channel.suscribe(sm.outlet)
             logging.info('New {2} slave at {1} '
                          'with S/N {0}'.format(*s))
             return s

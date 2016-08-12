@@ -2,7 +2,6 @@
 
 import liblo as lo
 import logging
-#from threading import Thread
 from threading import Event
 from threading import Timer
 import uuid
@@ -59,8 +58,8 @@ class OscDriver(AbstractDriver):
             logging.exception('Error while registering: %s' % str(e))
 
     def exit(self):
-        self['machine:command:stop'] = True
-        self['machine:command:enable'] = False
+        self.set('machine:command:stop', True, block=True)
+        self.set('machine:command:enable', False, block=True)
 
         self.running_event.set()
 

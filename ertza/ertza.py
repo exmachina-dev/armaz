@@ -131,12 +131,7 @@ class Ertza(object):
         except IndexError:
             logger.warn('No IP address found')
 
-        drv = machine.init_driver()
-        if drv:
-            logger.info("Loaded %s driver for machine" % drv)
-        else:
-            logger.error("Unable to find driver, exiting.")
-            sys.exit(1)
+        machine.init_driver()
 
         self._config_thermistors()
         self._config_fans()
