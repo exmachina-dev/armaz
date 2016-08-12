@@ -435,6 +435,12 @@ class Machine(AbstractMachine):
         self.activate_mode('standalone')
         self._running_event.set()
 
+    def getitem(self, key):
+        return getattr(self, key)
+
+    def setitem(self, key, value):
+        setattr(self, key, value)
+
     @property
     def slave_mode(self):
         return self._check_operating_mode('slave', raise_exception=False)
