@@ -114,12 +114,16 @@ class SlaveRequest(object):
         return self._kwargs
 
     @property
-    def callback(self):
-        return self._callback
+    def reply(self):
+        return self._kwargs['reply']
 
-    @callback.setter
-    def callback(self, cb):
-        self._callback = cb
+    @reply.setter
+    def reply(self, value):
+        self._kwargs['reply'] = value
+        if self.callback is not None:
+            self.callback(self)
+        if self.event is not None:
+            self.event.set()
 
     def __getattr__(self, name):
         try:
@@ -134,7 +138,8 @@ class SlaveRequest(object):
 
     def __repr__(self):
         return 'RQ {} {} {}'.format(
-            self.action, ' '.join(self._args), 'with callback' if self.callback is not None else '')
+            self.action, ' '.join(map(str, self._args)),
+            'with callback' if self.callback is not None else '')
 
 
 class SlaveMachine(AbstractMachine):
