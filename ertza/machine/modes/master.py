@@ -144,7 +144,7 @@ class MasterMachineMode(StandaloneMachineMode):
             nvalue = vl_value - value if value >= 0 else vl_value + value
 
         if nvalue is not None and value != nvalue:
-            logging.debug('Modfied value {} to {} ({} {})'.format(
+            logging.debug('Modified value {} to {} ({} {})'.format(
                 value, nvalue, vl_mode, vl_value))
         return nvalue
 
