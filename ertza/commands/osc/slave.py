@@ -19,6 +19,25 @@ class SlaveCommand(OscCommand):
             self.error(c, uid, 'Slave mode not activated')
             return True
 
+        if reply:
+            uuid, *args = c.args
+            self.error(c, uuid, 'Slave mode not activated')
+        return False
+
+    def check_args(self, c, comp_op='eq', v=1, reply=True):
+        comp = super().check_args(c, comp_op, v+1, reply=False)
+        uuid, *args = c.args
+        if not comp and reply:
+            i = {
+                'alias': self.alias,
+                'len': len(c.args), 'op': comp_op, 'v': v,
+                'args': ' '.join(map(str, args)),
+            }
+            self.error(c, uuid,  'Invalid number of arguments for {alias} '
+                       '({len} {op} {v}: {args})'.format(**i))
+
+        return comp
+
 
 class SlaveGet(SlaveCommand, UnbufferedCommand):
     """
@@ -30,7 +49,7 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
             if super().execute(c):
                 return
 
-        if not self.check_args(c, 'eq', 2):
+        if not self.check_args(c, 'eq', 1):
             return
 
         try:
@@ -48,7 +67,8 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
 class SlaveSet(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
-        if not self.check_args(c, 'ge', 3):
+        if not self.check_args(c, 'ge', 2) or \
+                not self.check_args(c, 'le', 3):
             return
 
         try:
@@ -80,7 +100,7 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
 class SlaveRegister(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
-        if not self.check_args(c, 'le', 2):
+        if not self.check_args(c, 'le', 1):
             return
 
         try:
