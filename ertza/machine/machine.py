@@ -454,7 +454,7 @@ class Machine(AbstractMachine):
         return self._check_operating_mode('standalone', raise_exception=False)
 
     @property
-    def paramaters(self):
+    def parameters(self):
         p = {}
         p += self._profile_parameters
         if self.frontend:
