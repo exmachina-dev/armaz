@@ -106,7 +106,7 @@ class MasterMachineMode(StandaloneMachineMode):
         sn = slave_machine.slave.serialnumber
 
         if sn not in self._slv_config.keys():
-            logging.warn('No config registered for slave {!s}'.format(slave))
+            logging.warn('No config registered for slave {!s}'.format(slave_machine))
             return
 
         if key is None:
@@ -119,7 +119,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
         if vl_mode in ('multiply', 'divide', 'add', 'substract', 'default',) and vl_value is None:
             raise MachineModeException('No value configured for '
-                                       '{0} in {1!s}'.format(key, slave))
+                                       '{0} in {1!s}'.format(key, slave_machine))
         if vl_mode == 'default':
             return vl_value
 
@@ -132,7 +132,7 @@ class MasterMachineMode(StandaloneMachineMode):
                 except ContinueException:
                     raise MachineModeException('No value returned for '
                                                '{0.slave.serialnumber} '
-                                               '({1} asked)'.format(slave, key))
+                                               '({1} asked)'.format(slave_machine, key))
 
         nvalue = None
         if vl_mode == 'forward':
