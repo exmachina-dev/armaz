@@ -42,8 +42,8 @@ class Switch(object):
             'name': name,
             'invert': kwargs.pop('invert', False),
             'function': kwargs.pop('function', False),
-            'hit': kwargs.pop('hit', False),
-            'direction': kwargs.pop('direction', None),
+            'hit': False,
+            'direction': None,
         }
         self._keycodes[keycode] = keycode_conf
         self.keycode = keycode
