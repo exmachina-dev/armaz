@@ -79,9 +79,7 @@ class Ertza(object):
                                       custom_conf)
 
         self._config_leds()
-        for l in self.machine.leds:
-            if l.function == 'status':
-                l.set_blink(500)
+        Led.set_status_leds('blink', 500)
 
         # Get loglevel from config file
         level = self.machine.config.getint('system', 'loglevel', fallback=10)
@@ -196,9 +194,7 @@ class Ertza(object):
         except MachineError as e:
             logger.error(str(e))
 
-        for l in self.machine.leds:
-            if l.function == 'status':
-                l.set_blink(50)
+        Led.set_status_leds('blink', 50)
 
         logger.info("Ertza ready")
 
@@ -260,8 +256,7 @@ class Ertza(object):
         for f in self.machine.fans:
             f.set_value(0)
 
-        for l in self.machine.leds:
-            l.set_trigger('default-on')
+        Led.set_all_leds('on')
 
     def _config_thermistors(self):
 
@@ -370,7 +365,7 @@ class Ertza(object):
                 led_f = self.machine.config.get("leds", "file_%s" % led_n)
                 led_fn = self.machine.config.get("leds", "function_%s" % led_n,
                                                  fallback=None)
-                led = Led(led_f, led_fn)
+                led = Led(led_f, name=led_n,function=led_fn)
                 led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
                                                 fallback='none')
                 led.set_trigger(led_t)
