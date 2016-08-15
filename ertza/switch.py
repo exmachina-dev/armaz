@@ -120,7 +120,7 @@ class Switch(object):
                     else:
                         logging.debug('Got unrecognized keycode: {}'.format(keycode))
         except OSError as e:
-            logging.error('Unable to acces to inputdev file: {!s}'.format(e))
+            logging.error('Unable to access to inputdev file: {!s}'.format(e))
             raise SwitchException(str(e))
 
     def __repr__(self):
