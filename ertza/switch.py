@@ -50,7 +50,7 @@ class Switch(object):
 
     @classmethod
     def set_inputdev(cls, inputdev):
-        if os.path.isfile(inputdev):
+        if os.path.exists(inputdev):
             cls._inputdev = inputdev
         else:
             raise FileNotFoundError('{} not found.'.format(inputdev))
