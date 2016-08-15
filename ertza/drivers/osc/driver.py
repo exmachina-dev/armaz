@@ -4,6 +4,7 @@ import liblo as lo
 import logging
 from threading import Event
 from threading import Timer
+from threading import Lock
 import uuid
 
 from .utils import OscFutureResult
@@ -32,6 +33,7 @@ class OscDriver(AbstractDriver):
 
         self._waiting_futures = {}
         self._timeout_timers = {}
+        self._timers_lock = Lock()
 
         self.running_event = Event()
         self.timeout_event = Event()
@@ -109,8 +111,9 @@ class OscDriver(AbstractDriver):
                     request.uuid = uuid.uuid4().hex
 
                 timer = Timer(self.timeout, self.timeout_cb, args=(request,))
+                with self._timers_lock:
+                    self._timeout_timers[request.uuid] = timer
                 timer.start()
-                self._timeout_timers[request.uuid] = timer
             except:
                 raise
 
@@ -120,11 +123,17 @@ class OscDriver(AbstractDriver):
             try:
                 message = (yield)
 
-                future = self._waiting_futures.pop(message.uuid, None)
-                timer = self._timeout_timers.pop(message.uuid, None)
+                with self._timers_lock:
+                    future = self._waiting_futures.pop(message.uuid, None)
+                    timer = self._timeout_timers.pop(message.uuid, None)
 
                 if timer:
                     timer.cancel()
+                    del timer
+                else:
+                    logging.error('Unable to find timer for {!s}.'
+                                  '{} timers still waiting.'
+                                  .format(message.uuid, len(self._timeout_timers)))
 
                 if future is None:
                     logging.error('Unable to find waiting future '
@@ -135,7 +144,6 @@ class OscDriver(AbstractDriver):
                     future.request.exception = OscDriverError(str(message))
 
                 future.request.reply = message
-
             except OscDriverTimeout as e:
                 logging.error('Timeout in %s: %s' % (self.__class__.__name__,
                                                      repr(e)))
