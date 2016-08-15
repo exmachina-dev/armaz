@@ -25,7 +25,7 @@ from .pwm import PWM
 from .thermistor import Thermistor
 
 from .fan import Fan
-from .switch import Switch
+from .switch import Switch, SwitchException
 from .tempwatcher import TempWatcher
 from .led import Led
 
@@ -180,6 +180,13 @@ class Ertza(object):
 
         self.machine.start()
 
+        try:
+            Switch.start()
+            logger.info('Switch thread started')
+        except (SwitchException, RuntimeError) as e:
+            logger.error('Error while starting switch thread: {!s}'.format(e))
+            sys.exit(1)
+
         for name, comm in self.machine.comms.items():
             comm.start()
             logger.info("%s communication module started" % name)
@@ -329,6 +336,8 @@ class Ertza(object):
 
     def _config_external_switches(self):
         Switch.callback = self.machine.switch_callback
+        Switch.set_inputdev(self.machine.config.get(
+            'switches', 'inputdev_path', fallback='/dev/input/event1'))
 
         # Create external switches
         self.machine.switches = []
@@ -336,15 +345,16 @@ class Ertza(object):
         while self.machine.config.has_option("switches",
                                              "keycode_ESW%d" % esw_p):
             esw_n = "ESW%d" % esw_p
-            esw_kc = self.machine.config.getint("switches",
-                                                "keycode_%s" % esw_n)
-            name = self.machine.config.get("switches",
-                                           "name_%s" % esw_n, fallback=esw_n)
-            esw = Switch(esw_kc, name)
-            esw.invert = self.machine.config.getboolean("switches",
-                                                        "invert_%s" % esw_n)
-            esw.function = self.machine.config.get("switches",
-                                                   "function_%s" % esw_n)
+            esw_kc = self.machine.config.getint(
+                "switches", "keycode_%s" % esw_n)
+            name = self.machine.config.get(
+                "switches", "name_%s" % esw_n, fallback=esw_n)
+            esw_cf = {}
+            esw_cf['invert'] = self.machine.config.getboolean(
+                "switches", "invert_%s" % esw_n)
+            esw_cf['function'] = self.machine.config.get(
+                "switches", "function_%s" % esw_n)
+            esw = Switch(esw_kc, name, **esw_cf)
             self.machine.switches.append(esw)
             logger.debug("Found switch %s at keycode %d" % (name, esw_kc))
             esw_p += 1
