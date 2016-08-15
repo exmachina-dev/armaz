@@ -13,8 +13,18 @@ This allow fine exception handling. Most submodules must subclass those
 exceptions.
 """
 
+from .led import Led
+
+
 class AbstractErtzaException(Exception):
-    pass
+    def __init__(self, *args, **kwargs):
+        delay = kwargs.pop('led_delay', 2000)
+        Led.set_error_leds('flash', delay)
+        super().__init__(*args, **kwargs)
+
 
 class AbstractErtzaFatalException(AbstractErtzaException):
-    pass
+    def __init__(self, *args, **kwargs):
+        delay = kwargs.pop('led_delay', 500)
+        Led.set_error_leds('blink', delay)
+        super().__init__(*args, **kwargs)
