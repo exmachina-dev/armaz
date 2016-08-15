@@ -25,7 +25,7 @@ from .pwm import PWM
 from .thermistor import Thermistor
 
 from .fan import Fan
-from .switch import Switch
+from .switch import Switch, SwitchException
 from .tempwatcher import TempWatcher
 from .led import Led
 
@@ -178,6 +178,13 @@ class Ertza(object):
 
         self.machine.start()
 
+        try:
+            Switch.start()
+            logger.info('Switch thread started')
+        except (SwitchException, RuntimeError) as e:
+            logger.error('Error while starting switch thread: {!s}'.format(e))
+            sys.exit(1)
+
         for name, comm in self.machine.comms.items():
             comm.start()
             logger.info("%s communication module started" % name)
@@ -327,6 +334,8 @@ class Ertza(object):
 
     def _config_external_switches(self):
         Switch.callback = self.machine.switch_callback
+        Switch.set_inputdev(self.machine.config.get(
+            'switches', 'inputdev_path', fallback='/dev/input/event1'))
 
         # Create external switches
         self.machine.switches = []
