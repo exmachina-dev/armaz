@@ -100,7 +100,6 @@ class Led(object):
 
     def __del__(self):
         self.leds.pop(self.name, None)
-        super().__del__()
 
 if __name__ == '__main__':
     import time
