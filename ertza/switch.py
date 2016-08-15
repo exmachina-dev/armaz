@@ -17,6 +17,7 @@ Code modified by Benoit Rapidel:
     Use a single thread
 """
 
+import os
 from threading import Thread, Event
 import logging
 
@@ -26,15 +27,9 @@ logging = logging.getLogger('ertza.switch')
 class Switch(object):
 
     callback = None                 # Override this to get events
-
-    def __new__(cls, inputdev):
-        cls._inputdev = inputdev
-        cls._thread = Thread(target=cls._wait_for_events)
-        cls._thread.daemon = True
-        cls._running_event = Event()
-        cls._keycodes = {}
-
-        return super().__new__()
+    _thread = None
+    _inputdev = None
+    _keycodes = {}
 
     def __init__(self, keycode, name, **kwargs):
         keycode_conf = {
@@ -48,22 +43,31 @@ class Switch(object):
         self.keycode = keycode
 
     @classmethod
-    def start(cls):
-        if len(cls._keycodes):
-            raise ValueError('No keycodes assigned to {0.__name__}, '
-                             'cannot start.'.format(cls))
+    def set_inputdev(cls, inputdev):
+        if os.path.isfile(inputdev):
+            cls._inputdev = inputdev
+        else:
+            raise FileNotFoundError('{} not found.'.format(inputdev))
 
-        if cls.inputdev is None:
+    @classmethod
+    def start(cls):
+        if cls._inputdev is None:
             raise ValueError('Inputdev cannot be None.')
 
         try:
+            if cls._thread is None:
+                cls._thread = Thread(target=Switch._wait_for_events)
+                cls._thread.daemon = True
+                cls._running_event = Event()
+
             cls._thread.start()
         except RuntimeError:
             logging.info('{0.__name__} already started.'.format(cls))
+            raise
 
     @classmethod
     def get_key_config(cls, keycode):
-        config = cls._keycodes[keycode].copy()
+        config = dict(cls._keycodes[keycode])
         return config
 
     @classmethod
@@ -87,6 +91,10 @@ class Switch(object):
                 while not cls._running_event.is_set():
                     evt = evt_file.read(16)     # Read the event
                     evt_file.read(16)           # Discard the debounce event
+
+                    if evt == b'':
+                        continue
+
                     keycode = evt[10]
 
                     if keycode in cls._keycodes.keys():
@@ -107,16 +115,11 @@ class Switch(object):
                         logging.debug('Got unrecognized keycode: {}'.format(keycode))
         except OSError as e:
             logging.error('Unable to acces to inputdev file: {!s}'.format(e))
+            raise SwitchException(str(e))
 
     def __repr__(self):
-        i = {
-            'name': self.name,
-            'keycode': self.key_code,
-            'dir': self.direction,
-            'hit': self.hit,
-        }
-
-        return 'Switch {name} at {keycode} (dir {dir} hit {hit})'.format(**i)
+        return 'Switch {name} at {keycode} ' \
+               '(dir {direction} hit {hit})'.format(**self.state)
 
 if __name__ == '__main__':
     import signal
