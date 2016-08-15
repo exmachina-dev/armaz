@@ -121,6 +121,8 @@ class Ertza(object):
                 for byte in eth.mac_address.split(':')[3:6]:
                     ip += '.{}'.format(int('0x{}'.format(byte), base=0))
                 ip += '/8'
+                logger.info('Generating default IP for MAC address: {}'
+                            .format(ip))
 
             try:
                 logger.info('Adding ip {} to {}'.format(ip, i))
