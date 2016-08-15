@@ -8,6 +8,8 @@ import configparser
 from configparser import Error, NoSectionError, NoOptionError, ParsingError
 from collections import ChainMap, namedtuple
 
+from .exceptions import AbstractErtzaException
+
 logger = logging.getLogger('ertza.config')
 
 _VARIANT_PATH = "/etc/ertza/variants"
@@ -53,7 +55,7 @@ __all__ = ['NoSectionError', 'NoOptionError', 'ParsingError', 'ConfigParserError
 parameter = namedtuple('parameter', ['vtype', 'unit', 'value'])
 
 
-class ConfigParserError(Error):
+class ConfigParserError(AbstractErtzaException, Error):
     pass
 
 

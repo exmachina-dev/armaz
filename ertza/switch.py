@@ -21,7 +21,13 @@ import os
 from threading import Thread, Event
 import logging
 
+from .exceptions import AbstractErtzaException
+
 logging = logging.getLogger('ertza.switch')
+
+
+class SwitchException(AbstractErtzaException):
+    pass
 
 
 class Switch(object):

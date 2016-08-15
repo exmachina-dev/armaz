@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from ..exceptions import AbstractErtzaException
+
 
 class AbstractDriver(object):
 
@@ -25,9 +27,9 @@ class AbstractDriver(object):
         raise NotImplementedError
 
 
-class AbstractDriverError(Exception):
+class AbstractDriverError(AbstractErtzaException):
     pass
 
 
-class AbstractTimeoutError(Exception):
+class AbstractTimeoutError(AbstractDriverError):
     pass
