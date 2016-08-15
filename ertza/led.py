@@ -73,17 +73,17 @@ class Led(object):
 
     @classmethod
     def set_all_leds(cls, action=None, delay=1000):
-        cls.set_for_leds(cls.leds, action, delay)
+        cls.set_for_leds(cls.leds.values(), action, delay)
 
     @classmethod
     def set_status_leds(cls, action=None, delay=1000):
-        status_leds = (led for led in cls.leds if led.function == 'status')
+        status_leds = (led for led in cls.leds.values() if led.function == 'status')
 
         cls.set_for_leds(status_leds, action, delay)
 
     @classmethod
     def set_error_leds(cls, action=None, delay=1000):
-        error_leds = (led for led in cls.leds if led.function == 'error')
+        error_leds = (led for led in cls.leds.values() if led.function == 'error')
 
         cls.set_for_leds(error_leds, action, delay)
 
