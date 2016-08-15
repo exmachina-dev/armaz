@@ -19,7 +19,13 @@ Code modified by Benoit Rapidel:
 from threading import Thread
 import logging
 
+from .exceptions import AbstractErtzaException
+
 logging = logging.getLogger('ertza.switch')
+
+
+class SwitchException(AbstractErtzaException):
+    pass
 
 
 class Switch(object):

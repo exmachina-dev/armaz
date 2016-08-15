@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from ..exceptions import AbstractErtzaException
 
-class AbstractMachineError(Exception):
+
+class AbstractMachineError(AbstractErtzaException):
     pass
 
 
