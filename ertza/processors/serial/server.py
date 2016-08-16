@@ -101,5 +101,8 @@ class SerialServer(sr.Serial):
             packet, self.data_buffer = self.data_buffer[:pos+2], \
                 self.data_buffer[pos+2:]
             m = SerialMessage(cmd_bytes=packet)
+            if len(m) != m.length:
+                raise ValueError('Invalid length specified in {0!s}: '
+                                 '{0.length} != {1}'.format(m, len(m)))
             self.processor.enqueue(m)
             self.find_serial_packets()
