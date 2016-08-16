@@ -10,21 +10,24 @@ logging = logging.getLogger('ertza.processors.osc.server')
 
 
 class OscServer(lo.Server):
+    identifier = 'OSC'
+    infos = {}
 
-    def __init__(self, machine):
-        self.machine = machine
-        self.processor = self.machine.processors['OSC']
+    def __init__(self, outlet, config=None):
+        self._outlet = outlet
 
-        port = machine.config.getint('osc', 'listen_port', fallback=6969)
-        self.reply_port = machine.config.getint('osc', 'reply_port',
-                                                fallback=6969)
+        if config is None:
+            port, self.reply_port = 6969, 6969
+        else:
+            port = int(config.get('listen_port', fallback=6969))
+            self.reply_port = int(config.get('reply_port', fallback=6969))
 
         super().__init__(port, lo.UDP)
-        logging.info('Started OSC server on port %d' % port)
+        logging.info('Started OSC server on port {}'.format(port))
 
     def run(self):
         while self.running:
-            self.recv(50)
+            self.recv(1000)
 
     def start(self):
         self.running = True
@@ -33,7 +36,10 @@ class OscServer(lo.Server):
         self._t.daemon = True
         self._t.start()
 
-        m = OscMessage('/alive', self.machine.serialnumber, self.machine.osc_address, hostname='255.255.255.255')
+        try:
+            m = OscMessage('/alive', self.infos['serialnumber'], self.infos['osc_address'], hostname='255.255.255.255')
+        except KeyError:
+            m = OscMessage('/alive', hostname='255.255.255.255')
         self.send_message(m)
 
     def send_message(self, message):
@@ -47,7 +53,7 @@ class OscServer(lo.Server):
     def dispatch(self, path, args, types, sender):
         m = OscMessage(path, *args, types=types, sender=sender)
         logging.debug('Received %s from %s' % (m, m.sender))
-        self.processor.enqueue(m)
+        self._outlet.send(m)
 
     def close(self):
         logging.debug('Closing OSC server')

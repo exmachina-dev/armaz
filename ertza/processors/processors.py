@@ -10,6 +10,7 @@ logging = logging.getLogger('ertza.processors')
 
 
 class OscProcessor(AbstractProcessor):
+    identifier = 'OSC'
 
     def __init__(self, machine):
         super().__init__("commands.osc", OscCommand, machine)
@@ -19,6 +20,7 @@ class OscProcessor(AbstractProcessor):
 
 
 class SerialProcessor(AbstractProcessor):
+    identifier = 'Serial'
 
     def __init__(self, machine):
         super().__init__("commands.serial", SerialCommand, machine)

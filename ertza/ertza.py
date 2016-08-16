@@ -9,12 +9,12 @@ import os.path
 import sys
 import signal
 from threading import Thread
-from multiprocessing import JoinableQueue
 import queue
 
 from .configparser import ConfigParser, ProfileError
 from .machine import Machine, MachineError
 
+from .dispatch import Dispatcher
 from .processors import OscProcessor, SerialProcessor
 
 from .processors.osc.server import OscServer
@@ -142,18 +142,22 @@ class Ertza(object):
         self._config_fans()
         self._config_external_switches()
 
-        # Create queue of commands
-        self.machine.commands = JoinableQueue(10)
-        self.machine.unbuffered_commands = JoinableQueue(10)
-        self.machine.sync_commands = JoinableQueue()
+        # Create dispatcher
+        dispatcher = Dispatcher()
 
         if not machine.config.get('osc', 'disable', fallback=False):
-            machine.processors['OSC'] = OscProcessor(self.machine)
-            machine.comms['OSC'] = OscServer(self.machine)
+            osc_conf = machine.config['osc'] \
+                if machine.config.has_section('osc') else None
+            dispatcher.add_server(OscServer(
+                dispatcher.inlet(OscServer.identifier), osc_conf))
+            dispatcher.add_processor(OscProcessor(self.machine))
 
         if not machine.config.get('serial', 'disable', fallback=False):
-            machine.processors['Serial'] = SerialProcessor(self.machine)
-            machine.comms['Serial'] = SerialServer(self.machine)
+            serial_conf = machine.config['serial'] \
+                if machine.config.has_section('serial') else None
+            dispatcher.add_server(SerialServer(
+                dispatcher.inlet(SerialServer.identifier), serial_conf))
+            dispatcher.add_processor(SerialProcessor(self.machine))
 
     def start(self):
         """ Start the processes """

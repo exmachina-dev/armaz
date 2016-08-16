@@ -11,17 +11,18 @@ logging = logging.getLogger('ertza.processors.serial.server')
 
 
 class SerialServer(sr.Serial):
+    identifier = 'Serial'
 
-    def __init__(self, machine):
-        self.machine = machine
-        self.processor = self.machine.processors['Serial']
+    def __init__(self, outlet, config):
+        self._outlet = outlet
 
-        dev = machine.config.get('serial', 'listen_device')
+        dev = config.get('listen_device')
         if dev == 'None':
             dev = None
-        baudrate = machine.config.getint('serial', 'baudrate', fallback=57600)
+        baudrate = int(config.get('baudrate', fallback=57600))
 
-        logging.debug("Starting serial server on %s at %d" % (dev, baudrate))
+        logging.debug('Initializing serial server on {} at {}'
+                      . format(dev, baudrate))
         super().__init__(port=None, baudrate=baudrate)
 
         self.port = dev
@@ -101,5 +102,5 @@ class SerialServer(sr.Serial):
             packet, self.data_buffer = self.data_buffer[:pos+2], \
                 self.data_buffer[pos+2:]
             m = SerialMessage(cmd_bytes=packet)
-            self.processor.enqueue(m)
+            self._outlet.send(m)
             self.find_serial_packets()
