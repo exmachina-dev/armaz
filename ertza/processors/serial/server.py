@@ -63,9 +63,9 @@ class SerialServer(sr.Serial):
                 self.find_serial_packets()
 
             except sr.SerialException as e:
-                logging.error(e)
-            except:
-                pass
+                logging.error(str(e))
+            except Exception as e:
+                logging.error(str(e))
 
     def start(self):
         self.running = True
@@ -102,5 +102,14 @@ class SerialServer(sr.Serial):
             packet, self.data_buffer = self.data_buffer[:pos+2], \
                 self.data_buffer[pos+2:]
             m = SerialMessage(cmd_bytes=packet)
+            l = m.length
+            if len(m) != l:
+                reply = SerialMessage(cmd_bytes=packet)
+                reply.cmd_bytes['data'] = reply.cmd_bytes['data'].split(b':')[0] + b'.error'
+                e = 'Invalid length specified in {}: ' \
+                    '{} != {}'.format(m, l, len(m))
+                reply.cmd_bytes += e
+                self.send_message(reply)
+                raise ValueError(e)
             self._outlet.send(m)
             self.find_serial_packets()
