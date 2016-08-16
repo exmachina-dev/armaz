@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from ..exceptions import AbstractErtzaException
+
 
 class AbstractDriver(object):
 
@@ -47,11 +49,11 @@ class AbstractDriver(object):
     __str__ = __repr__
 
 
-class AbstractDriverError(Exception):
+class AbstractDriverError(AbstractErtzaException):
     pass
 
 
-class AbstractTimeoutError(Exception):
+class AbstractTimeoutError(AbstractDriverError):
     """
     Raised when a command times out.
     """

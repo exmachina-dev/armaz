@@ -26,7 +26,7 @@ from .pwm import PWM
 from .thermistor import Thermistor
 
 from .fan import Fan
-from .switch import Switch
+from .switch import Switch, SwitchException
 from .tempwatcher import TempWatcher
 from .led import Led
 
@@ -80,9 +80,7 @@ class Ertza(object):
                                       custom_conf)
 
         self._config_leds()
-        for l in self.machine.leds:
-            if l.function == 'status':
-                l.set_blink(500)
+        Led.set_status_leds('blink', 500)
 
         # Get loglevel from config file
         level = self.machine.config.getint('system', 'loglevel', fallback=10)
@@ -122,6 +120,8 @@ class Ertza(object):
                 for byte in eth.mac_address.split(':')[3:6]:
                     ip += '.{}'.format(int('0x{}'.format(byte), base=0))
                 ip += '/8'
+                logger.info('Generating default IP for MAC address: {}'
+                            .format(ip))
 
             try:
                 logger.info('Adding ip {} to {}'.format(ip, i))
@@ -174,6 +174,13 @@ class Ertza(object):
 
         self.machine.start()
 
+        try:
+            Switch.start()
+            logger.info('Switch thread started')
+        except (SwitchException, RuntimeError) as e:
+            logger.error('Error while starting switch thread: {!s}'.format(e))
+            sys.exit(1)
+
         for name, comm in self.machine.comms.items():
             comm.start()
             logger.info("%s communication module started" % name)
@@ -183,9 +190,7 @@ class Ertza(object):
         except AbstractMachineError as e:
             logger.error(str(e))
 
-        for l in self.machine.leds:
-            if l.function == 'status':
-                l.set_blink(50)
+        Led.set_status_leds('blink', 50)
 
         logger.info("Ertza ready")
 
@@ -247,8 +252,7 @@ class Ertza(object):
         for f in self.machine.fans:
             f.set_value(0)
 
-        for l in self.machine.leds:
-            l.set_trigger('default-on')
+        Led.set_all_leds('on')
 
     def _config_thermistors(self):
 
@@ -323,6 +327,8 @@ class Ertza(object):
 
     def _config_external_switches(self):
         Switch.callback = self.machine.switch_callback
+        Switch.set_inputdev(self.machine.config.get(
+            'switches', 'inputdev_path', fallback='/dev/input/event1'))
 
         # Create external switches
         self.machine.switches = []
@@ -330,15 +336,16 @@ class Ertza(object):
         while self.machine.config.has_option("switches",
                                              "keycode_ESW%d" % esw_p):
             esw_n = "ESW%d" % esw_p
-            esw_kc = self.machine.config.getint("switches",
-                                                "keycode_%s" % esw_n)
-            name = self.machine.config.get("switches",
-                                           "name_%s" % esw_n, fallback=esw_n)
-            esw = Switch(esw_kc, name)
-            esw.invert = self.machine.config.getboolean("switches",
-                                                        "invert_%s" % esw_n)
-            esw.function = self.machine.config.get("switches",
-                                                   "function_%s" % esw_n)
+            esw_kc = self.machine.config.getint(
+                "switches", "keycode_%s" % esw_n)
+            name = self.machine.config.get(
+                "switches", "name_%s" % esw_n, fallback=esw_n)
+            esw_cf = {}
+            esw_cf['invert'] = self.machine.config.getboolean(
+                "switches", "invert_%s" % esw_n)
+            esw_cf['function'] = self.machine.config.get(
+                "switches", "function_%s" % esw_n)
+            esw = Switch(esw_kc, name, **esw_cf)
             self.machine.switches.append(esw)
             logger.debug("Found switch %s at keycode %d" % (name, esw_kc))
             esw_p += 1
@@ -354,14 +361,13 @@ class Ertza(object):
                 led_f = self.machine.config.get("leds", "file_%s" % led_n)
                 led_fn = self.machine.config.get("leds", "function_%s" % led_n,
                                                  fallback=None)
-                led = Led(led_f, led_fn)
+                led = Led(led_f, name=led_n,function=led_fn)
                 led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
                                                 fallback='none')
                 led.set_trigger(led_t)
                 if led_t == "timer":
-                    led.set_blink(self.machine.config.get("leds",
-                                                          "blink_%s" % led_n,
-                                                          fallback='500'))
+                    led.set_delays(int(self.machine.config.get(
+                        "leds", "blink_%s" % led_n, fallback='500')))
                 self.machine.leds.append(led)
                 logger.debug("Found led %s, trigger: %s" % (led_n, led_t))
                 led_i += 1
