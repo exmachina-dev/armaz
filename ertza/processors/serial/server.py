@@ -69,6 +69,7 @@ class SerialServer(sr.Serial):
 
     def start(self):
         self.running = True
+        self._outlet = self._outlet_coro(self.identifier)
 
         self._t = Thread(target=self.run)
         self._t.daemon = True

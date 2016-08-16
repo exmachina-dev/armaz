@@ -20,22 +20,24 @@ class ProcessorAliasError(AbstractErtzaException):
 
 
 class AbstractProcessor(object):
-    def __init__(self, base_module, abstract_class, machine):
+    def __init__(self, base_module, abstract_class, outlet):
         self.base_module = base_module
         self.abstract_class = abstract_class
-        self.machine = machine
+        self._outlet_coro = outlet
 
         self.commands = {}
 
-        module = importlib.import_module("ertza.%s" % base_module)
+    def start(self):
+        self.outlet = self._outlet_coro(self.identifier)
 
-        self.load_classes_in_module(module)
+        _module = importlib.import_module('ertza.{}'.format(self.base_module))
+        self.load_classes_in_module(_module)
 
     def load_classes_in_module(self, module):
         for module_name, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, self.abstract_class):
                 try:
-                    cmd = obj(self.machine)
+                    cmd = obj(self.outlet)
                     if not isinstance(cmd.alias, str):
                         logging.error('Bad command alias, expected str, '
                                       'found {}. Skipped command.'
@@ -87,7 +89,7 @@ class AbstractProcessor(object):
                 self.commands[alias].readyEvent.wait()
         except Exception as e:
             import traceback
-            logging.error("Error while executing %s: %s", alias, e)
+            logging.error('Error while executing {!s}: {!r}'.format(alias, e))
             traceback.print_exc(e)
         return command
 

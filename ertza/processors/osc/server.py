@@ -14,7 +14,7 @@ class OscServer(lo.Server):
     infos = {}
 
     def __init__(self, outlet, config=None):
-        self._outlet = outlet
+        self._outlet_coro = outlet
 
         if config is None:
             port, self.reply_port = 6969, 6969
@@ -31,6 +31,7 @@ class OscServer(lo.Server):
 
     def start(self):
         self.running = True
+        self._outlet = self._outlet_coro(self.identifier)
 
         self._t = Thread(target=self.run)
         self._t.daemon = True
