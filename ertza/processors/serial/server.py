@@ -104,10 +104,10 @@ class SerialServer(sr.Serial):
             l = m.length
             if len(m) != l:
                 reply = SerialMessage(cmd_bytes=packet)
-                reply['data'] = reply['data'].split(':')[0] + b'.error'
+                reply.cmd_bytes['data'] = reply.cmd_bytes['data'].split(b':')[0] + b'.error'
                 e = 'Invalid length specified in {}: ' \
                     '{} != {}'.format(m, l, len(m))
-                reply += e
+                reply.cmd_bytes += e
                 self.send_message(reply)
                 raise ValueError(e)
             self.processor.enqueue(m)
