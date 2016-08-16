@@ -145,41 +145,28 @@ class Ertza(object):
         dispatcher = Dispatcher()
 
         if not machine.config.get('osc', 'disable', fallback=False):
+            ident = OscServer.identifier
             osc_conf = machine.config['osc'] \
                 if machine.config.has_section('osc') else None
-            dispatcher.add_server(OscServer(
-                dispatcher.inlet(OscServer.identifier), osc_conf))
-            dispatcher.add_processor(OscProcessor(self.machine))
+            dispatcher.add_processor(OscProcessor(dispatcher.outlet))
+            dispatcher.add_server(OscServer(dispatcher.inlet, osc_conf))
+            OscProcessor.outlet = dispatcher.outlet(ident)
             OscCommand.machine = machine
 
         if not machine.config.get('serial', 'disable', fallback=False):
+            ident = SerialServer.identifier
             serial_conf = machine.config['serial'] \
                 if machine.config.has_section('serial') else None
-            dispatcher.add_server(SerialServer(
-                dispatcher.inlet(SerialServer.identifier), serial_conf))
-            dispatcher.add_processor(SerialProcessor(self.machine))
+            dispatcher.add_processor(SerialProcessor(dispatcher.outlet))
+            dispatcher.add_server(SerialServer(dispatcher.inlet, serial_conf))
+            SerialProcessor.outlet = dispatcher.outlet(ident)
             SerialCommand.machine = machine
+
+        self.machine.dispatcher = dispatcher
 
     def start(self):
         """ Start the processes """
         self.running = True
-
-        # Start the processes
-        commands_thread = Thread(target=self.loop,
-                                 args=(self.machine.commands, "command"))
-        unbuffered_commands_thread = Thread(target=self.loop,
-                                            args=(self.machine.unbuffered_commands,
-                                                  "unbuffered"))
-        synced_commands_thread = Thread(target=self.eventloop,
-                                        args=(self.machine.sync_commands, "sync"))
-
-        commands_thread.deamon = True
-        unbuffered_commands_thread.deamon = True
-        synced_commands_thread.deamon = True
-
-        commands_thread.start()
-        unbuffered_commands_thread.start()
-        # synced_commands_thread.start()
 
         self.machine.start()
 
@@ -190,9 +177,7 @@ class Ertza(object):
             logger.error('Error while starting switch thread: {!s}'.format(e))
             sys.exit(1)
 
-        for name, comm in self.machine.comms.items():
-            comm.start()
-            logger.info("%s communication module started" % name)
+        self.machine.dispatcher.start()
 
         try:
             self.machine.load_startup_mode()

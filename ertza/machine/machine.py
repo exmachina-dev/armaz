@@ -54,11 +54,11 @@ class Machine(AbstractMachine):
         self.cape_infos = None
         self.ethernet_interface = None
 
-        self.comms = {}
-        self.processors = {}
-        self.commands = None
-        self.synced_commands = None
-        self.unbuffered_commands = None
+        self.dispatcher = None
+        self.thermistors = None
+        self.fans = None
+        self.switches = None
+        self.leds = None
 
         self.slave_machines = {}
         self.slaves_channel = Channel('slave_machines')
@@ -133,8 +133,7 @@ class Machine(AbstractMachine):
             for s in self.slave_machines.values():
                 s.exit()
 
-        for n, c in self.comms.items():
-            c.exit()
+        self.dispatcher.exit()
 
     def load_startup_mode(self):
         m = self.config.get('machine', 'operating_mode', fallback='standalone')
@@ -157,7 +156,7 @@ class Machine(AbstractMachine):
             self.send_message(command.protocol, command.answer)
 
     def send_message(self, msg):
-        self.comms[msg.protocol].send_message(msg)
+        self.dispatcher[msg.protocol].send_message(msg)
 
     @property
     def machine_keys(self):
