@@ -12,7 +12,7 @@ Communication dispatcher
 
 import logging
 
-from .asyncio_utils import coroutine
+from .async_utils import coroutine
 from .exceptions import AbstractErtzaException, AbstractErtzaFatalException
 
 logging = logging.getLogger('ertza.dispatch')
