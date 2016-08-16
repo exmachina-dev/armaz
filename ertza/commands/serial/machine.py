@@ -22,7 +22,9 @@ class MachineSet(SerialCommand):
         'machine:command:cancel',
         'machine:command:reset',
         'machine:command:go',
+        'machine:command:go_home',
         'machine:command:set_home',
+        'machine:command:stop',
     )
 
     def execute(self, c):
