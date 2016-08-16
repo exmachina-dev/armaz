@@ -14,7 +14,7 @@ class SerialServer(sr.Serial):
     identifier = 'Serial'
 
     def __init__(self, outlet, config):
-        self._outlet = outlet
+        self._outlet_coro = outlet
 
         dev = config.get('listen_device')
         if dev == 'None':
