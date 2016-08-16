@@ -3,6 +3,8 @@
 import logging
 from collections import namedtuple
 
+from ..exceptions import AbstractErtzaException
+
 logging = logging.getLogger('ertza.machine.modes')
 
 
@@ -10,7 +12,7 @@ class ContinueException(BaseException):
     pass
 
 
-class MachineModeException(Exception):
+class MachineModeException(AbstractErtzaException):
     pass
 
 
