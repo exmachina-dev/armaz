@@ -188,56 +188,6 @@ class Ertza(object):
 
         logger.info("Ertza ready")
 
-    def loop(self, machine_queue, name):
-        """ When a new command comes in, execute it """
-
-        try:
-            while self.running:
-                try:
-                    message = machine_queue.get(block=True, timeout=1)
-                except queue.Empty:
-                    continue
-
-                logger.debug("Executing %s from %s" % (message.command, name))
-
-                try:
-                    p = self.machine.processors[message.protocol]
-                except KeyError:
-                    raise KeyError('Unable to get %s processor' % message.protocol)
-
-                self._execute(message, p)
-
-                self.machine.reply(message)
-
-                machine_queue.task_done()
-        except Exception as e:
-            logger.exception("Exception in %s loop: %s" % (name, e))
-
-    def eventloop(self, machine_queue, name):
-        """ When a new event comes in, execute the pending gcode """
-
-        while self.running:
-            try:
-                # Returns False on timeout, else True
-                if self.machine.wait_until_sync_event():
-                    try:
-                        message = machine_queue.get(block=True, timeout=1)
-                    except queue.Empty:
-                        continue
-
-                    try:
-                        p = self.machine.processors[message.protocol]
-                    except KeyError:
-                        raise KeyError('Unable to get %s processor' % message.protocol)
-
-                    self._synchronize(message, p)
-
-                    logger.info("Event handled for %s from %s %s" % (
-                        message.target, name, message))
-                    machine_queue.task_done()
-            except Exception:
-                logger.exception("Exception in {} eventloop: ".format(name))
-
     def exit(self):
         self.machine.exit()
 
