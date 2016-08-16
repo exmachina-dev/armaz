@@ -61,6 +61,11 @@ class Dispatcher(object):
         try:
             proc = self._processors[name]
         except KeyError:
-            raise DispatcherFatalError('Unable to find {} processor'.format(name))
+            raise DispatcherFatalException('Unable to find {} processor'.format(name))
 
-
+        while not self._running_event.is_set():
+            try:
+                message = (yield)
+                proc.execute(message)
+            except AbstractErtzaException as e:
+                logging.error(str(e))
