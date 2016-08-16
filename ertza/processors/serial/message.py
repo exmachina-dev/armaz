@@ -27,7 +27,6 @@ class SerialCommandString(object):
         if cmd_bytes:
             self._b = bs.pack('bits', cmd_bytes)
             self._c = SerialCommandStruct(*[b.bytes for b in self._b.unpack(self.CmdFormat)])
-            logging.debug(self._c)
         else:
             self._c = SerialCommandStruct(b'', b'\x00\x00', b'', b'', b'')
             self['serial_number'] = self.SerialNumber.encode()
