@@ -212,7 +212,7 @@ class Ertza(object):
                                                  'port_TH{}'.format(th_p)):
                 th_n = 'TH{}'.format(th_p)
                 adc_channel = int(self.machine.config.get(
-                    'thermistors', 'port_{}'.format(th_p)))
+                    'thermistors', 'port_{}'.format(th_n)))
                 therm = Thermistor(adc_channel, th_n)
                 self.machine.thermistors.append(therm)
                 logger.debug('Found thermistor {} at ADC channel {}'
