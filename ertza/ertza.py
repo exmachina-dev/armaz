@@ -140,7 +140,9 @@ class Ertza(object):
 
         self._config_thermistors()
         self._config_fans()
-        self._config_external_switches()
+
+        if not machine.config.get('switches', 'disable', fallback=False):
+            self._config_external_switches()
 
         # Create queue of commands
         self.machine.commands = JoinableQueue(10)
@@ -179,8 +181,9 @@ class Ertza(object):
         self.machine.start()
 
         try:
-            Switch.start()
-            logger.info('Switch thread started')
+            if self.machine.switches is not None:
+                Switch.start()
+                logger.info('Switch thread started')
         except (SwitchException, RuntimeError) as e:
             logger.error('Error while starting switch thread: {!s}'.format(e))
             sys.exit(1)
