@@ -10,9 +10,9 @@ from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError
 from .abstract_machine import AbstractFatalMachineError
 
-from .machinemodes import StandaloneMachineMode
-from .machinemodes import MasterMachineMode
-from .machinemodes import SlaveMachineMode
+from .modes import StandaloneMachineMode
+from .modes import MasterMachineMode
+from .modes import SlaveMachineMode
 
 from ..drivers import Driver
 from ..drivers import AbstractDriverError
@@ -24,7 +24,11 @@ from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
+from ..async_utils import Channel
+
 logging = logging.getLogger('ertza.machine')
+
+OPERATING_MODES = ('standalone', 'master', 'slave')
 
 
 class MachineError(AbstractMachineError):
@@ -56,20 +60,26 @@ class Machine(AbstractMachine):
         self.synced_commands = None
         self.unbuffered_commands = None
 
-        self.slaves = []
+        self.slave_machines = {}
+        self.slaves_channel = Channel('slave_machines')
+        self._slaves_thread = None
+        self.alive_machines = {}
         self.master = None
         self.operating_mode = None
         self._machine_keys = None
 
+        # TODO: Not working yet
         self._profile_parameters = {
             'ip_address': _p(str, None, self.set_ip_address),
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-
         self._last_command_time = time.time()
         self._running_event = Event()
+        self._slaves_running_event = Event()
         self._timeout_event = Event()
+
+        self.slave_refresh_interval = None
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -90,25 +100,37 @@ class Machine(AbstractMachine):
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
         else:
-            logging.error("Machine driver is not defined, aborting.")
-            return False
+            e = FatalMachineError("Machine driver is not defined, aborting.")
+            logging.error(e)
+            raise e
 
         logging.debug("%s driver loaded" % drv)
 
         self.driver.frontend.load_config(self.config, 'motor')
-        return drv
 
     def start(self):
         self.driver.connect()
 
         self.driver.send_default_values()
 
+    def start_slaves_loop(self):
+        if self._slaves_thread is not None:
+            self._slaves_running_event.set()
+            self._slaves_thread.join()
+            self._slaves_thread = None
+
+        self._slaves_running_event.clear()
+        self._slaves_thread = Thread(target=self._slaves_loop)
+        self._slaves_thread.daemon = True
+
+        self._slaves_thread.start()
+
     def exit(self):
         self.driver.exit()
         self._running_event.set()
 
         if self.master_mode:
-            for s in self.slaves:
+            for s in self.slave_machines.values():
                 s.exit()
 
         for n, c in self.comms.items():
@@ -118,13 +140,17 @@ class Machine(AbstractMachine):
         m = self.config.get('machine', 'operating_mode', fallback='standalone')
         logging.info('Loading {} operating mode'.format(m))
 
-        if m == 'master':
-            self.load_slaves()
-        if m == 'slave':
-            master = self.config.get('machine', 'master')
-            self.set_operating_mode(m, master)
-        else:
-            self.set_operating_mode(m)
+        try:
+            if m == 'master':
+                self.load_slaves()
+
+            if m == 'slave':
+                master = self.config.get('machine', 'master')
+                self.set_operating_mode(m, master=master)
+            else:
+                self.set_operating_mode(m)
+        except AbstractMachineError as e:
+            logging.error('Error while loading startup mode {}: {!s}'.format(m, e))
 
     def reply(self, command):
         if command.answer is not None:
@@ -164,7 +190,7 @@ class Machine(AbstractMachine):
     @property
     def osc_address(self):
         try:
-            a = self.ip_address
+            a = self.ip_address.split('/')[0]
             p = self.config.getint('osc', 'listen_port')
             return '{addr}:{port}'.format(addr=a, port=p)
         except (IndexError, KeyError):
@@ -212,52 +238,52 @@ class Machine(AbstractMachine):
         if not slaves:
             return False
 
-        self.slaves = []
+        self.slave_machines = {}
         for s in slaves:
-            m = SlaveMachine(s)
-            self.slaves.append(m)
+            sm = SlaveMachine(s)
+            self.slave_machines[(s.serialnumber, s.address)] = sm
 
-        self.slaves = tuple(self.slaves)
-        return self.slaves
+        return self.slave_machines
 
     @retry(SlaveMachineError, 20, 10, 1.5)
-    def slave_block_ping(self, slave):
-        p = slave.ping()
+    def slave_block_ping(self, sm):
+        p = sm.ping()
         if isinstance(p, SlaveRequest):
-            raise SlaveMachineError('Unable to ping slave {!r} !'.format(slave))
+            raise SlaveMachineError('Unable to ping slave: {!s} !'.format(sm))
 
         if isinstance(p, float):
             return p
         else:
-            raise MachineError('Unexpected result while pinging {!s}'.format(slave))
+            raise MachineError('Unexpected result while pinging: {!s}'.format(sm))
 
-    @retry(MachineError, 5, 5, 2)
+    @retry(AbstractMachineError, 5, 5, 2)
     def load_slaves(self):
-        if not self.slaves:
+        if not self.slave_machines:
             if not self.search_slaves():
                 logging.info('No slaves found')
                 return
 
-        for s in self.slaves:
-            logging.debug('Initializing {2} slave at {1} ({0})'.format(*s.slave))
+        for sm in self.slave_machines.values():
+            logging.debug('Initializing {2} slave at {1} ({0})'.format(*sm.slave))
             try:
-                self.init_slave(s)
-                ping_time = self.slave_block_ping(s)
-                logging.info('Slave at {2} took {0:.2} ms to respond'.format(
-                    ping_time, *s.slave))
+                self.init_slave(sm)
+                ping_time = self.slave_block_ping(sm)
+                logging.info('Slave at {2} took {0:.2f} ms to respond'.format(
+                    ping_time, *sm.slave))
             except AbstractMachineError as e:
                 logging.error('Unable to contact {3} slave at {2} ({1}) '
-                              '{0}'.format(str(e), *s.slave))
-                return
+                              '{0}'.format(str(e), *sm.slave))
+                raise e
 
-            sn = s.get_from_remote('machine:serialnumber', block=True)
-            if type(sn) == str and s.serialnumber != sn:
-                infos = s.slave + (s.get_serialnumber(),)
+            sn = sm.get('machine:serialnumber', block=True)
+            if type(sn) == str and sm.serialnumber != sn:
+                infos = sm.slave + (sm.get_serialnumber(),)
                 raise MachineError('S/N don\'t match for {2} slave '
                                    'at {1} ({0} vs {4})'.format(*infos))
 
             else:
-                s.start(loop=True)
+                sm.start()
+                self.slaves_channel.suscribe(sm.outlet)
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operating_mode()
@@ -275,8 +301,9 @@ class Machine(AbstractMachine):
                 raise MachineError('Already existing {2} at {1} '
                                    'with S/N {0}'.format(*existing_s.slave))
 
-            self.slaves.append(sm)
+            self.slaves[(sm.serialnumber, sm.address)] = sm
             s = sm.slave
+            self.slaves_channel.suscribe(sm.outlet)
             logging.info('New {2} slave at {1} '
                          'with S/N {0}'.format(*s))
             return s
@@ -287,90 +314,82 @@ class Machine(AbstractMachine):
         self._check_operating_mode()
 
         try:
-            rm_slave = self.get_slave(sn)
-            if not rm_slave:
+            sm = self.get_slave(sn)
+            if not sm:
                 raise MachineError('Slave with S/N %s not found' % sn)
 
-            slave_id, slave = rm_slave
-
-            slave.unslave()
-            slave.exit()
-            slave_instance = self.slaves.pop(slave_id)
-            del slave_instance
+            sm.unslave()
+            sm.exit()
+            self.slave_machines.pop((sm.slave.serialnumber, sm.slave.address))
         except Exception as e:
             raise MachineError('Unable to remove slave: %s' % str(e))
 
     def get_slave(self, serialnumber=None, address=None):
-        if serialnumber:
-            for i, s in enumerate(self.slaves):
-                if serialnumber == s.slave.serialnumber:
-                    return i, s
-            logging.error('Unable to find slave by S/N {}'.format(serialnumber))
-        elif address:
-            for i, s in enumerate(self.slaves):
-                if address == s.slave.address:
-                    return i, s
-            logging.error('Unable to find slave by address {}'.format(address))
+        for sn, ad in self.slave_machines.keys():
+            if serialnumber == sn:
+                return self.slave_machines[(sn, ad)]
+            elif address == ad:
+                return self.slave_machines[(sn, ad)]
+        else:
+            if serialnumber is not None:
+                logging.error('Unable to find slave by S/N {}'.format(serialnumber))
+            else:
+                logging.error('Unable to find slave by address {}'.format(address))
 
-        return None, None
+        return None
 
     def init_slave(self, slave_machine):
         try:
             slave_machine.init_driver()
             slave_machine.start()
         except SlaveMachineError as e:
-            raise FatalMachineError('Couldn\'t initialize {2} slave at {1} '
-                                    'with S/N {0}: {exc}'
-                                    .format(*slave_machine.slave, exc=e))
+            raise FatalMachineError(
+                'Couldn\'t initialize {2} slave at {1} with S/N {0}: {exc}'
+                .format(*slave_machine.slave, exc=e))
 
-    def set_operating_mode(self, *args):
-        if len(args) >= 1:
-            mode = args[0]
-            if mode not in ('standalone', 'master', 'slave'):
-                raise MachineError('Unexpected mode: {}'.format(mode))
-
-            logging.info('Setting operating mode to {}'.format(mode))
-
-            if mode == 'master':
-                if self.master_mode:
-                    logging.info('Operating mode {} already active'.format(mode))
-                    return
-
-                self.activate_mode(mode)
-            elif mode == 'slave':
-                if self.slave_mode:
-                    raise MachineError('Operating mode {0} already active. '
-                                       'You must disable {0} mode before '
-                                       'reactiving it'.format(mode))
-                if len(args) >= 2:
-                    master = args[1]
-                else:
-                    raise MachineError('No master supplied')
-
-                if ':' in master:
-                    master, port = master.split(':')
-                else:
-                    port = None
-
-                self.master = master
-                self.master_port = port if port else \
-                    self.config.get('driver_Osc', 'port', fallback=6969)
-
-                self.activate_mode(mode)
-            elif mode == 'standalone':
-                if self.standalone_mode:
-                    logging.info('Operating mode {} already active'.format(mode))
-                    return
-
-                self.activate_mode(mode)
-        else:
+    def set_operating_mode(self, mode=None, **kwargs):
+        if mode is None:
             logging.info('Deactivating %s mode' % self.operating_mode)
 
             if self.operating_mode == 'slave':
                 self.free()
-
             elif self.operating_mode == 'master':
                 pass
+            return
+
+        if mode not in OPERATING_MODES:
+            raise MachineError('Unexpected mode: {}'.format(mode))
+
+        if self._check_operating_mode(mode, raise_exception=False):
+            logging.info('Operating mode {} already active'.format(mode))
+            return
+
+        logging.info('Setting operating mode to {}'.format(mode))
+
+        if mode == 'master':
+            self.slave_refresh_interval = float(self.config.get(
+                'slaves', 'refresh_interval', fallback=0.5))
+            self.activate_mode(mode)
+        elif mode == 'slave':
+            master = kwargs.get('master')
+            if master is None:
+                raise MachineError('No master supplied')
+
+            if ':' in master:
+                master, port = master.split(':')
+            else:
+                port = None
+
+            if '/' in master:
+                master = master.split('/')[0]
+
+            self.master = master
+            self.master_port = port if port else \
+                self.config.get('osc', 'reply_port', fallback=6969)
+
+            self.activate_mode(mode)
+        elif mode == 'standalone':
+            self.activate_mode(mode)
 
     def set_ip_address(self, new_ip):
         if '/' not in new_ip:
@@ -380,21 +399,23 @@ class Machine(AbstractMachine):
         self.ethernet_interface.del_ip(self.ip_address)
 
     def activate_mode(self, mode):
-        if mode not in ('standalone', 'master', 'slave'):
+        if mode not in OPERATING_MODES:
             raise MachineError('Unexpected mode: {}'.format(mode))
 
         if mode == 'standalone':
             self._machine_keys = StandaloneMachineMode(self)
             self.operating_mode = mode
         elif mode == 'master':
-            if not self.slaves:
+            if not self.slave_machines:
                 raise MachineError('No slaves found')
 
-            for s in self.slaves:
+            for s in self.slave_machines.values():
                 s.enslave()
 
             self._machine_keys = MasterMachineMode(self)
             self.operating_mode = mode
+
+            self.start_slaves_loop()
         elif mode == 'slave':
             if not self.master:
                 raise MachineError('No master specified')
@@ -419,6 +440,12 @@ class Machine(AbstractMachine):
         self.activate_mode('standalone')
         self._running_event.set()
 
+    def getitem(self, key):
+        return getattr(self, key)
+
+    def setitem(self, key, value):
+        setattr(self, key, value)
+
     @property
     def slave_mode(self):
         return self._check_operating_mode('slave', raise_exception=False)
@@ -432,7 +459,7 @@ class Machine(AbstractMachine):
         return self._check_operating_mode('standalone', raise_exception=False)
 
     @property
-    def paramaters(self):
+    def parameters(self):
         p = {}
         p += self._profile_parameters
         if self.frontend:
@@ -465,6 +492,49 @@ class Machine(AbstractMachine):
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
 
+    def _get_destination(self, key):
+        if key.startswith('drive:'):
+            return self.driver
+        elif key.startswith('machine:'):
+            return self
+
+        raise ValueError('Unable to find target %s' % key)
+
+    def _timeout_watcher(self):
+        self._running_event.clear()
+        while not self._running_event.is_set():
+            if self['machine:status:drive_enable'] is False:
+                self._running_event.wait(self._slave_timeout)
+                continue
+
+            if time.time() - self._last_command_time > self._slave_timeout:
+                self._timeout_event.set()
+                self['machine:command:enable'] = False
+                logging.error('Timeout detected, disabling drive')
+
+            self._running_event.wait(self._slave_timeout)
+
+    def _slaves_loop(self):
+        while not self._slaves_running_event.is_set():
+            if not self.slaves_channel:
+                logging.error('Missing channel for slaves')
+
+            keys_to_send = []
+            for sm in self.slave_machines.values():
+                for key in sm.forward_keys:
+                    if key not in keys_to_send:
+                        keys_to_send.append(key)
+
+            for key in keys_to_send:
+                rq = SlaveRequest(dest=key.dest, source=key.source,
+                                  setitem=True, broadcast_request=True)
+                try:
+                    self.slaves_channel.send(rq)
+                except StopIteration:
+                    pass
+
+            self._slaves_running_event.wait(self.slave_refresh_interval)
+
     def __getitem__(self, key):
         dst = self._get_destination(key)
         key = key.split(':', maxsplit=1)[1]
@@ -495,31 +565,3 @@ class Machine(AbstractMachine):
             self._last_command_time = time.time()
 
         self.machine_keys[key] = value
-
-    def _get_destination(self, key):
-        if key.startswith('drive:'):
-            return self.driver
-        elif key.startswith('machine:'):
-            return self
-
-        raise ValueError('Unable to find target %s' % key)
-
-    def getitem(self, key):
-        return getattr(self, key)
-
-    def setitem(self, key, value):
-        setattr(self, key, value)
-
-    def _timeout_watcher(self):
-        self._running_event.clear()
-        while not self._running_event.is_set():
-            if self['machine:status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
-                continue
-
-            if time.time() - self._last_command_time > self._slave_timeout:
-                self._timeout_event.set()
-                self['machine:command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
-
-            self._running_event.wait(self._slave_timeout)

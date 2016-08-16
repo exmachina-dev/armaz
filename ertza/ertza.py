@@ -12,7 +12,8 @@ from threading import Thread
 import queue
 
 from .configparser import ConfigParser, ProfileError
-from .machine import Machine, MachineError
+from .machine import Machine
+from .machine.abstract_machine import AbstractMachineError
 
 from .dispatch import Dispatcher
 from .processors import OscProcessor, SerialProcessor
@@ -38,7 +39,7 @@ _MACHINE_CONF = "/etc/ertza/machine.conf"
 _CUSTOM_CONF = "/etc/ertza/custom.conf"
 
 console_logger = lg.StreamHandler()
-console_formatter = lg.Formatter('%(asctime)s %(name)-36s '
+console_formatter = lg.Formatter('%(asctime)s %(name)-30s '
                                  '%(levelname)-8s %(message)s',
                                  datefmt='%Y%m%d %H:%M:%S')
 
@@ -131,12 +132,7 @@ class Ertza(object):
         except IndexError:
             logger.warn('No IP address found')
 
-        drv = machine.init_driver()
-        if drv:
-            logger.info("Loaded %s driver for machine" % drv)
-        else:
-            logger.error("Unable to find driver, exiting.")
-            sys.exit(1)
+        machine.init_driver()
 
         self._config_thermistors()
         self._config_fans()
@@ -195,7 +191,7 @@ class Ertza(object):
 
         try:
             self.machine.load_startup_mode()
-        except MachineError as e:
+        except AbstractMachineError as e:
             logger.error(str(e))
 
         Led.set_status_leds('blink', 50)

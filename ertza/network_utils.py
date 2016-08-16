@@ -68,23 +68,6 @@ class EthernetInterface(object):
         c = ['ip', 'link', 'set', 'dev', self.interface, 'down']
         subprocess.check_call(c, stderr=subprocess.DEVNULL)
 
-    def _check_ip(self, ip):
-        try:
-            if len(ip.split('.')) != 4:
-                raise ValueError
-            return ip
-        except ValueError:
-            raise ValueError('Invalid format for IP address.')
-
-    def _check_cidr(self, ip):
-        try:
-            ip_addr, ip_mask = ip.split('/')
-            if len(ip_addr.split('.')) != 4:
-                raise ValueError
-            return ip_addr, ip_mask
-        except ValueError:
-            raise ValueError('Invalid format for IP address. Use CIDR notation')
-
     @property
     def ips(self):
         return self._ips
@@ -105,3 +88,20 @@ class EthernetInterface(object):
 
             self._macaddress = line.split()[1].decode()
             return self._macaddress
+
+    def _check_ip(self, ip):
+        try:
+            if len(ip.split('.')) != 4:
+                raise ValueError
+            return ip
+        except ValueError:
+            raise ValueError('Invalid format for IP address.')
+
+    def _check_cidr(self, ip):
+        try:
+            ip_addr, ip_mask = ip.split('/')
+            if len(ip_addr.split('.')) != 4:
+                raise ValueError
+            return ip_addr, ip_mask
+        except ValueError:
+            raise ValueError('Invalid format for IP address. Use CIDR notation')

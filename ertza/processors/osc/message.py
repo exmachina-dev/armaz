@@ -89,9 +89,11 @@ class OscMessage(AbstractMessage):
         return self.to_message()
 
     @property
-    def uid(self):
-        uid = self.args[0]
-        return uid
+    def uuid(self):
+        uuid = self.args[0]
+        return uuid
+
+    uid = uuid
 
     def __repr__(self):
         args = [str(i) for i in self.args]

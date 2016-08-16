@@ -10,9 +10,12 @@ logging = logging.getLogger('ertza.machine.modes.master')
 
 
 class SlavesConfig(object):
-    def __init__(self, config, slaves):
+    def __init__(self, config, slave_machines):
         self._cf = config
-        self._slaves = slaves
+        self.update_slave_configs(slave_machines)
+
+    def update_slave_configs(self, slave_machines):
+        self._slaves = [sm.slave for sm in slave_machines.values()]
 
     def __getitem__(self, key):
         try:
@@ -35,10 +38,7 @@ class SlavesConfig(object):
             raise KeyError('No config found for {}'.format(key.split(':', maxsplit=1)[0]))
 
     def keys(self):
-        slaves_sn = []
-        for s in self._slaves:
-            slaves_sn += (s.slave.serialnumber,)
-        return slaves_sn
+        return [s.serialnumber for s in self._slaves]
 
 
 class MasterMachineMode(StandaloneMachineMode):
@@ -91,7 +91,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
         self.guard_interval = 0.03
 
-        self._slv_config = SlavesConfig(self._machine.config, self._machine.slaves)
+        self._slv_config = SlavesConfig(self._machine.config, self._machine.slave_machines)
 
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
@@ -109,7 +109,14 @@ class MasterMachineMode(StandaloneMachineMode):
             logging.warn('No config registered for slave {!s}'.format(slave_machine))
             return
 
-        vl_mode, vl_value = self._slv_config['{}:{}'.format(sn, key)]
+        if key is None:
+            raise MachineModeException('Key cannot be None')
+
+        try:
+            vl_mode, vl_value = self._slv_config['{}:{}'.format(sn, key)]
+        except KeyError as e:
+            vl_mode, vl_value = 'forward', None
+            logging.debug('{!s}'.format(e))
 
         if vl_mode not in ('forward', 'multiply', 'divide', 'add', 'substract', 'default',):
             raise MachineModeException('Unrecognized mode {0} for {1}'.format(vl_mode, key))
@@ -144,8 +151,10 @@ class MasterMachineMode(StandaloneMachineMode):
             nvalue = vl_value - value if value >= 0 else vl_value + value
 
         if nvalue is not None and value != nvalue:
-            logging.debug('Modfied value {} to {} ({} {})'.format(
-                value, nvalue, vl_mode, vl_value))
+            logging.debug('Modified value for key {}: '
+                          '{} to {} ({} {})'
+                          .format(key, value,
+                                  nvalue, vl_mode, vl_value))
         return nvalue
 
     def get_guarded_value(self, key):

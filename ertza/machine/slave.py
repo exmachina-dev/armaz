@@ -2,17 +2,17 @@
 
 from threading import Thread
 from threading import Event
-from queue import Queue, Empty
 from collections import namedtuple
 from datetime import datetime
 import logging
-import functools
 
 from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
 
 from ..drivers import Driver
 from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
+
+from ..async_utils import coroutine
 
 logging = logging.getLogger('ertza.machine.slave')
 
@@ -43,54 +43,112 @@ class FatalSlaveMachineError(AbstractFatalMachineError):
 
 
 class SlaveRequest(object):
-    def __init__(self, attr, *args, **kwargs):
-        self._args = ()
-        self._attr = None
-        if 'getitem' in kwargs and kwargs['getitem']:
-            self._item = attr
-        elif 'setitem' in kwargs and kwargs['setitem']:
-            self._item = attr
-            self._args = args
-        else:
-            self._attr = attr
-            self._args = args
+    __slots__ = ('_args', '_action', '_kwargs', '__dict__')
+    _actions = ('ping', 'getitem', 'setitem')
+
+    def __init__(self, *args, **kwargs):
+        self._args = list(args)
+
+        self._action = None
+
+        for action in SlaveRequest._actions:
+            if kwargs.pop(action, False):
+                if self.action is not None:
+                    raise ValueError('Action already defined for SlaveRequest')
+                self.action = action
 
         self._kwargs = {
-            'getitem': False,
-            'setitem': False,
+            'block': False,
+            'event': None,
+            'uuid': None,
+            'reply': None,
+            'exception': None,
+            'callback': None,
+            'broadcast_request': False,
+            'parent_request': None,
         }
         self._kwargs.update(kwargs)
-        self._callback = None
 
-    def set_callback(self, cb):
-        self._callback = cb
+        if self.block is True and self._kwargs['event'] is None:
+            self._kwargs['event'] = Event()
+
+    def copy(self):
+        kw = self.kwargs
+        kw.pop('uuid', None)
+        kw[self.action] = True
+
+        return SlaveRequest(*self.args, **kw)
 
     @property
-    def attribute(self):
-        return self._attr
+    def action(self):
+        return self._action
+
+    @action.setter
+    def action(self, value):
+        if value not in SlaveRequest._actions:
+            raise ValueError('Unrecognized action')
+        self._action = value
 
     @property
     def item(self):
-        return self._item
+        if self.getitem or self.setitem:
+            try:
+                return self._args[0]
+            except IndexError:
+                return None
+
+    @item.setter
+    def item(self, value):
+        if self.getitem or self.setitem:
+            if len(self._args) < 1:
+                self._args.append(value)
+            else:
+                self._args[0] = value
+        else:
+            raise KeyError("SlaveRequest doesn't have item.")
 
     @property
     def args(self):
         return self._args
+
+    @args.setter
+    def args(self, value):
+        if self.getitem or self.setitem:
+            self._args[1:] = list(value)
+        else:
+            self._args = list(value)
 
     @property
     def kwargs(self):
         return self._kwargs
 
     @property
-    def callback(self):
-        return self._callback
+    def reply(self):
+        return self._kwargs['reply']
+
+    @reply.setter
+    def reply(self, value):
+        self._kwargs['reply'] = value
+        if self.callback is not None:
+            self.callback(self)
+        if self.event is not None:
+            self.event.set()
 
     def __getattr__(self, name):
-        return self._kwargs[name]
+        try:
+            if name in SlaveRequest._actions:
+                if name == self.action:
+                    return True
+                return False
+
+            return self._kwargs[name]
+        except KeyError:
+            return False
 
     def __repr__(self):
-        return '{} {} {} {}'.format('RQ', self.attribute,
-                                    ' '.join(self.args), self.callback)
+        return 'RQ {} {} {} {}'.format(
+            self.action, ' '.join(map(str, self._args)), self.uuid or '',
+            'with callback' if self.callback is not None else '')
 
 
 class SlaveMachine(AbstractMachine):
@@ -130,13 +188,10 @@ class SlaveMachine(AbstractMachine):
             'timeout': float(self.config.get('slave_timeout', .5)),
         }
 
-        self.running_ev = Event()
-        self.newdata_ev = Event()
-
         self.timeout = float(self.config.get('slave_timeout', .5))
         self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
 
-        self.bridge = Queue()
+        self.inlet = self.outlet = None
 
         self._get_dict = {}
         self._set_dict = {}
@@ -144,8 +199,15 @@ class SlaveMachine(AbstractMachine):
 
         self.last_values = {}
 
-        self.errors = 0
+        self._errors = 0
         self.max_errors = 10
+
+        self.running_event = Event()
+        self.timeout_event = Event()
+        self.fault_event = Event()
+        self.watchdog_event = Event()
+
+        self._watchdog_thread = None
 
     def init_driver(self):
         drv = self.slave.driver
@@ -154,7 +216,7 @@ class SlaveMachine(AbstractMachine):
             try:
                 driver = Driver().get_driver(drv)
                 self.driver = driver(self.driver_config, self.machine)
-                self.inlet = self.driver.init_queue()
+                self.init_pipes()
             except KeyError:
                 logging.error("Unable to get %s driver, aborting." % drv)
                 return
@@ -164,113 +226,37 @@ class SlaveMachine(AbstractMachine):
             logging.error("Machine driver is not defined, aborting.")
             return False
 
-        logging.debug("%s driver loaded" % drv)
-        return drv
+        logging.debug('{} driver loaded: {!s}'.format(drv, self.driver))
 
-    def start(self, loop=False):
-        if not loop:
-            self._thread = Thread(target=self.loop)
-            self._thread.daemon = True
+    def init_pipes(self):
+        self.driver.init_pipes()
+        self.outlet = self.make_request(self.filter_by_operating_mode(
+            self.get_value_for_slave(self.send_if_latest(self.driver.outlet))))
+        self.inlet = self.driver.inlet
 
-            self._watcher_thread = Thread(target=self.watcher_loop)
-            self._watcher_thread.daemon = True
+    def start(self, **kwargs):
+        self.running_event.clear()
+        self.driver.connect()
 
-            self.running_ev.clear()
-            self.driver.connect()
-            self._thread.start()
-        else:
-            if not self._watcher_thread:
-                self.start()
+        if kwargs.get('watchdog', True):
+            self.start_watchdog()
 
-            self._watcher_thread.start()
+    def start_watchdog(self):
+        if self._watchdog_thread:
+            self.watchdog_event.set()
+            self._watchdog_thread.join()
+
+        self.watchdog_event.clear()
+        self._watchdog_thread = Thread(target=self._watchdog)
+        self._watchdog_thread.daemon = True
+        self._watchdog_thread.start()
 
     def exit(self):
-        self.running_ev.set()
-        self._watcher_thread.join()
-        self._thread.join()
+        self.running_event.set()
         self.driver.exit()
 
-    def loop(self):
-        while not self.running_ev.is_set():
-            try:
-                recv_item = self.bridge.get(block=True, timeout=2)
-                if not isinstance(recv_item, SlaveRequest):
-                    logging.error('Unsupported object in queue: %s' % repr(recv_item))
-                    continue
-
-                try:
-                    if recv_item.getitem:
-                        res = self.driver[recv_item.item]
-                    elif recv_item.setitem:
-                        res = self.driver.__setitem__(recv_item.item, *recv_item.args)
-                    else:
-                        res = getattr(self.driver, recv_item.attribute)(
-                            *recv_item.args)
-                    recv_item.callback(res)
-                except AttributeError:
-                    logging.exception('''Can't find %s in driver''' % recv_item.attribute)
-                except SlaveMachineError as e:
-                    logging.error('Exception in {n} loop: {e}'.format(
-                        n=self.__class__.__name__, e=e))
-                except AbstractTimeoutError as e:
-                    logging.error('Timeout for {!s}'.format(self))
-                except Exception as e:
-                    logging.error('Uncatched exception in {n} loop: {e}'.format(
-                        n=self.__class__.__name__, e=e))
-                self.bridge.task_done()
-            except Empty:
-                pass
-
-    def watcher_loop(self):
-        smode = self.slave.slave_mode
-        self.last_values = {}
-        self.set_control_mode(smode)
-        while not self.running_ev.is_set():
-            if SlaveMachine.fatal_event.is_set():
-                self.set_to_remote('machine:command:enable', False)
-                self.running_ev.wait(self.refresh_interval)
-                continue
-
-            try:
-                try:
-                    for skey in self.SLAVE_MODES[smode]:
-                        self._send_if_latest(skey.dest, source=skey.source)
-                    self.errors = 0
-                except KeyError:
-                    raise FatalSlaveMachineError(
-                        'Unrecognized mode for slave {!s}: {}'.format(self, smode))
-            except AbstractFatalMachineError as e:
-                if self.errors > self.max_errors:
-                    self.set_to_remote('machine:command:enable', False)
-                    if SlaveMachine.fatal_event:
-                        SlaveMachine.fatal_event.set()
-                    logging.error('Slave machine disabled')
-                    continue
-                else:
-                    self.errors += 1
-                logging.error('Fatal exception occured in slave watcher loop '
-                              'for {!s}: {!r}'.format(self, e))
-            except AbstractMachineError as e:
-                logging.error('Exception occured in slave watcher loop '
-                              'for {!s}: {!r}'.format(self, e))
-            except Exception as e:
-                logging.error('Exception in {0} loop: {1}'.format(self.__class__.__name__, e))
-
-            self.running_ev.wait(self.refresh_interval)
-
-    def request_from_remote(self, callback, attribute, *args, **kwargs):
-        event = kwargs.pop('event', None)
-        rq = SlaveRequest(attribute, *args, **kwargs)
-        if event:
-            callback = functools.partial(callback, event=event)
-
-        rq.set_callback(callback)
-
-        self.bridge.put(rq)
-        return rq
-
     def enslave(self):
-        self.set_to_remote('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
+        self.driver.set('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
 
     @property
     def infos(self):
@@ -286,84 +272,140 @@ class SlaveMachine(AbstractMachine):
     def serialnumber(self):
         return self.slave.serialnumber
 
+    @property
+    def errors(self):
+        return self._errors
+
+    @property
+    def forward_keys(self):
+        return self.SLAVE_MODES[self.slave.slave_mode]
+
     def get_serialnumber(self):
-        return self.get_from_remote('machine:serialnumber', block=True)
+        return self.get('machine:serialnumber', block=True)
 
     def ping(self, block=True):
-        ev = Event() if block is True else None
-
-        start_time = datetime.now()
-        cb = functools.partial(self._ping_cb, start_time)
-        rq = self.request_from_remote(cb, 'ping', event=ev)
-
-        if ev is not None and ev.wait(self.timeout):
+        try:
+            start_time = datetime.now()
+            ev = Event() if block else None
+            rq = self.driver.ping(block=block, event=ev)
+            if not rq.path.endswith('/ok'):
+                raise SlaveMachineError('Unexpected reply while pinging: {}'
+                                        .format(rq.path))
+            time_delta = datetime.now() - start_time
+            self._latency = time_delta.microseconds / 1000
             return self._latency
-        return rq
-
-    def get_from_remote(self, key, **kwargs):
-        ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
-
-        rq = self.request_from_remote(self._get_cb, key, getitem=True, event=ev)
-
-        if ev is not None and ev.wait(self.timeout):
-            return self._get_dict[key]
-        return rq
-
-    def set_to_remote(self, key, *args, **kwargs):
-        ev = Event() if 'block' in kwargs and kwargs['block'] is True else None
-
-        rq = self.request_from_remote(self._set_cb, key, *args, setitem=True, event=ev)
-
-        if ev is not None and ev.wait(self.timeout):
-            return self._set_dict[key]
-        return rq
+        except AbstractTimeoutError as e:
+            raise SlaveMachineError('Timeout while pinging: {}!s'.format(e))
 
     def set_control_mode(self, mode):
         if mode not in CONTROL_MODES.keys():
             raise KeyError('Unexpected mode: {0}'.format(mode))
 
-        return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
+        return self.set('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
-    def _send_if_latest(self, dest, source=None):
-        source = source if source is not None else dest
-        lvalue = self.last_values.get(dest, None)
+    def get(self, key, **kwargs):
+        return self.driver.get(key, **kwargs)
 
-        value = None
+    def set(self, key, *args, **kwargs):
+        return self.driver.set(key, *args, **kwargs)
 
-        try:
-            value = self.machine.machine_keys.get_value_for_slave(self, source)
-        except SlaveMachineError as e:
-            logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
-        except AbstractMachineError:
-            logging.warn('Machine is not ready')
-        except Exception as e:
-            logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
-            raise SlaveMachineError('{!s}'.format(e))
+    @coroutine
+    def make_request(self, outlet_coro):
+        while not self.running_event.is_set():
+            try:
+                request = (yield)
 
-        if value is None:
-            raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
+                if request.broadcast_request:     # Copy request if it is broadcasted
+                    rq = request.copy()
+                    rq.parent_request = request
+                    outlet_coro.send(rq)
+                    continue
 
-        if lvalue:
+                outlet_coro.send(request)
+            except StopIteration:
+                self.running_event.set()
+                break
+
+    @coroutine
+    def filter_by_operating_mode(self, outlet_coro):
+        while not self.running_event.is_set():
+            try:
+                request = (yield)
+
+                if not request.setitem:     # Only check if it is a setitem request
+                    outlet_coro.send(request)
+                    continue
+
+                key = SlaveKey(request.dest, request.source)
+                if key not in self.SLAVE_MODES[self.slave.slave_mode]:
+                    continue
+
+                outlet_coro.send(request)
+            except StopIteration:
+                self.running_event.set()
+                break
+
+    @coroutine
+    def get_value_for_slave(self, outlet_coro):
+        while not self.running_event.is_set():
+            request = (yield)
+
+            if not request.setitem:     # Only check if it is a setitem request
+                outlet_coro.send(request)
+                continue
+
+            dest = request.kwargs.get('dest')
+            source = request.kwargs.get('source') or dest
+            try:
+                value = self.machine.machine_keys.get_value_for_slave(self, source)
+
+                if value is None:
+                    raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
+
+                request.item = dest
+                request.args = value,
+                outlet_coro.send(request)
+            except SlaveMachineError as e:
+                logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
+            except AbstractMachineError:
+                logging.warn('Machine is not ready')
+            except StopIteration:
+                self.running_event.set()
+                break
+            except Exception as e:
+                logging.exception('Exception in {0!s}: {1!s}'.format(self, e))
+                raise SlaveMachineError('{!s}'.format(e))
+
+    @coroutine
+    def send_if_latest(self, outlet_coro):
+        while not self.running_event.is_set():
+            request = (yield)
+
+            if not request.setitem:     # Only check if it is a setitem request
+                outlet_coro.send(request)
+                continue
+
+            dest = request.kwargs.get('dest')
+            lvalue = self.last_values.get(dest, None)
+
+            value = request.args[1]
+
             if value != lvalue:
-                self.set_to_remote(dest, value)
+                outlet_coro.send(request)
                 self.last_values[dest] = value
-        else:
-            self.set_to_remote(dest, value)
-            self.last_values[dest] = value
+            else:
+                continue
 
-    def _ping_cb(self, start_time, data, event=None):
-        rtn = self._default_cb(data, event)
+    def _watchdog(self):
+        while not self.watchdog_event.is_set():
+            if self.fatal_event.is_set() or self.fault_event.is_set():
+                self.set('machine:command:enable', False)
 
-        if rtn:
-            dt = datetime.now() - start_time
-            self._latency = dt.microseconds / 1000
+            self.watchdog_event.wait(self.refresh_interval)
 
-        if event:
-            event.set()
-
-    def _get_cb(self, data, event=None):
+    def _get_cb(self, rq):
         try:
-            rtn = self._default_cb(data, event)
+            rtn = self._default_cb(rq)
             logging.debug('Rtn data: %s' % rtn)
         except SlaveMachineError as e:
             logging.error(repr(e))
@@ -374,12 +416,9 @@ class SlaveMachine(AbstractMachine):
         else:
             raise SlaveMachineError('No data in {}'.format(rtn))
 
-        if event:
-            event.set()
-
-    def _set_cb(self, data, event=None):
+    def _set_cb(self, rq):
         try:
-            rtn = self._default_cb(data, event)
+            rtn = self._default_cb(rq)
             logging.debug('Rtn data: %s' % rtn)
         except SlaveMachineError as e:
             logging.error(repr(e))
@@ -390,29 +429,19 @@ class SlaveMachine(AbstractMachine):
         else:
             raise SlaveMachineError('No data in {}'.format(rtn))
 
-        if event:
-            event.set()
+    def _default_cb(self, rq):
+        if rq.exception is not None:
+            raise rq.exception
 
-    def _default_cb(self, data, event=None):
-        exc = None
-        if isinstance(data, (list, tuple)) and len(data) == 2:
-            data, exc = data
-
-        if event and exc and isinstance(exc, Exception):
-            event.set()
-            raise exc
-
-        if not data:
-            if event:
-                event.set()
+        if rq.reply is None:
             raise SlaveMachineError('No data')
 
-        if '/ok' in data.path:
-            return data
-        elif '/error' in data.path:
+        if '/ok' in rq.reply.path:
+            return rq.reply.args
+        elif '/error' in rq.reply.path:
             e = {
-                'path': data.path,
-                'args': ' '.join(data.args),
+                'path': rq.reply.path,
+                'args': ' '.join(rq.reply.args),
             }
             raise SlaveMachineError('Got error in {path}: {args}'.format(**e))
 
