@@ -62,9 +62,9 @@ class SerialServer(sr.Serial):
                 self.find_serial_packets()
 
             except sr.SerialException as e:
-                logging.error(e)
-            except:
-                pass
+                logging.error(str(e))
+            except Exception as e:
+                logging.error(str(e))
 
     def start(self):
         self.running = True
