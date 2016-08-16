@@ -10,9 +10,13 @@ from threading import Event
 from ..commands.abstract_commands import BufferedCommand
 from ..commands.abstract_commands import SyncedCommand
 
+from ..exceptions import AbstractErtzaException
+
 logging = logging.getLogger('ertza.processors')
 
 
+class ProcessorAliasError(AbstractErtzaException):
+    pass
 
 
 class AbstractProcessor(object):
@@ -68,21 +72,24 @@ class AbstractProcessor(object):
             return command
 
     def execute(self, command):
-        alias = self._check_in_commands(command)
-        if alias:
-            try:
-                if self.commands[alias].synced:
-                    self.commands[alias].readyEvent = Event()
+        try:
+            alias = self._check_in_commands(command)
+        except ProcessorAliasError as e:
+            logging.error('{!s}'.format(e))
+            raise
+        try:
+            if self.commands[alias].synced:
+                self.commands[alias].readyEvent = Event()
 
-                self.commands[alias].execute(command)
+            self.commands[alias].execute(command)
 
-                if self.commands[alias].synced:
-                    self.commands[alias].readyEvent.wait()
-            except Exception as e:
-                import traceback
-                logging.error("Error while executing %s: %s", alias, e)
-                traceback.print_exc(e)
-            return command
+            if self.commands[alias].synced:
+                self.commands[alias].readyEvent.wait()
+        except Exception as e:
+            import traceback
+            logging.error("Error while executing %s: %s", alias, e)
+            traceback.print_exc(e)
+        return command
 
     def enqueue(self, message):
         if self.is_buffered(message):
@@ -95,7 +102,8 @@ class AbstractProcessor(object):
     def _check_in_commands(self, message):
         alias = message.command
         if alias not in self.commands:
-            logging.error('Alias {} not found in commands.'.format(alias))
-            return None
+            raise ProcessorAliasError('Alias not found in '
+                                      '{0.__class__.__name__}: {1}'
+                                      .format(self, alias))
 
         return alias
