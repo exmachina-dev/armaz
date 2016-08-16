@@ -12,7 +12,7 @@ class OscCommand(AbstractCommand):
             args = args[0]
 
         m = OscMessage(path, *args, receiver=target, **kwargs)
-        return self.machine.send_message(m)
+        self.outlet.send(m)
 
     def ok(self, command, *args, **kwargs):
         return self.reply(command, *args, add_path='/ok', **kwargs)

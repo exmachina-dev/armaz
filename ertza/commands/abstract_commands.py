@@ -4,9 +4,10 @@ import operator
 
 
 class AbstractCommand(object):
+    machine = None
 
-    def __init__(self, machine):
-        self.machine = machine
+    def __init__(self, outlet):
+        self.outlet = outlet
         self.event_ready = None
 
     def execute(self, command):

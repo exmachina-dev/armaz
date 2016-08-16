@@ -14,7 +14,7 @@ class SerialCommand(AbstractCommand):
         for d in args:
             m.cmd_bytes += d
 
-        return self.machine.send_message(m)
+        return self.outlet.send(m)
 
     def ok(self, command, *args, **kwargs):
         self.reply(command, *args, add_path='.ok', **kwargs)

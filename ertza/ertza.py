@@ -16,11 +16,14 @@ from .machine import Machine
 from .machine.abstract_machine import AbstractMachineError
 
 from .dispatch import Dispatcher
+
 from .processors import OscProcessor, SerialProcessor
 
 from .processors.osc.server import OscServer
 from .processors.serial.server import SerialServer
 from .processors.serial.message import SerialCommandString
+
+from .commands import OscCommand, SerialCommand
 
 from .pwm import PWM
 from .thermistor import Thermistor
@@ -147,6 +150,7 @@ class Ertza(object):
             dispatcher.add_server(OscServer(
                 dispatcher.inlet(OscServer.identifier), osc_conf))
             dispatcher.add_processor(OscProcessor(self.machine))
+            OscCommand.machine = machine
 
         if not machine.config.get('serial', 'disable', fallback=False):
             serial_conf = machine.config['serial'] \
@@ -154,6 +158,7 @@ class Ertza(object):
             dispatcher.add_server(SerialServer(
                 dispatcher.inlet(SerialServer.identifier), serial_conf))
             dispatcher.add_processor(SerialProcessor(self.machine))
+            SerialCommand.machine = machine
 
     def start(self):
         """ Start the processes """
