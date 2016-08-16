@@ -89,11 +89,11 @@ class AbstractProcessor(object):
 
     def enqueue(self, message):
         if self.is_buffered(message):
-            self.machine.commands.put(message)
+            self.machine.commands.send(message)
             if self.is_sync(message):
                 self.machine.sync_commands.put(message)    # Yes, it goes into both queues!
         else:
-            self.machine.unbuffered_commands.put(message)
+            self.machine.unbuffered_commands.send(message)
 
     def _check_in_commands(self, message):
         alias = message.command
