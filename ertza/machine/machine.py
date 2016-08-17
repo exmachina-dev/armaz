@@ -50,11 +50,11 @@ class Machine(AbstractMachine):
         self.version = None
 
         self.config = None
-        self.driver = None
         self.cape_infos = None
         self.ethernet_interface = None
-
+        self.driver = None
         self.dispatcher = None
+
         self.thermistors = None
         self.fans = None
         self.switches = None
@@ -62,10 +62,16 @@ class Machine(AbstractMachine):
 
         self.slave_machines = {}
         self.slaves_channel = Channel('slave_machines')
-        self._slaves_thread = None
+        self.slave_refresh_interval = None
+
+        self.switch_callback = self._switch_cb
+        self.switch_states = {}
+
         self.alive_machines = {}
+
         self.master = None
         self.operating_mode = None
+
         self._machine_keys = None
 
         # TODO: Not working yet
@@ -74,15 +80,12 @@ class Machine(AbstractMachine):
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-        self._last_command_time = time.time()
+        self._slaves_thread = None
         self._running_event = Event()
-        self._slaves_running_event = Event()
         self._timeout_event = Event()
+        self._slaves_running_event = Event()
 
-        self.slave_refresh_interval = None
-
-        self.switch_callback = self._switch_cb
-        self.switch_states = {}
+        self._last_command_time = time.time()
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
