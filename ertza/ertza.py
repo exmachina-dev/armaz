@@ -13,7 +13,7 @@ import queue
 
 from .configparser import ConfigParser, ProfileError
 from .machine import Machine
-from .machine.abstract_machine import AbstractMachineError
+from .machine import AbstractMachineError
 
 from .dispatch import Dispatcher
 

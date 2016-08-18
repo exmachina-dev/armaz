@@ -7,10 +7,12 @@ from datetime import datetime
 import logging
 
 from .abstract_machine import AbstractMachine
-from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
+
+from .exceptions import AbstractMachineError
+from .exceptions import SlaveMachineError, SlaveMachineTimeoutError, SlaveMachineFatalError
 
 from ..drivers import Driver
-from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
+from ..drivers import AbstractDriverError, AbstractDriverTimeoutError
 
 from ..async_utils import coroutine
 
@@ -26,20 +28,6 @@ CONTROL_MODES = {
     'position':         3,
     'enhanced_torque':  4,
 }
-
-
-class SlaveMachineError(AbstractMachineError):
-    pass
-
-
-class FatalSlaveMachineError(AbstractFatalMachineError):
-    fatal_event = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if FatalSlaveMachineError:
-            FatalSlaveMachineError.fatal_event.set()
-            logging.error('Fatal error, disabling all slaves')
 
 
 class SlaveRequest(object):

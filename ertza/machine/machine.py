@@ -7,8 +7,7 @@ import logging
 from threading import Event, Thread
 
 from .abstract_machine import AbstractMachine
-from .abstract_machine import AbstractMachineError
-from .abstract_machine import AbstractFatalMachineError
+from .slave import Slave, SlaveMachine, SlaveRequest
 
 from .modes import StandaloneMachineMode
 from .modes import MasterMachineMode
@@ -17,8 +16,11 @@ from .modes import SlaveMachineMode
 from ..drivers import Driver
 from ..drivers import AbstractDriverError
 
-from .slave import Slave, SlaveMachine
-from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+from .exceptions import AbstractMachineError, AbstractMachineFatalError
+from .exceptions import MachineError, MachineFatalError
+from .exceptions import SlaveMachineError, SlaveMachineFatalError
+from .exceptions import MachineTimeoutError, SlaveMachineTimeoutError
+
 
 from ..drivers.utils import retry
 
@@ -31,21 +33,11 @@ logging = logging.getLogger('ertza.machine')
 OPERATING_MODES = ('standalone', 'master', 'slave')
 
 
-class MachineError(AbstractMachineError):
-    pass
-
-
-class FatalMachineError(AbstractFatalMachineError):
-    pass
-
-
 class Machine(AbstractMachine):
     def __init__(self):
 
         SlaveMachine.machine = self
         self.fatal_event = Event()
-        SlaveMachine.fatal_event = self.fatal_event
-        FatalSlaveMachineError.fatal_event = self.fatal_event
 
         self.version = None
 
@@ -103,7 +95,7 @@ class Machine(AbstractMachine):
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
         else:
-            e = FatalMachineError("Machine driver is not defined, aborting.")
+            e = MachineFatalError("Machine driver is not defined, aborting.")
             logging.error(e)
             raise e
 
@@ -224,7 +216,7 @@ class Machine(AbstractMachine):
                 except KeyError as e:
                     m = 'Missing required option for {}: {!s}'.format(item, e)
                     logging.error(m)
-                    raise FatalMachineError(m)
+                    raise MachineFatalError(m)
 
                 slave_cf = {}
                 if self.config.has_section('slave_{}'.format(slave_sn)):
@@ -345,7 +337,7 @@ class Machine(AbstractMachine):
             slave_machine.init_driver()
             slave_machine.start()
         except SlaveMachineError as e:
-            raise FatalMachineError(
+            raise MachineFatalError(
                 'Couldn\'t initialize {2} slave at {1} with S/N {0}: {exc}'
                 .format(*slave_machine.slave, exc=e))
 

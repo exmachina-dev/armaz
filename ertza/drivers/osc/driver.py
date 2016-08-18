@@ -8,8 +8,9 @@ from threading import Lock
 import uuid
 
 from .utils import OscFutureResult
-from .errors import OscDriverError, OscDriverTimeout
-from ..abstract_driver import AbstractDriver, AbstractDriverError
+from .exceptions import OscDriverError, OscDriverTimeout
+from ..abstract_driver import AbstractDriver
+from ..exceptions import AbstractDriverError
 from ...machine.slave import SlaveRequest
 from ...processors.osc import OscAddress, OscMessage
 
