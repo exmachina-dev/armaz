@@ -280,7 +280,7 @@ class SlaveMachine(AbstractMachine):
                 raise SlaveMachineError('Unexpected reply while pinging: {}'
                                         .format(rq.path))
             time_delta = datetime.now() - start_time
-            self._latency = time_delta.microseconds / 1000
+            self._latency = time_delta.total_seconds() * 1000
             return self._latency
         except AbstractDriverTimeoutError as e:
             raise SlaveMachineTimeoutError('Timeout while pinging: {!s}'.format(e), self.slave)
