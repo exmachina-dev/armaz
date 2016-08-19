@@ -41,4 +41,4 @@ class OscFutureResult(object):
                 self.__class__.__name__, other.__class__.__name__, str(e)))
 
     def __repr__(self):
-        return 'WF {}'.format(self.uuid)
+        return '{0.__class__.__name__}({0.uuid})'.format(self)
