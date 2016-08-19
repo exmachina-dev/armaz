@@ -53,7 +53,8 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
 
         try:
             dst = args[0]
-            self.ok(c, uuid, dst, self.machine[dst])
+            val = self.machine.get(dst, tick=True)
+            self.ok(c, uuid, dst, val)
         except Exception as e:
             logging.error(repr(e))
             self.error(c, uuid, dst, repr(e))
@@ -75,10 +76,10 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
             key, *values = args
             if key == 'machine:operating_mode':
 
-                if len(c.args[2:]) == 1:
-                    mode, master = c.args[2], None
+                if len(values) == 1:
+                    mode, master = values[0], None
                 else:
-                    mode, master = c.args[2:4]
+                    mode, master = values
                 self.machine.set_operating_mode(mode, master=master)
                 self.ok(c, uuid, *args)
                 return
@@ -86,17 +87,16 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
                 if not self.check_slave_mode(c):
                     return
 
-            uuid, dst, *args = c.args
+            val = self.machine.set(key, *values, tick=True)
 
-            if len(args) == 1:
-                self.machine[dst] = args[0]
+            if isinstance(val, (tuple, list)):
+                self.ok(c, uuid, key, *val)
             else:
-                self.machine[dst] = args
-
-            self.ok(c, uuid, dst, *args)
+                self.ok(c, uuid, key, val)
         except Exception as e:
-            logging.error(repr(e))
-            self.error(c, uuid, dst, *(list(args) + [repr(e),]))
+            logging.exception(e)
+            args = values + [str(e),]
+            self.error(c, uuid, key, *args)
 
     @property
     def alias(self):

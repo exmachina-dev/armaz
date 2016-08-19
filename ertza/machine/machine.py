@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import time
+from datetime import datetime
 import logging
 
 from threading import Event, Thread
@@ -77,7 +77,7 @@ class Machine(AbstractMachine):
         self._timeout_event = Event()
         self._slaves_running_event = Event()
 
-        self._last_command_time = time.time()
+        self._last_command_time = datetime.now()
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
@@ -434,6 +434,34 @@ class Machine(AbstractMachine):
         self.activate_mode('standalone')
         self._running_event.set()
 
+    def get(self, key, **kwargs):
+        if key.startswith('machine:'):
+            key = key.split(':', maxsplit=1)[1]
+
+        if kwargs.pop('tick', False) and self.slave_mode:
+            if self._timeout_event.is_set() and not self['status:drive_enable']:
+                self.machine_keys['command:enable'] = True
+                self._timeout_event.clear()
+            self._last_command_time = datetime.now()
+
+        return self.machine_keys[key]
+
+    def set(self, key, *args, **kwargs):
+        if key.startswith('machine:'):
+            key = key.split(':', maxsplit=1)[1]
+
+        if kwargs.pop('tick', False) and self.slave_mode:
+            if self._timeout_event.is_set() and not self['status:drive_enable']:
+                self.machine_keys['command:enable'] = True
+                self._timeout_event.clear()
+            self._last_command_time = datetime.now()
+
+        if len(args) != 1:
+            raise ValueError('Invalid argument number')
+
+        self.machine_keys[key] = args[0]
+        return args[0]
+
     def getitem(self, key):
         return getattr(self, key)
 
@@ -501,7 +529,9 @@ class Machine(AbstractMachine):
                 self._running_event.wait(self._slave_timeout)
                 continue
 
-            if time.time() - self._last_command_time > self._slave_timeout:
+            t_delta = (datetime.now() - self._last_command_time).total_seconds()
+
+            if t_delta > self._slave_timeout:
                 self._timeout_event.set()
                 self['machine:command:enable'] = False
                 logging.error('Timeout detected, disabling drive')
@@ -526,36 +556,14 @@ class Machine(AbstractMachine):
                     self.slaves_channel.send(rq)
                 except StopIteration:
                     pass
+                except SlaveMachineTimeoutError as e:
+                    self._slaves_timeout_event.set()
+                    logging.error('Timeout detected for {0.slave!s}'.format(e))
 
             self._slaves_running_event.wait(self.slave_refresh_interval)
 
     def __getitem__(self, key):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            return dst[key]
-
-        if self.slave_mode:
-            self._last_command_time = time.time()
-
-        return self.machine_keys[key]
+        return self.get(key)
 
     def __setitem__(self, key, value):
-        if isinstance(value, (tuple, list)) and len(value) == 1:
-            value, = value
-
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            dst[key] = value
-            return dst[key]
-
-        if self.slave_mode:
-            if self._timeout_event.is_set() and not self['machine:status:drive_enable']:
-                self.machine_keys['machine:command:enable'] = True
-                self._timeout_event.clear()
-            self._last_command_time = time.time()
-
-        self.machine_keys[key] = value
+        self.set(key, value)
