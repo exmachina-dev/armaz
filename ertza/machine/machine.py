@@ -269,7 +269,7 @@ class Machine(AbstractMachine):
                               '{0}'.format(str(e), *sm.slave))
                 raise e
 
-            sn = sm.get('machine:serialnumber', block=True)
+            sn = sm.get('serialnumber', block=True)
             if type(sn) == str and sm.serialnumber != sn:
                 infos = sm.slave + (sm.get_serialnumber(),)
                 raise MachineError('S/N don\'t match for {2} slave '
@@ -429,7 +429,7 @@ class Machine(AbstractMachine):
         self.master = None
         self.master_port = None
 
-        self['machine:command:enable'] = False
+        self['command:enable'] = False
 
         self.activate_mode('standalone')
         self._running_event.set()
@@ -501,7 +501,7 @@ class Machine(AbstractMachine):
             n, f, h = sw_state['name'], sw_state['function'], sw_state['hit']
             logging.debug('Switch activated: {0}, {1}, {2}'.format(n, f, h))
             if 'drive_enable' == f:
-                self['machine:command:enable'] = True if h else False
+                self['command:enable'] = True if h else False
                 self.switch_states[n] = h
                 logging.info('Switch: {0} {1} with {2}'.format(
                     f, 'enabled' if h else 'disabled', n))
@@ -509,7 +509,7 @@ class Machine(AbstractMachine):
                 if h:
                     sw_st = self.switch_states.get(n, False)
 
-                    self['machine:command:enable'] = not sw_st
+                    self['command:enable'] = not sw_st
                     self.switch_states[n] = not sw_st
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
@@ -525,7 +525,7 @@ class Machine(AbstractMachine):
     def _timeout_watcher(self):
         self._running_event.clear()
         while not self._running_event.is_set():
-            if self['machine:status:drive_enable'] is False:
+            if self['status:drive_enable'] is False:
                 self._running_event.wait(self._slave_timeout)
                 continue
 
@@ -533,7 +533,7 @@ class Machine(AbstractMachine):
 
             if t_delta > self._slave_timeout:
                 self._timeout_event.set()
-                self['machine:command:enable'] = False
+                self['command:enable'] = False
                 logging.error('Timeout detected, disabling drive')
 
             self._running_event.wait(self._slave_timeout)

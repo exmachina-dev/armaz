@@ -44,7 +44,7 @@ class SlaveGet(SlaveCommand, UnbufferedCommand):
 
     def execute(self, c):
         uuid, *args = c.args
-        if args[0] not in ('machine:operating_mode', 'machine:serialnumber') \
+        if args[0] not in ('operating_mode', 'serialnumber') \
                 and not self.check_slave_mode(c):
             return
 
@@ -74,7 +74,7 @@ class SlaveSet(SlaveCommand, UnbufferedCommand):
         try:
             uuid, *args = c.args
             key, *values = args
-            if key == 'machine:operating_mode':
+            if key == 'operating_mode':
 
                 if len(values) == 1:
                     mode, master = values[0], None
