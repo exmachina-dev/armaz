@@ -327,16 +327,8 @@ class Machine(AbstractMachine):
             logging.info('Setting operating mode to {}'.format(mode))
 
             if mode == 'master':
-                if self.master_mode:
-                    logging.info('Operating mode {} already active'.format(mode))
-                    return
-
                 self.activate_mode(mode)
             elif mode == 'slave':
-                if self.slave_mode:
-                    raise MachineError('Operating mode {0} already active. '
-                                       'You must disable {0} mode before '
-                                       'reactiving it'.format(mode))
                 if len(args) >= 2:
                     master = args[1]
                 else:
@@ -353,10 +345,6 @@ class Machine(AbstractMachine):
 
                 self.activate_mode(mode)
             elif mode == 'standalone':
-                if self.standalone_mode:
-                    logging.info('Operating mode {} already active'.format(mode))
-                    return
-
                 self.activate_mode(mode)
         else:
             logging.info('Deactivating %s mode' % self.operating_mode)
