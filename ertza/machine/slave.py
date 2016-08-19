@@ -282,8 +282,8 @@ class SlaveMachine(AbstractMachine):
             time_delta = datetime.now() - start_time
             self._latency = time_delta.microseconds / 1000
             return self._latency
-        except AbstractTimeoutError as e:
-            raise SlaveMachineError('Timeout while pinging: {}!s'.format(e))
+        except AbstractDriverTimeoutError as e:
+            raise SlaveMachineTimeoutError('Timeout while pinging: {!s}'.format(e), self.slave)
 
     def set_control_mode(self, mode):
         if mode not in CONTROL_MODES.keys():
@@ -292,7 +292,11 @@ class SlaveMachine(AbstractMachine):
         return self.set('command:control_mode', CONTROL_MODES[mode], block=True)
 
     def get(self, key, **kwargs):
-        return self.driver.get(key, **kwargs)
+        try:
+            return self.driver.get(key, **kwargs)
+        except AbstractDriverTimeoutError as e:
+            raise SlaveMachineTimeoutError('Timeout while getting: {0.request!s}'
+                                           .format(e), self.slave)
 
     def set(self, key, *args, **kwargs):
         return self.driver.set(key, *args, **kwargs)

@@ -170,7 +170,7 @@ class OscDriver(AbstractDriver):
         pass
 
     def timeout_cb(self, request):
-        request.kwargs['exception'] = OscDriverTimeout('Timeout for {!s}'.format(request))
+        request.kwargs['exception'] = OscDriverTimeout('Timeout', request)
         request.kwargs['timeout'] = True
         self.timeout_event.set()
         logging.error('Timeout for request {!s}'.format(request))
@@ -181,11 +181,11 @@ class OscDriver(AbstractDriver):
 
     def wait_for_reply(self, request):
         if request.event is None:
-            raise OscDriverError('Cannot wait for reply, no event specified')
+            raise OscDriverError('Cannot wait for reply, no event specified', request)
 
         if request.event.wait(self.timeout):
             return request.reply
-        raise OscDriverTimeout('Timeout while waiting for {!s}'.format(request))
+        raise OscDriverTimeout('Timeout while waiting', request)
 
     def get(self, key, **kwargs):
         block = kwargs.get('block', False)
@@ -238,7 +238,7 @@ class OscDriver(AbstractDriver):
                 m.receiver = self.target
                 lo.send((m.receiver.hostname, m.receiver.port), m.message)
             except OSError as e:
-                raise OscDriverError(str(e))
+                raise OscDriverError(str(e), request)
 
     def __getitem__(self, key):
         return self.get(key, block=True)
