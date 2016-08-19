@@ -42,7 +42,7 @@ class OscDriver(AbstractDriver):
 
     def init_pipes(self):
         self.outlet = self.gen_future(self._send(), self.gen_timeout_timer())
-        self.inlet = self.inlet_pipe()
+        self.inlet = self.inlet_pipe(self.update_latency())
 
     def connect(self):
         self.init_pipes()
@@ -119,7 +119,7 @@ class OscDriver(AbstractDriver):
                 raise
 
     @coroutine
-    def inlet_pipe(self):
+    def inlet_pipe(self, coro=None):
         while not self.running_event.is_set():
             try:
                 message = (yield)
@@ -145,9 +145,23 @@ class OscDriver(AbstractDriver):
                     future.request.exception = OscDriverError(str(message))
 
                 future.request.reply = message
+                if coro:
+                    coro.send(future)
             except OscDriverTimeout as e:
                 logging.error('Timeout in %s: %s' % (self.__class__.__name__,
                                                      repr(e)))
+            except OscDriverError as e:
+                logging.error('Exception in %s: %s' % (self.__class__.__name__,
+                                                       repr(e)))
+
+    @coroutine
+    def update_latency(self):
+        while not self.running_event.is_set():
+            try:
+                future = (yield)
+
+                self._latency = future.latency
+                logging.info('Latency: {0:.2f} ms'.format(future.latency))
             except OscDriverError as e:
                 logging.error('Exception in %s: %s' % (self.__class__.__name__,
                                                        repr(e)))
