@@ -283,6 +283,7 @@ class SlaveMachine(AbstractMachine):
             self._latency = time_delta.total_seconds() * 1000
             return self._latency
         except AbstractDriverTimeoutError as e:
+            self.timeout_event.set()
             raise SlaveMachineTimeoutError('Timeout while pinging: {!s}'.format(e), self.slave)
 
     def set_control_mode(self, mode):
@@ -390,7 +391,7 @@ class SlaveMachine(AbstractMachine):
 
     def _watchdog(self):
         while not self.watchdog_event.is_set():
-            if self.fatal_event.is_set() or self.fault_event.is_set():
+            if SlaveMachineFatalError.fatal_event.is_set():
                 self.set('command:enable', False)
 
             self.watchdog_event.wait(self.refresh_interval)
