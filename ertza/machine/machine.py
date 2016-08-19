@@ -471,15 +471,15 @@ class Machine(AbstractMachine):
 
     @property
     def slave_mode(self):
-        return self._check_operating_mode('slave', raise_exception=False)
+        return self.operating_mode == 'slave'
 
     @property
     def master_mode(self):
-        return self._check_operating_mode('master', raise_exception=False)
+        return self.operating_mode == 'master'
 
     @property
     def standalone_mode(self):
-        return self._check_operating_mode('standalone', raise_exception=False)
+        return self.operating_mode == 'standalone'
 
     @property
     def parameters(self):
