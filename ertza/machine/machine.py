@@ -354,10 +354,6 @@ class Machine(AbstractMachine):
         if mode not in OPERATING_MODES:
             raise MachineError('Unexpected mode: {}'.format(mode))
 
-        if self._check_operating_mode(mode, raise_exception=False):
-            logging.info('Operating mode {} already active'.format(mode))
-            return
-
         logging.info('Setting operating mode to {}'.format(mode))
 
         if mode == 'master':
