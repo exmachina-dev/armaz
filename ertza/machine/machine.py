@@ -62,6 +62,7 @@ class Machine(AbstractMachine):
         self.alive_machines = {}
 
         self.master = None
+        self.slave_watchdog_timeout = 0.5
         self.operating_mode = None
 
         self._machine_keys = None
@@ -76,6 +77,10 @@ class Machine(AbstractMachine):
         self._running_event = Event()
         self._timeout_event = Event()
         self._slaves_running_event = Event()
+        self._slaves_timeout_event = Event()
+        SlaveMachineTimeoutError.fatal_event = self._slaves_timeout_event
+        self._slaves_fatal_event = Event()
+        SlaveMachineFatalError.fatal_event = self._slaves_fatal_event
 
         self._last_command_time = datetime.now()
 
@@ -416,7 +421,7 @@ class Machine(AbstractMachine):
             self._machine_keys = SlaveMachineMode(self)
             self.operating_mode = mode
 
-            self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
+            self.slave_watchdog_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=.5))
             self._timeout_thread = Thread(target=self._timeout_watcher)
             self._timeout_thread.daemon = True
             self._timeout_thread.start()
@@ -511,20 +516,22 @@ class Machine(AbstractMachine):
                         f, 'on' if not sw_st else 'off', n))
 
     def _timeout_watcher(self):
+        logging.info('Starting timeout watchdog')
         self._running_event.clear()
         while not self._running_event.is_set():
             if self['status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
+                self._running_event.wait(self.slave_watchdog_timeout)
                 continue
 
             t_delta = (datetime.now() - self._last_command_time).total_seconds()
 
-            if t_delta > self._slave_timeout:
+            logging.debug(t_delta)
+            if t_delta > self.slave_watchdog_timeout:
                 self._timeout_event.set()
                 self['command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
+                logging.error('Timeout detected, drive disabled')
 
-            self._running_event.wait(self._slave_timeout)
+            self._running_event.wait(self.slave_watchdog_timeout)
 
     def _slaves_loop(self):
         while not self._slaves_running_event.is_set():
