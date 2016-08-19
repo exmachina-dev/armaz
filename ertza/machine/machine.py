@@ -510,14 +510,6 @@ class Machine(AbstractMachine):
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
 
-    def _get_destination(self, key):
-        if key.startswith('drive:'):
-            return self.driver
-        elif key.startswith('machine:'):
-            return self
-
-        raise ValueError('Unable to find target %s' % key)
-
     def _timeout_watcher(self):
         self._running_event.clear()
         while not self._running_event.is_set():
