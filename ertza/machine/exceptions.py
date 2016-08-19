@@ -4,7 +4,7 @@
 #
 # Copyright © 2016 Benoit Rapidel <benoit.rapidel+devs@exmachina.fr>
 #
-# Distributed under terms of the MIT license.
+# Distributed under terms of the GPLv3+ license.
 
 """
 Exceptions for ertza.machine
