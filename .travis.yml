@@ -18,7 +18,7 @@ before_install:
 # command to install dependencies
 install:
     - pip install Cython
-    - pip install -r requirements.txt
+    - pip install -r requirements.travis.txt
     - pip install .
 
 # command to run tests
