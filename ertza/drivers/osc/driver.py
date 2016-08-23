@@ -180,7 +180,7 @@ class OscDriver(AbstractDriver):
         self._timeout_timers.pop(request.uuid, None)
         orphan_future = self._waiting_futures.pop(request.uuid, None)
         if orphan_future:
-            logging.error('Removed orphan future: {!s}'.format(orphan_future))
+            logging.debug('Removed orphan future: {!s}'.format(orphan_future))
 
         request.reply = None
 
