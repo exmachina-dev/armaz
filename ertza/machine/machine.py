@@ -78,7 +78,7 @@ class Machine(AbstractMachine):
 
         self._slaves_thread = None
         self._slaves_running_event = Event()
-        self._slaves_timeout_event = SlaveMachineTimeoutError.timeout_error
+        self._slaves_timeout_event = SlaveMachineTimeoutError.timeout_event
         self._slaves_fatal_event = SlaveMachineFatalError.fatal_event
 
         self._last_command_time = datetime.now()
