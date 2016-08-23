@@ -35,6 +35,9 @@ class Test_Switch(object):
         self.wait_ev = Event()
         self.rtn_data = {}
 
+        with open(self.inputdev, 'w') as f:
+            pass
+
         def _cb(sw_state):
             self.wait_ev.wait()
             self.data_ev.clear()
