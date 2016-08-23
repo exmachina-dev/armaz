@@ -61,6 +61,7 @@ class Ertza(object):
 
     def __init__(self, *agrs, **kwargs):
         ''' Init '''
+        logger.setLevel(15)
         logger.info('Ertza initializing. Version: {}'.format(version))
 
         machine = Machine()
