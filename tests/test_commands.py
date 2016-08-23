@@ -9,7 +9,23 @@ from ertza.processors.serial.message import SerialCommandString
 
 
 class _FakeMachine(AbstractMachine):
+    class FakeCoro(object):
+        def send(self, m):
+            return(m)
+
+    outlet = FakeCoro()
+
     def send_message(self, m):
+        return m
+
+    def send(self, m):
+        return m
+
+
+class MockOscCommand(OscCommand):
+    def send(self, *args, **kwargs):
+        target, path, *args = args
+        m = OscMessage(path, *args, receiver=target, **kwargs)
         return m
 
 
@@ -34,9 +50,9 @@ class Test_AbstractCommand(object):
 class Test_OscCommand(object):
     def setup_class(self):
         self.fm = _FakeMachine()
-        self.cmd = OscCommand(self.fm)
+        self.cmd = MockOscCommand(self.fm)
 
-        class TestCommand(OscCommand):
+        class TestCommand(MockOscCommand):
             @property
             def alias(self):
                 return '/test'
