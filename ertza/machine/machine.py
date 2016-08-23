@@ -37,7 +37,6 @@ class Machine(AbstractMachine):
     def __init__(self):
 
         SlaveMachine.machine = self
-        self.fatal_event = Event()
 
         self.version = None
 
@@ -73,14 +72,14 @@ class Machine(AbstractMachine):
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-        self._slaves_thread = None
         self._running_event = Event()
-        self._timeout_event = Event()
+        self._fatal_event = MachineFatalError.fatal_event
+        self._timeout_event = MachineTimeoutError.timeout_event
+
+        self._slaves_thread = None
         self._slaves_running_event = Event()
-        self._slaves_timeout_event = Event()
-        SlaveMachineTimeoutError.fatal_event = self._slaves_timeout_event
-        self._slaves_fatal_event = Event()
-        SlaveMachineFatalError.fatal_event = self._slaves_fatal_event
+        self._slaves_timeout_event = SlaveMachineTimeoutError.timeout_error
+        self._slaves_fatal_event = SlaveMachineFatalError.fatal_event
 
         self._last_command_time = datetime.now()
 
