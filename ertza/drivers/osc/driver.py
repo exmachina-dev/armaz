@@ -29,7 +29,7 @@ class OscDriver(AbstractDriver):
 
         self.machine = machine
 
-        self.outlet, self.inlet = None, None
+        self.outlet = self.inlet = None
         self.timeout = config.get('timeout', 0.5)
 
         self._waiting_futures = {}
@@ -161,7 +161,6 @@ class OscDriver(AbstractDriver):
                 future = (yield)
 
                 self._latency = future.latency
-                logging.info('Latency: {0:.2f} ms'.format(future.latency))
             except OscDriverError as e:
                 logging.error('Exception in %s: %s' % (self.__class__.__name__,
                                                        repr(e)))
