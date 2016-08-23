@@ -26,7 +26,9 @@ install:
 # command to run tests
 script:
     - py.test
-    - cd tests && py.test --cov=ertza ./ && mv .coverage ../
+    - cd tests
+    - py.test --cov=ertza ./ && mv .coverage ../
+    - cd ../
 
 # update code coverage
 after_success:
