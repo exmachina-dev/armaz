@@ -10,8 +10,6 @@ ____ ____ ___ ___  ____
 [![Travis CI](https://travis-ci.org/exmachina-dev/ertza.svg?branch=dev)](https://travis-ci.org/exmachina-dev/ertza)
 [![Documentation Status](https://readthedocs.org/projects/ertza/badge/?version=latest)](http://ertza.readthedocs.io/en/latest/?badge=latest)
 
-Continuous integration is currently not working.
-
 
 This program provides all functionnalities for controlling Armaz motors. This software runs on a Beaglebone Black with a ArmazCape on top of it.
 ArmazCape design files can be found in the [Bitbucket repository](https://bitbucket.org/exmachina-dev/eisla-electronics) or in the [Github repository](https://github.com/exmachina-dev/ertza).
