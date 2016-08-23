@@ -4,7 +4,7 @@
 #
 # Copyright © 2016 Benoit Rapidel <benoit.rapidel+devs@exmachina.fr>
 #
-# Distributed under terms of the MIT license.
+# Distributed under terms of the GPLv3+ license.
 
 """
 Defines abstract exceptions.
@@ -15,8 +15,22 @@ exceptions.
 
 from .led import Led
 
+__all__ = ['AbstractErtzaException', 'AbstractErtzaFatalException']
 
-class AbstractErtzaException(Exception):
+
+class _ErtzaException(Exception):
+    def __init__(self, msg=''):
+        self.message = msg
+        Exception.__init__(self, msg)
+
+    def __repr__(self):
+        return '{0.__class__.__name__}({0.message})'.format(self)
+
+    def __str__(self):
+        return self.message
+
+
+class AbstractErtzaException(_ErtzaException):
     def __init__(self, *args, **kwargs):
         delay = kwargs.pop('led_delay', 2000)
         Led.set_error_leds('flash', delay)

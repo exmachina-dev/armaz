@@ -13,7 +13,7 @@ import queue
 
 from .configparser import ConfigParser, ProfileError
 from .machine import Machine
-from .machine.abstract_machine import AbstractMachineError
+from .machine import AbstractMachineError
 
 from .dispatch import Dispatcher
 
@@ -61,6 +61,7 @@ class Ertza(object):
 
     def __init__(self, *agrs, **kwargs):
         ''' Init '''
+        logger.setLevel(15)
         logger.info('Ertza initializing. Version: {}'.format(version))
 
         machine = Machine()

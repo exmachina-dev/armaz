@@ -2,7 +2,8 @@
 
 import logging
 
-from ..abstract_driver import AbstractDriver, AbstractDriverError
+from ..abstract_driver import AbstractDriver
+from ..exceptions import AbstractDriverError
 from ..frontend import DriverFrontend
 from ..netdata_maps import MicroflexE100Map
 

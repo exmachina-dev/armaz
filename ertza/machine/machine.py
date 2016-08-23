@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import time
+from datetime import datetime
 import logging
 
 from threading import Event, Thread
 
 from .abstract_machine import AbstractMachine
-from .abstract_machine import AbstractMachineError
-from .abstract_machine import AbstractFatalMachineError
+from .slave import Slave, SlaveMachine, SlaveRequest
 
 from .modes import StandaloneMachineMode
 from .modes import MasterMachineMode
@@ -17,8 +16,11 @@ from .modes import SlaveMachineMode
 from ..drivers import Driver
 from ..drivers import AbstractDriverError
 
-from .slave import Slave, SlaveMachine
-from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+from .exceptions import AbstractMachineError, AbstractMachineFatalError
+from .exceptions import MachineError, MachineFatalError
+from .exceptions import SlaveMachineError, SlaveMachineFatalError
+from .exceptions import MachineTimeoutError, SlaveMachineTimeoutError
+
 
 from ..drivers.utils import retry
 
@@ -31,30 +33,19 @@ logging = logging.getLogger('ertza.machine')
 OPERATING_MODES = ('standalone', 'master', 'slave')
 
 
-class MachineError(AbstractMachineError):
-    pass
-
-
-class FatalMachineError(AbstractFatalMachineError):
-    pass
-
-
 class Machine(AbstractMachine):
     def __init__(self):
 
         SlaveMachine.machine = self
-        self.fatal_event = Event()
-        SlaveMachine.fatal_event = self.fatal_event
-        FatalSlaveMachineError.fatal_event = self.fatal_event
 
         self.version = None
 
         self.config = None
-        self.driver = None
         self.cape_infos = None
         self.ethernet_interface = None
-
+        self.driver = None
         self.dispatcher = None
+
         self.thermistors = None
         self.fans = None
         self.switches = None
@@ -62,10 +53,17 @@ class Machine(AbstractMachine):
 
         self.slave_machines = {}
         self.slaves_channel = Channel('slave_machines')
-        self._slaves_thread = None
+        self.slave_refresh_interval = None
+
+        self.switch_callback = self._switch_cb
+        self.switch_states = {}
+
         self.alive_machines = {}
+
         self.master = None
+        self.slave_watchdog_timeout = 0.5
         self.operating_mode = None
+
         self._machine_keys = None
 
         # TODO: Not working yet
@@ -74,15 +72,16 @@ class Machine(AbstractMachine):
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-        self._last_command_time = time.time()
         self._running_event = Event()
+        self._fatal_event = MachineFatalError.fatal_event
+        self._timeout_event = MachineTimeoutError.timeout_event
+
+        self._slaves_thread = None
         self._slaves_running_event = Event()
-        self._timeout_event = Event()
+        self._slaves_timeout_event = SlaveMachineTimeoutError.timeout_event
+        self._slaves_fatal_event = SlaveMachineFatalError.fatal_event
 
-        self.slave_refresh_interval = None
-
-        self.switch_callback = self._switch_cb
-        self.switch_states = {}
+        self._last_command_time = datetime.now()
 
     def init_driver(self):
         drv = self.config.get('machine', 'driver', fallback=None)
@@ -100,7 +99,7 @@ class Machine(AbstractMachine):
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
         else:
-            e = FatalMachineError("Machine driver is not defined, aborting.")
+            e = MachineFatalError("Machine driver is not defined, aborting.")
             logging.error(e)
             raise e
 
@@ -221,7 +220,7 @@ class Machine(AbstractMachine):
                 except KeyError as e:
                     m = 'Missing required option for {}: {!s}'.format(item, e)
                     logging.error(m)
-                    raise FatalMachineError(m)
+                    raise MachineFatalError(m)
 
                 slave_cf = {}
                 if self.config.has_section('slave_{}'.format(slave_sn)):
@@ -274,7 +273,7 @@ class Machine(AbstractMachine):
                               '{0}'.format(str(e), *sm.slave))
                 raise e
 
-            sn = sm.get('machine:serialnumber', block=True)
+            sn = sm.get('serialnumber', block=True)
             if type(sn) == str and sm.serialnumber != sn:
                 infos = sm.slave + (sm.get_serialnumber(),)
                 raise MachineError('S/N don\'t match for {2} slave '
@@ -342,7 +341,7 @@ class Machine(AbstractMachine):
             slave_machine.init_driver()
             slave_machine.start()
         except SlaveMachineError as e:
-            raise FatalMachineError(
+            raise MachineFatalError(
                 'Couldn\'t initialize {2} slave at {1} with S/N {0}: {exc}'
                 .format(*slave_machine.slave, exc=e))
 
@@ -358,10 +357,6 @@ class Machine(AbstractMachine):
 
         if mode not in OPERATING_MODES:
             raise MachineError('Unexpected mode: {}'.format(mode))
-
-        if self._check_operating_mode(mode, raise_exception=False):
-            logging.info('Operating mode {} already active'.format(mode))
-            return
 
         logging.info('Setting operating mode to {}'.format(mode))
 
@@ -425,7 +420,7 @@ class Machine(AbstractMachine):
             self._machine_keys = SlaveMachineMode(self)
             self.operating_mode = mode
 
-            self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
+            self.slave_watchdog_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=.5))
             self._timeout_thread = Thread(target=self._timeout_watcher)
             self._timeout_thread.daemon = True
             self._timeout_thread.start()
@@ -434,10 +429,38 @@ class Machine(AbstractMachine):
         self.master = None
         self.master_port = None
 
-        self['machine:command:enable'] = False
+        self['command:enable'] = False
 
         self.activate_mode('standalone')
         self._running_event.set()
+
+    def get(self, key, **kwargs):
+        if key.startswith('machine:'):
+            key = key.split(':', maxsplit=1)[1]
+
+        if kwargs.pop('tick', False) and self.slave_mode:
+            if self._timeout_event.is_set() and not self['status:drive_enable']:
+                self.machine_keys['command:enable'] = True
+                self._timeout_event.clear()
+            self._last_command_time = datetime.now()
+
+        return self.machine_keys[key]
+
+    def set(self, key, *args, **kwargs):
+        if key.startswith('machine:'):
+            key = key.split(':', maxsplit=1)[1]
+
+        if kwargs.pop('tick', False) and self.slave_mode:
+            if self._timeout_event.is_set() and not self['status:drive_enable']:
+                self.machine_keys['command:enable'] = True
+                self._timeout_event.clear()
+            self._last_command_time = datetime.now()
+
+        if len(args) != 1:
+            raise ValueError('Invalid argument number')
+
+        self.machine_keys[key] = args[0]
+        return args[0]
 
     def getitem(self, key):
         return getattr(self, key)
@@ -447,15 +470,15 @@ class Machine(AbstractMachine):
 
     @property
     def slave_mode(self):
-        return self._check_operating_mode('slave', raise_exception=False)
+        return self.operating_mode == 'slave'
 
     @property
     def master_mode(self):
-        return self._check_operating_mode('master', raise_exception=False)
+        return self.operating_mode == 'master'
 
     @property
     def standalone_mode(self):
-        return self._check_operating_mode('standalone', raise_exception=False)
+        return self.operating_mode == 'standalone'
 
     @property
     def parameters(self):
@@ -478,7 +501,7 @@ class Machine(AbstractMachine):
             n, f, h = sw_state['name'], sw_state['function'], sw_state['hit']
             logging.debug('Switch activated: {0}, {1}, {2}'.format(n, f, h))
             if 'drive_enable' == f:
-                self['machine:command:enable'] = True if h else False
+                self['command:enable'] = True if h else False
                 self.switch_states[n] = h
                 logging.info('Switch: {0} {1} with {2}'.format(
                     f, 'enabled' if h else 'disabled', n))
@@ -486,32 +509,28 @@ class Machine(AbstractMachine):
                 if h:
                     sw_st = self.switch_states.get(n, False)
 
-                    self['machine:command:enable'] = not sw_st
+                    self['command:enable'] = not sw_st
                     self.switch_states[n] = not sw_st
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
 
-    def _get_destination(self, key):
-        if key.startswith('drive:'):
-            return self.driver
-        elif key.startswith('machine:'):
-            return self
-
-        raise ValueError('Unable to find target %s' % key)
-
     def _timeout_watcher(self):
+        logging.info('Starting timeout watchdog')
         self._running_event.clear()
         while not self._running_event.is_set():
-            if self['machine:status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
+            if self['status:drive_enable'] is False:
+                self._running_event.wait(self.slave_watchdog_timeout)
                 continue
 
-            if time.time() - self._last_command_time > self._slave_timeout:
-                self._timeout_event.set()
-                self['machine:command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
+            t_delta = (datetime.now() - self._last_command_time).total_seconds()
 
-            self._running_event.wait(self._slave_timeout)
+            logging.debug(t_delta)
+            if t_delta > self.slave_watchdog_timeout:
+                self._timeout_event.set()
+                self['command:enable'] = False
+                logging.error('Timeout detected, drive disabled')
+
+            self._running_event.wait(self.slave_watchdog_timeout)
 
     def _slaves_loop(self):
         while not self._slaves_running_event.is_set():
@@ -531,36 +550,14 @@ class Machine(AbstractMachine):
                     self.slaves_channel.send(rq)
                 except StopIteration:
                     pass
+                except SlaveMachineTimeoutError as e:
+                    self._slaves_timeout_event.set()
+                    logging.error('Timeout detected for {0.slave!s}'.format(e))
 
             self._slaves_running_event.wait(self.slave_refresh_interval)
 
     def __getitem__(self, key):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            return dst[key]
-
-        if self.slave_mode:
-            self._last_command_time = time.time()
-
-        return self.machine_keys[key]
+        return self.get(key)
 
     def __setitem__(self, key, value):
-        if isinstance(value, (tuple, list)) and len(value) == 1:
-            value, = value
-
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            dst[key] = value
-            return dst[key]
-
-        if self.slave_mode:
-            if self._timeout_event.is_set() and not self['machine:status:drive_enable']:
-                self.machine_keys['machine:command:enable'] = True
-                self._timeout_event.clear()
-            self._last_command_time = time.time()
-
-        self.machine_keys[key] = value
+        self.set(key, value)

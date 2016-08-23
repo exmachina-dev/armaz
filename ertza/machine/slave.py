@@ -7,10 +7,12 @@ from datetime import datetime
 import logging
 
 from .abstract_machine import AbstractMachine
-from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
+
+from .exceptions import AbstractMachineError
+from .exceptions import SlaveMachineError, SlaveMachineTimeoutError, SlaveMachineFatalError
 
 from ..drivers import Driver
-from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
+from ..drivers import AbstractDriverError, AbstractDriverTimeoutError
 
 from ..async_utils import coroutine
 
@@ -26,20 +28,6 @@ CONTROL_MODES = {
     'position':         3,
     'enhanced_torque':  4,
 }
-
-
-class SlaveMachineError(AbstractMachineError):
-    pass
-
-
-class FatalSlaveMachineError(AbstractFatalMachineError):
-    fatal_event = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if FatalSlaveMachineError:
-            FatalSlaveMachineError.fatal_event.set()
-            logging.error('Fatal error, disabling all slaves')
 
 
 class SlaveRequest(object):
@@ -154,24 +142,23 @@ class SlaveRequest(object):
 class SlaveMachine(AbstractMachine):
 
     machine = None
-    fatal_event = None
 
     SLAVE_MODES = {
         'torque': (
-            SlaveKey('machine:torque_ref', 'machine:torque'),
-            SlaveKey('machine:torque_rise_time', 'machine:torque_rise_time'),
-            SlaveKey('machine:torque_fall_time', 'machine:torque_fall_time'),
+            SlaveKey('torque_ref', 'torque'),
+            SlaveKey('torque_rise_time', 'torque_rise_time'),
+            SlaveKey('torque_fall_time', 'torque_fall_time'),
         ),
         'enhanced_torque': (
-            SlaveKey('machine:torque_ref', 'machine:current_ratio'),
-            SlaveKey('machine:velocity_ref', 'machine:velocity'),
-            SlaveKey('machine:torque_rise_time', None),
-            SlaveKey('machine:torque_fall_time', None),
+            SlaveKey('torque_ref', 'current_ratio'),
+            SlaveKey('velocity_ref', 'velocity'),
+            SlaveKey('torque_rise_time', None),
+            SlaveKey('torque_fall_time', None),
         ),
         'velocity': (
-            SlaveKey('machine:velocity_ref', 'machine:velocity'),
-            SlaveKey('machine:acceleration', None),
-            SlaveKey('machine:deceleration', None),
+            SlaveKey('velocity_ref', 'velocity'),
+            SlaveKey('acceleration', None),
+            SlaveKey('deceleration', None),
         ),
     }
 
@@ -203,8 +190,8 @@ class SlaveMachine(AbstractMachine):
         self.max_errors = 10
 
         self.running_event = Event()
-        self.timeout_event = Event()
-        self.fault_event = Event()
+        self.timeout_event = SlaveMachineTimeoutError.timeout_event
+        self.fault_event = SlaveMachineFatalError.fatal_event
         self.watchdog_event = Event()
 
         self._watchdog_thread = None
@@ -256,13 +243,13 @@ class SlaveMachine(AbstractMachine):
         self.driver.exit()
 
     def enslave(self):
-        self.driver.set('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
+        self.driver.set('operating_mode', 'slave', self.machine.get_address(self.slave.driver))
 
     @property
     def infos(self):
-        rev = self.driver['machine:revision']
+        rev = self.driver['revision']
         try:
-            var = self.driver['machine:variant'].split('.')
+            var = self.driver['variant'].split('.')
         except AttributeError:
             var = 'none:none'
 
@@ -281,7 +268,7 @@ class SlaveMachine(AbstractMachine):
         return self.SLAVE_MODES[self.slave.slave_mode]
 
     def get_serialnumber(self):
-        return self.get('machine:serialnumber', block=True)
+        return self.get('serialnumber', block=True)
 
     def ping(self, block=True):
         try:
@@ -292,19 +279,23 @@ class SlaveMachine(AbstractMachine):
                 raise SlaveMachineError('Unexpected reply while pinging: {}'
                                         .format(rq.path))
             time_delta = datetime.now() - start_time
-            self._latency = time_delta.microseconds / 1000
+            self._latency = time_delta.total_seconds() * 1000
             return self._latency
-        except AbstractTimeoutError as e:
-            raise SlaveMachineError('Timeout while pinging: {}!s'.format(e))
+        except AbstractDriverTimeoutError as e:
+            raise SlaveMachineTimeoutError('Timeout while pinging: {!s}'.format(e), self.slave)
 
     def set_control_mode(self, mode):
         if mode not in CONTROL_MODES.keys():
             raise KeyError('Unexpected mode: {0}'.format(mode))
 
-        return self.set('machine:command:control_mode', CONTROL_MODES[mode], block=True)
+        return self.set('command:control_mode', CONTROL_MODES[mode], block=True)
 
     def get(self, key, **kwargs):
-        return self.driver.get(key, **kwargs)
+        try:
+            return self.driver.get(key, **kwargs)
+        except AbstractDriverTimeoutError as e:
+            raise SlaveMachineTimeoutError('Timeout while getting: {0.request!s}'
+                                           .format(e), self.slave)
 
     def set(self, key, *args, **kwargs):
         return self.driver.set(key, *args, **kwargs)
@@ -398,8 +389,8 @@ class SlaveMachine(AbstractMachine):
 
     def _watchdog(self):
         while not self.watchdog_event.is_set():
-            if self.fatal_event.is_set() or self.fault_event.is_set():
-                self.set('machine:command:enable', False)
+            if SlaveMachineFatalError.fatal_event.is_set():
+                self.set('command:enable', False)
 
             self.watchdog_event.wait(self.refresh_interval)
 

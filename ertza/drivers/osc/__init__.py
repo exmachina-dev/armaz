@@ -1,3 +1,3 @@
 from .driver import OscDriver
-from .errors import OscDriverError, OscDriverTimeout
+from .exceptions import OscDriverError, OscDriverTimeout
 from .utils import OscFutureResult

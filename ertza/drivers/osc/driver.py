@@ -8,8 +8,9 @@ from threading import Lock
 import uuid
 
 from .utils import OscFutureResult
-from .errors import OscDriverError, OscDriverTimeout
-from ..abstract_driver import AbstractDriver, AbstractDriverError
+from .exceptions import OscDriverError, OscDriverTimeout
+from ..abstract_driver import AbstractDriver
+from ..exceptions import AbstractDriverError
 from ...machine.slave import SlaveRequest
 from ...processors.osc import OscAddress, OscMessage
 
@@ -28,7 +29,7 @@ class OscDriver(AbstractDriver):
 
         self.machine = machine
 
-        self.outlet, self.inlet = None, None
+        self.outlet = self.inlet = None
         self.timeout = config.get('timeout', 0.5)
 
         self._waiting_futures = {}
@@ -36,12 +37,12 @@ class OscDriver(AbstractDriver):
         self._timers_lock = Lock()
 
         self.running_event = Event()
-        self.timeout_event = Event()
         self.fault_event = Event()
+        self.timeout_event = OscDriverTimeout.timeout_event
 
     def init_pipes(self):
         self.outlet = self.gen_future(self._send(), self.gen_timeout_timer())
-        self.inlet = self.inlet_pipe()
+        self.inlet = self.inlet_pipe(self.update_latency())
 
     def connect(self):
         self.init_pipes()
@@ -118,7 +119,7 @@ class OscDriver(AbstractDriver):
                 raise
 
     @coroutine
-    def inlet_pipe(self):
+    def inlet_pipe(self, coro=None):
         while not self.running_event.is_set():
             try:
                 message = (yield)
@@ -144,6 +145,8 @@ class OscDriver(AbstractDriver):
                     future.request.exception = OscDriverError(str(message))
 
                 future.request.reply = message
+                if coro:
+                    coro.send(future)
             except OscDriverTimeout as e:
                 logging.error('Timeout in %s: %s' % (self.__class__.__name__,
                                                      repr(e)))
@@ -151,26 +154,46 @@ class OscDriver(AbstractDriver):
                 logging.error('Exception in %s: %s' % (self.__class__.__name__,
                                                        repr(e)))
 
-    def done_cb(self, *args):
-        pass
+    @coroutine
+    def update_latency(self):
+        while not self.running_event.is_set():
+            try:
+                future = (yield)
+
+                self._latency = future.latency
+            except OscDriverError as e:
+                logging.error('Exception in %s: %s' % (self.__class__.__name__,
+                                                       repr(e)))
+
+    def done_cb(self, request):
+        if self.timeout_event.is_set():
+            self.timeout_event.clear()
+
+        if request.exception is None:
+            self.fault_event.clear()
 
     def timeout_cb(self, request):
-        request.kwargs['exception'] = OscDriverTimeout('Timeout for {!s}'.format(request))
-        request.kwargs['timeout'] = True
+        request.exception = OscDriverTimeout('Timeout', request)
+        request.timeout = True
         self.timeout_event.set()
         logging.error('Timeout for request {!s}'.format(request))
         self._timeout_timers.pop(request.uuid, None)
         orphan_future = self._waiting_futures.pop(request.uuid, None)
         if orphan_future:
-            logging.error('Removed orphan future: {!s}'.format(orphan_future))
+            logging.debug('Removed orphan future: {!s}'.format(orphan_future))
+
+        request.reply = None
 
     def wait_for_reply(self, request):
         if request.event is None:
-            raise OscDriverError('Cannot wait for reply, no event specified')
+            raise OscDriverError('Cannot wait for reply, no event specified', request)
 
         if request.event.wait(self.timeout):
+            if request.exception is not None:
+                raise request.exception
+
             return request.reply
-        raise OscDriverTimeout('Timeout while waiting for {!s}'.format(request))
+        raise OscDriverTimeout('Timeout while waiting', request)
 
     def get(self, key, **kwargs):
         block = kwargs.get('block', False)
@@ -181,11 +204,9 @@ class OscDriver(AbstractDriver):
             if block:
                 return self.wait_for_reply(rq)
 
-        except OscDriverTimeout as e:
-            logging.error(e)
-            raise
         except OscDriverError as e:
             logging.error(e)
+            raise
 
     def set(self, key, *args, **kwargs):
         block = kwargs.get('block', False)
@@ -196,11 +217,9 @@ class OscDriver(AbstractDriver):
             if block:
                 return self.wait_for_reply(rq)
 
-        except OscDriverTimeout as e:
-            logging.error(e)
-            raise
         except OscDriverError as e:
             logging.error(e)
+            raise
 
     @coroutine
     def _send(self):
@@ -223,7 +242,7 @@ class OscDriver(AbstractDriver):
                 m.receiver = self.target
                 lo.send((m.receiver.hostname, m.receiver.port), m.message)
             except OSError as e:
-                raise OscDriverError(str(e))
+                raise OscDriverError(str(e), request)
 
     def __getitem__(self, key):
         return self.get(key, block=True)
