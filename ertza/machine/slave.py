@@ -142,7 +142,6 @@ class SlaveRequest(object):
 class SlaveMachine(AbstractMachine):
 
     machine = None
-    fatal_event = None
 
     SLAVE_MODES = {
         'torque': (
@@ -191,8 +190,8 @@ class SlaveMachine(AbstractMachine):
         self.max_errors = 10
 
         self.running_event = Event()
-        self.timeout_event = Event()
-        self.fault_event = Event()
+        self.timeout_event = SlaveMachineTimeoutError.timeout_event
+        self.fault_event = SlaveMachineFatalError.fatal_event
         self.watchdog_event = Event()
 
         self._watchdog_thread = None
@@ -283,7 +282,6 @@ class SlaveMachine(AbstractMachine):
             self._latency = time_delta.total_seconds() * 1000
             return self._latency
         except AbstractDriverTimeoutError as e:
-            self.timeout_event.set()
             raise SlaveMachineTimeoutError('Timeout while pinging: {!s}'.format(e), self.slave)
 
     def set_control_mode(self, mode):
