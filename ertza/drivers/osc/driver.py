@@ -182,6 +182,8 @@ class OscDriver(AbstractDriver):
         if orphan_future:
             logging.error('Removed orphan future: {!s}'.format(orphan_future))
 
+        request.reply = None
+
     def wait_for_reply(self, request):
         if request.event is None:
             raise OscDriverError('Cannot wait for reply, no event specified', request)
