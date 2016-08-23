@@ -37,8 +37,8 @@ class OscDriver(AbstractDriver):
         self._timers_lock = Lock()
 
         self.running_event = Event()
-        self.timeout_event = Event()
         self.fault_event = Event()
+        self.timeout_event = OscDriverTimeout.timeout_event
 
     def init_pipes(self):
         self.outlet = self.gen_future(self._send(), self.gen_timeout_timer())

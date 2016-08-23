@@ -16,4 +16,11 @@ class AbstractDriverTimeoutError(AbstractDriverError):
     """
     Raised when a command times out.
     """
-    pass
+
+    timeout_event = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.timeout_event:
+            self.timeout_event.set()

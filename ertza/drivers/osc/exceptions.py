@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Declare exceptions used OscDriver.
+"""
+
+from threading import Event
 
 from ..exceptions import AbstractDriverError, AbstractDriverTimeoutError
 
@@ -8,4 +13,4 @@ class OscDriverError(AbstractDriverError):
 
 
 class OscDriverTimeout(OscDriverError, AbstractDriverTimeoutError):
-    pass
+    timeout_event = Event()
