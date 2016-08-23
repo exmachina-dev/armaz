@@ -165,8 +165,12 @@ class OscDriver(AbstractDriver):
                 logging.error('Exception in %s: %s' % (self.__class__.__name__,
                                                        repr(e)))
 
-    def done_cb(self, *args):
-        pass
+    def done_cb(self, request):
+        if self.timeout_event.is_set():
+            self.timeout_event.clear()
+
+        if request.exception is None:
+            self.fault_event.clear()
 
     def timeout_cb(self, request):
         request.exception = OscDriverTimeout('Timeout', request)
