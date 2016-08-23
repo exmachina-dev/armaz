@@ -12,44 +12,12 @@ import os
 import logging
 from threading import Event
 import struct
-import time
-import socket
 
-from ertza.switch import Switch as _Switch
-from ertza.switch import EventTypes, SwitchException, InputEvent
+from ertza.switch import Switch, EventTypes
 
 logging.basicConfig()
 logger = logging.getLogger('ertza')
 logger.setLevel(10)
-
-
-class MockSwitch(_Switch):
-    _socket = None
-
-    @classmethod
-    def _wait_for_events(cls):
-        try:
-            with cls._socket as evt_file:
-                while not cls._running_event.is_set():
-                    evt = cls._get_event(evt_file)
-
-                    if evt is None:
-                        continue
-
-                    cls._process_event(evt)
-        except OSError as e:
-            logging.error('Unable to access to inputdev file: {!s}'.format(e))
-            raise SwitchException(str(e))
-
-    @classmethod
-    def _get_event(self, sock):
-        ev_data = sock.recv(16)
-
-        if len(ev_data) == 16:
-            return InputEvent(ev_data)
-
-
-Switch = MockSwitch
 
 
 class Test_Switch(object):
@@ -57,15 +25,18 @@ class Test_Switch(object):
         ev = struct.pack('<dHHHH', 0, EventTypes.SW, key, hit, 0)
         ev += b'\x00' * 16
 
-
-        self.sock.send(ev)
+        with open(self.inputdev, 'ab') as f:
+            f.write(ev)
 
     def setup_class(self):
-        self.inputdev = os.path.realpath('./tests/inputdev')
-        self.sock, sw_sock = socket.socketpair()
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        self.inputdev = os.path.realpath('{}/inputdev'.format(base_path))
         self.data_ev = Event()
         self.wait_ev = Event()
         self.rtn_data = {}
+
+        with open(self.inputdev, 'wb'):
+            pass
 
         def _cb(sw_state):
             self.wait_ev.wait()
@@ -76,12 +47,12 @@ class Test_Switch(object):
             self.data_ev.set()
 
         Switch.callback = _cb
-        Switch._inputdev = True
-        Switch._socket = sw_sock
+        Switch.set_inputdev(self.inputdev)
 
     def test_non_existing_inpudev_file(self):
         with pytest.raises(FileNotFoundError):
-            _Switch.set_inputdev('./tests/nonexisting_dir')
+            Switch.set_inputdev('./tests/nonexisting_dir')
+        Switch.set_inputdev(self.inputdev)
 
     def test_switch(self):
         self.wait_ev.clear()
