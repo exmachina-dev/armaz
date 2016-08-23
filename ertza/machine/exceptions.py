@@ -10,7 +10,9 @@
 Exceptions for ertza.machine
 """
 
-from ..exceptions import AbstractErtzaException
+from threading import Event
+
+from ..exceptions import AbstractErtzaException, AbstractErtzaFatalException
 
 
 class AbstractMachineError(AbstractErtzaException):
@@ -18,34 +20,37 @@ class AbstractMachineError(AbstractErtzaException):
 
 
 class AbstractMachineTimeoutError(AbstractMachineError):
-    timeout_event = None
+    timeout_event = Event()
 
     def __init__(self, *args, **kwargs):
-        AbstractMachineError.__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        if AbstractMachineTimeoutError.fatal_event:
-            AbstractMachineTimeoutError.fatal_event.set()
+        if self.timeout_event:
+            self.timeout_event.set()
 
 
-class AbstractMachineFatalError(AbstractMachineError):
-    fatal_event = None
+class AbstractMachineFatalError(AbstractMachineError,
+                                AbstractErtzaFatalException):
+    fatal_event = Event()
 
     def __init__(self, *args, **kwargs):
-        AbstractMachineError.__init__(*args, **kwargs)
+        AbstractMachineError.__init__(self, *args, **kwargs)
 
-        if AbstractMachineFatalError.fatal_event:
-            AbstractMachineFatalError.fatal_event.set()
+        if self.fatal_event:
+            self.fatal_event.set()
+
+        AbstractErtzaFatalException.__init__(self, *args, **kwargs)
 
 
 class MachineError(AbstractMachineError):
     pass
 
 
-class MachineFatalError(AbstractMachineFatalError):
+class MachineFatalError(AbstractMachineFatalError, MachineError):
     pass
 
 
-class MachineTimeoutError(MachineError):
+class MachineTimeoutError(AbstractMachineTimeoutError, MachineError):
     pass
 
 
@@ -54,7 +59,7 @@ class SlaveMachineError(AbstractMachineError):
         if slave is not None:
             msg = msg + ' for {!s}'.format(slave)
 
-        AbstractMachineError.__init__(self, msg, **kwargs)
+        super().__init__(msg, **kwargs)
         self.slave = slave
 
 
@@ -62,11 +67,12 @@ class SlaveMachineFatalError(AbstractMachineFatalError, SlaveMachineError):
     pass
 
 
-class SlaveMachineTimeoutError(SlaveMachineError):
-    timeout_event = None
+class SlaveMachineTimeoutError(AbstractMachineTimeoutError, SlaveMachineError):
+    timeout_event = Event()
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         SlaveMachineError.__init__(self, *args, **kwargs)
 
-        if SlaveMachineTimeoutError.timeout_event:
-            SlaveMachineTimeoutError.timeout_event.set()
+        if self.timeout_event:
+            self.timeout_event.set()
