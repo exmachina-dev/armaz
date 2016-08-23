@@ -63,7 +63,7 @@ class Test_Switch(object):
 
         self._write_to_inputdev(115, True)
         self.wait_ev.set()
-        self.data_ev.wait()
+        self.data_ev.wait(10)
         st = dict(self.rtn_data)
         self.data_ev.clear()
         self.wait_ev.clear()
@@ -73,7 +73,7 @@ class Test_Switch(object):
 
         self._write_to_inputdev(116, True)
         self.wait_ev.set()
-        self.data_ev.wait()
+        self.data_ev.wait(10)
         st = dict(self.rtn_data)
         self.wait_ev.clear()
         assert st['keycode'] == 116
@@ -83,7 +83,7 @@ class Test_Switch(object):
 
         self._write_to_inputdev(117, True)
         self.wait_ev.set()
-        self.data_ev.wait()
+        self.data_ev.wait(10)
         st = dict(self.rtn_data)
         self.data_ev.clear()
         self.wait_ev.clear()
