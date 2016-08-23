@@ -2,18 +2,21 @@
 
 import pytest
 
+import os
+
 from ertza.configparser import ConfigParser, NoSectionError, NoOptionError
 
 
 class Test_ConfigParser(object):
     def setup_class(self):
-        self.cf = ConfigParser('./tests/test.conf')
+        self.base_path = os.path.dirname(os.path.realpath(__file__))
+        self.cf = ConfigParser('{}/test.conf'.format(self.base_path))
 
     def test_load_variant(self):
-        self.cf.load_variant('variant', variant_path='./tests')
+        self.cf.load_variant('variant', variant_path=self.base_path)
 
     def test_load_profile(self):
-        self.cf.load_profile('profile', profile_path='./tests')
+        self.cf.load_profile('profile', profile_path=self.base_path)
 
     def test_get(self):
         assert self.cf['machine']['profile'] == 'profile'
