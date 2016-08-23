@@ -189,6 +189,9 @@ class OscDriver(AbstractDriver):
             raise OscDriverError('Cannot wait for reply, no event specified', request)
 
         if request.event.wait(self.timeout):
+            if request.exception is not None:
+                raise request.exception
+
             return request.reply
         raise OscDriverTimeout('Timeout while waiting', request)
 
@@ -201,11 +204,9 @@ class OscDriver(AbstractDriver):
             if block:
                 return self.wait_for_reply(rq)
 
-        except OscDriverTimeout as e:
-            logging.error(e)
-            raise
         except OscDriverError as e:
             logging.error(e)
+            raise
 
     def set(self, key, *args, **kwargs):
         block = kwargs.get('block', False)
@@ -216,11 +217,9 @@ class OscDriver(AbstractDriver):
             if block:
                 return self.wait_for_reply(rq)
 
-        except OscDriverTimeout as e:
-            logging.error(e)
-            raise
         except OscDriverError as e:
             logging.error(e)
+            raise
 
     @coroutine
     def _send(self):
