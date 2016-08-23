@@ -40,4 +40,4 @@ class StandaloneMachineMode(AbstractMachineMode):
             self._machine.driver[key] = value
 
         if key in self.StaticKeys:
-            self.StaticKeys[key] = value
+            self._last_values[key] = value
