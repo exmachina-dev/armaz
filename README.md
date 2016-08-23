@@ -9,6 +9,7 @@ ____ ____ ___ ___  ____
 
 [![Travis CI](https://travis-ci.org/exmachina-dev/ertza.svg?branch=dev)](https://travis-ci.org/exmachina-dev/ertza)
 [![Documentation Status](https://readthedocs.org/projects/ertza/badge/?version=latest)](http://docs.exmachina.fr/projects/ertza/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/exmachina-dev/ertza/branch/dev/graph/badge.svg)](https://codecov.io/gh/exmachina-dev/ertza)
 
 
 This program provides all functionnalities for controlling Armaz motors. This software runs on a Beaglebone Black with a ArmazCape on top of it.
