@@ -20,6 +20,8 @@ class Test_DriverFrontend(object):
                 'max_deceleration': 5000,
 
                 'custom_max_velocity': '500',
+                'custom_max_acceleration': '5050',
+                'custom_max_deceleration': '5050',
 
                 'application_coefficient': 1,
             },
@@ -49,9 +51,12 @@ class Test_DriverFrontend(object):
 
         assert self.fe.output_value('velocity_ref', 400) == 4000   # divided by gearbox_ratio
 
-        assert self.fe.output_value('postion_ref', 400) == 400
+        assert self.fe.output_value('position_ref', 400) == 4000
 
         assert self.fe.output_value('torque_ref', 10) == 1000.0
+
+        assert self.fe.output_value('acceleration', 600) == 5000.0
+        assert self.fe.output_value('deceleration', 600) == 5000.0
 
         self.fe.acceleration_time_mode = True
         assert self.fe.output_value('acceleration', 1) == 50.0
@@ -68,6 +73,9 @@ class Test_DriverFrontend(object):
         assert self.fe.input_value('position_ref', 4000) == 400.0
 
         assert self.fe.input_value('torque_ref', 100) == 1.0
+
+        assert self.fe.input_value('acceleration', 60000) == 6000.0
+        assert self.fe.input_value('deceleration', 60000) == 6000.0
 
         self.fe.acceleration_time_mode = True
         assert self.fe.input_value('acceleration', 50) == 1
