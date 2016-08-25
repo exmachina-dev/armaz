@@ -36,6 +36,9 @@ class Test_DriverFrontend(object):
         assert self.fe.torque_constant == 5
         assert self.fe.drive_rated_current == 2
 
+        self.fe.acceleration_time_mode = True
+        assert self.fe.acceleration_time_mode is True
+        self.fe.acceleration_time_mode = False
         assert self.fe.acceleration_time_mode is False
 
     def test_output(self):
@@ -50,6 +53,13 @@ class Test_DriverFrontend(object):
 
         assert self.fe.output_value('torque_ref', 10) == 1000.0
 
+        self.fe.acceleration_time_mode = True
+        assert self.fe.output_value('acceleration', 1) == 50.0
+        assert self.fe.output_value('deceleration', 1) == 50.0
+        assert self.fe.output_value('acceleration', 10) == 5.0
+        assert self.fe.output_value('deceleration', 10) == 5.0
+        self.fe.acceleration_time_mode = False
+
     def test_input(self):
         assert self.fe.input_value('nonexistingkey', 500) == 500
 
@@ -58,6 +68,13 @@ class Test_DriverFrontend(object):
         assert self.fe.input_value('position_ref', 4000) == 400.0
 
         assert self.fe.input_value('torque_ref', 100) == 1.0
+
+        self.fe.acceleration_time_mode = True
+        assert self.fe.input_value('acceleration', 50) == 1
+        assert self.fe.input_value('deceleration', 50) == 1
+        assert self.fe.input_value('acceleration', 5) == 10
+        assert self.fe.input_value('deceleration', 5) == 10
+        self.fe.acceleration_time_mode = False
 
     def test_coeff(self):
         keys = ('velocity_ref', 'position_ref', 'torque_ref', 'acceleration', 'deceleration')

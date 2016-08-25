@@ -78,6 +78,21 @@ class DriverFrontend(object):
     def gearbox_ratio(self):
         return self.gearbox_input_coefficient / self.gearbox_output_coefficient
 
+    @property
+    def application_max_velocity(self):
+        """
+        Return the application_max_velocity.
+
+        If custom_max_velocity is specified, returns if custom_max_velocity is
+        less than max_velocity.
+        Otherwise returns max_velocity (application side)
+        """
+
+        max_vel = self.max_velocity / self.gearbox_ratio * self.application_coefficient
+        if self.custom_max_velocity is not _UNSET and self.custom_max_velocity < max_vel:
+            return self.custom_max_velocity
+        return max_vel
+
     def _output_value_limit(self, key, value):
         if 'acceleration' == key:
             return value if value < self.max_acceleration else self.max_acceleration
@@ -120,7 +135,7 @@ class DriverFrontend(object):
             value *= self.application_coefficient
 
         if key in ('acceleration', 'deceleration') and self.acceleration_time_mode:
-            value = (self.max_velocity / self.gearbox_ratio * self.application_coefficient) / value
+            value = self.application_max_velocity / value
 
         return value
 
@@ -128,15 +143,16 @@ class DriverFrontend(object):
         return self._output_value_limit(key, self._output_value_coefficient(key, value))
 
     def _input_value_coefficient(self, key, value):
+        if key in ('acceleration', 'deceleration') and self.acceleration_time_mode:
+            value = self.application_max_velocity / value
+
         if key in self._gearbox_keys:
             value *= self.gearbox_ratio
 
         if key in self._application_keys:
             value /= self.application_coefficient
 
-        if key in ('acceleration', 'deceleration') and self.acceleration_time_mode:
-            value = (self.max_velocity / self.gearbox_ratio * self.application_coefficient) / value
-        elif key == 'torque_ref':
+        if key == 'torque_ref':
             value /= 100
             value *= self.drive_rated_current
             value *= self.torque_constant
