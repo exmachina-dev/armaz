@@ -76,6 +76,10 @@ class DriverFrontend(object):
 
     @property
     def gearbox_ratio(self):
+        """
+        Returns gearbox_ratio calculated from gearbox_input_coefficient and
+        gearbox_output_coefficient.
+        """
         return self.gearbox_input_coefficient / self.gearbox_output_coefficient
 
     @property
@@ -140,6 +144,9 @@ class DriverFrontend(object):
         return value
 
     def output_value(self, key, value):
+        """
+        Format and limit value sended by user using application parameters
+        """
         return self._output_value_limit(key, self._output_value_coefficient(key, value))
 
     def _input_value_coefficient(self, key, value):
@@ -163,6 +170,9 @@ class DriverFrontend(object):
         return value
 
     def input_value(self, key, value):
+        """
+            Format incoming value from motor using application parameters
+        """
         return self._input_value_coefficient(key, value)
 
     def __getattr__(self, key):
