@@ -66,6 +66,10 @@ class DriverFrontend(object):
 
     DEFAULTS_KEYS = ('acceleration', 'deceleration', 'torque_rise_time', 'torque_fall_time')
 
+    def __init__(self):
+        self.frontend_config = {}
+        self.frontend_section = None
+
     def load_config(self, config, section='motor'):
         self.frontend_config = config
         self.frontend_section = section
