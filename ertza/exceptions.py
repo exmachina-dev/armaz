@@ -27,7 +27,13 @@ class _ErtzaException(Exception):
         return '{0.__class__.__name__}({0.message})'.format(self)
 
     def __str__(self):
-        return self.message
+        try:
+            return self.message
+        except AttributeError:
+            try:
+                return self.msg
+            except AttributeError:
+                return self.__class__.__name__
 
 
 class AbstractErtzaException(_ErtzaException):
