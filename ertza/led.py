@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os.path
+import logging
+
+
+logging = logging.getLogger('ertza.led')
 
 
 LedModes = (
@@ -26,25 +30,34 @@ class Led(object):
         self.leds[self.name] = self
 
     def set_trigger(self, new_trigger):
-        if new_trigger not in LedModes:
-            raise ValueError('Wrong trigger supplied: {}'.format(new_trigger))
+        try:
+            if new_trigger not in LedModes:
+                raise ValueError('Wrong trigger supplied: {}'.format(new_trigger))
 
-        with open(self.trigger, mode='w') as f:
-            f.write(str(new_trigger))
+            with open(self.trigger, mode='w') as f:
+                f.write(str(new_trigger))
+        except OSError as e:
+            logging.warn('Unable to set brightness: {!s}'.format(e))
 
     def set_brightness(self, new_brightness=255):
-        with open(self.brightness, mode='w') as f:
-            f.write(str(new_brightness))
+        try:
+            with open(self.brightness, mode='w') as f:
+                f.write(str(new_brightness))
+        except OSError as e:
+            logging.warn('Unable to set brightness: {!s}'.format(e))
 
     def set_delays(self, on=1000, off=-1):
-        if on is not None:
-            with open(self.delay_on, mode='w') as f:
-                f.write(str(on))
-        if off is not None:
-            if off <= 0:
-                off = on
-            with open(self.delay_off, mode='w') as f:
-                f.write(str(off))
+        try:
+            if on is not None:
+                with open(self.delay_on, mode='w') as f:
+                    f.write(str(on))
+            if off is not None:
+                if off <= 0:
+                    off = on
+                with open(self.delay_off, mode='w') as f:
+                    f.write(str(off))
+        except OSError as e:
+            logging.warn('Unable to set delays: {!s}'.format(e))
 
     def blink(self, new_delay):
         if new_delay > 0:
