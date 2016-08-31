@@ -19,13 +19,13 @@ class ModbusCommunicationError(ModbusBackendError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._errors += 1
+        ModbusCommunicationError._errors += 1
 
         if self._errors >= self._max_errors:
             if self._trigger:
                 self._trigger()
             logging.error('Max errors exceed: {}'.format(self._errors))
-            self._errors = 0
+            ModbusCommunicationError._errors = 0
 
 
 class ModbusBackend(object):
