@@ -167,4 +167,4 @@ class DriverFrontend(object):
         try:
             return getattr(self, key)
         except AttributeError:
-            raise KeyError
+            raise KeyError(key)
