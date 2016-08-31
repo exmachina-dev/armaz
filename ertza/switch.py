@@ -148,8 +148,8 @@ class Switch(object):
         if evt.keycode in cls._keycodes.keys():
             cnf = cls.get_key_config(evt.keycode)
             k_dir = True if evt.value else False
-            k_hit = True if (cnf['invert'] and cnf['direction']) or \
-                (not cnf['invert'] and not cnf['direction']) else False
+            k_hit = True if (not cnf['invert'] and cnf['direction']) or \
+                (cnf['invert'] and not cnf['direction']) else False
 
             cls._keycodes[evt.keycode]['direction'] = k_dir
             cls._keycodes[evt.keycode]['hit'] = k_hit
