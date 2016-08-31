@@ -282,6 +282,8 @@ class ConfigGet(UnbufferedCommand, OscCommand):
             s, o = k.split(':', maxsplit=1)
             v = self.machine.config[s][o]
             self.ok(c, k, v)
+        except KeyError:
+            self.error(c, k, 'No such key: {}'.format(k))
         except Exception as e:
             self.error(c, k, str(e))
 
