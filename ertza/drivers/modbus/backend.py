@@ -19,6 +19,8 @@ class ModbusCommunicationError(ModbusBackendError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._errors += 1
+
         if self._errors >= self._max_errors:
             if self._trigger:
                 self._trigger()
