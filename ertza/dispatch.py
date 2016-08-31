@@ -106,3 +106,11 @@ class Dispatcher(object):
             except StopIteration:
                 self._running_event.set()
                 break
+
+    @property
+    def processors(self):
+        return self._processors
+
+    @property
+    def servers(self):
+        return self._servers
