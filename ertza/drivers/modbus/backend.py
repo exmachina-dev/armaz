@@ -2,14 +2,17 @@
 
 import logging
 import bitstring
+from threading import Event
 
 from pylibmodbus import ModbusTcp as ModbusClient
 from pylibmodbus import ModbusException
 
 logging = logging.getLogger('ertza.drivers.modbus.backend')
 
+
 class ModbusBackendError(Exception):
     pass
+
 
 class ModbusCommunicationError(ModbusBackendError):
     _trigger = None
@@ -42,12 +45,19 @@ class ModbusBackend(object):
 
         self.connected = False
 
+        self._connecting = Event()
         self._end = ModbusClient(self.address, self.port)
         self._end.set_response_timeout(1)
 
     def connect(self):
         try:
+            if self._connecting.is_set():
+                logging.info('Connection in progress, skipping.')
+                return
+
+            self._connecting.set()
             res = self._end.connect()
+
             if res is None:
                 self.connected = True
                 return self.connected
@@ -55,6 +65,8 @@ class ModbusBackend(object):
             logging.error('Unable to connect: {!r}'.format(e))
             raise ModbusBackendError(e)
             return False
+        finally:
+            self._connecting.clear()
 
     def close(self):
         self._end.close()
