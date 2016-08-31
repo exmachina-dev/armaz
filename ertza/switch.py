@@ -139,7 +139,7 @@ class Switch(object):
 
     @classmethod
     def _process_event(cls, evt):
-        if evt.evtype != EventTypes.SW:
+        if evt.evtype != EventTypes.KEY:
             logging.debug('Ignored {!s}'.format(evt))
             return
 
