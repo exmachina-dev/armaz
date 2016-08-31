@@ -35,15 +35,25 @@ class MachineSet(SerialCommand):
         try:
             k, v, = c.args
             nk = k.decode().replace('.', ':')
+            vt = None
             if nk in self._float_keys:
                 v = struct.unpack('f', v)[0]
+                vt = float
             elif nk in self._uint_keys:
                 v = struct.unpack('I', v)[0]
+                vt = int
             elif nk in self._bool_keys:
                 v = struct.unpack('?', v)[0]
+                vt = bool
 
             self.machine[nk] = v
-            self.ok(c, k, int(v))
+            nk = nk.split(':', maxsplit=1)[1] if nk.startswith('machine:') else nk
+            nv = self.machine.driver.frontend.input_value(
+                nk, self.machine.driver.frontend.output_value(nk, v))
+            if vt is not None:
+                self.ok(c, k, vt(nv))
+            else:
+                self.ok(c, k, nv)
         except Exception as e:
             self.error(c, k, str(e))
 
