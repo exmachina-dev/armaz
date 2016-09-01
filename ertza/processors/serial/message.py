@@ -20,6 +20,7 @@ class SerialCommandString(object):
 
     IntLength = 32
     FloatLength = 32
+    StringLength = 15
 
     SerialNumber = '000000000000'
 
@@ -58,6 +59,9 @@ class SerialCommandString(object):
             raise ValueError('''value can't be None''')
 
         if isinstance(value, str):
+            if self['data'] != b'' and len(value) > self.StringLength:
+                mid = int(self.StringLength / 2) - 3
+                value = value[0:mid+2] + '...' + value[-mid-1:]
             value = value.encode()
         elif isinstance(value, bool):
             value = bs.Bits(uintle=value, length=8).tobytes()
