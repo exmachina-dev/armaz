@@ -27,6 +27,9 @@ from ..configparser import parameter as _p
 logging = logging.getLogger('ertza.machine')
 
 
+OPERATING_MODES = ('standalone', 'master', 'slave')
+
+
 class MachineError(AbstractMachineError):
     pass
 
