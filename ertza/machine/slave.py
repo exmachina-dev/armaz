@@ -285,7 +285,7 @@ class SlaveMachine(AbstractMachine):
         return rq
 
     def send(self, rq, *args, **kwargs):
-        if rq.item not in self.forward_keys:
+        if SlaveKey(rq.item, rq.source) not in self.forward_keys:
             return
 
         event = kwargs.pop('event', None)

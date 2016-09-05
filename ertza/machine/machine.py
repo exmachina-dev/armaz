@@ -561,13 +561,15 @@ class Machine(AbstractMachine):
                         keys_to_send.append(key)
 
             for key in keys_to_send:
-                v = self[key.source or key.dest]
-                rq = SlaveRequest(key.dest, v,
-                                  source=key.source, setitem=True)
                 try:
+                    v = self[key.source or key.dest]
+                    rq = SlaveRequest(key.dest, v,
+                                      source=key.source, setitem=True)
                     self.slaves_channel.send(rq)
-                except StopIteration:
+                except AbstractDriverError:
                     pass
+                except AbstractMachineError as e:
+                    logging.error(repr(e))
 
             self._slaves_running_event.wait(self.slave_refresh_interval)
 
