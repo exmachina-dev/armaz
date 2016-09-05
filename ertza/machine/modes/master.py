@@ -143,9 +143,6 @@ class MasterMachineMode(StandaloneMachineMode):
         elif vl_mode == 'substract':
             nvalue = vl_value - value if value >= 0 else vl_value + value
 
-        if nvalue is not None and value != nvalue:
-            logging.debug('Modified value {} to {} ({} {})'.format(
-                value, nvalue, vl_mode, vl_value))
         return nvalue
 
     def get_guarded_value(self, key):
