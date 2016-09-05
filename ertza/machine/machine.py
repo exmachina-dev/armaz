@@ -134,7 +134,6 @@ class Machine(AbstractMachine):
             'operating_mode': _p(str, None, self.set_operating_mode),
         }
 
-
         self._last_command_time = time.time()
         self._running_event = Event()
         self._slaves_running_event = Event()
@@ -534,20 +533,6 @@ class Machine(AbstractMachine):
                     self.switch_states[n] = not sw_st
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
-
-    def _timeout_watcher(self):
-        self._running_event.clear()
-        while not self._running_event.is_set():
-            if self['machine:status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
-                continue
-
-            if time.time() - self._last_command_time > self._slave_timeout:
-                self._timeout_event.set()
-                self['machine:command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
-
-            self._running_event.wait(self._slave_timeout)
 
     def _slaves_loop(self):
         while not self._slaves_running_event.is_set():
