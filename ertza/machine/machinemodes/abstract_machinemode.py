@@ -18,7 +18,7 @@ class AbstractMachineMode(object):
     _param = namedtuple('parameter', ['vtype', 'mode'])
 
     MachineMap = {
-        'operation_mode':   _param(str, 'rw'),
+        'operating_mode':   _param(str, 'rw'),
         'serialnumber':     _param(str, 'r'),
         'osc_address':          _param(str, 'r'),
         'ip_address':       _param(str, 'rw'),
@@ -74,9 +74,9 @@ class AbstractMachineMode(object):
 
         if key == 'operating_mode':
             if isinstance(value, (list, tuple)):
-                return self._machine.set_operation_mode(*value)
+                return self._machine.set_operating_mode(*value)
             else:
-                return self._machine.set_operation_mode(value)
+                return self._machine.set_operating_mode(value)
 
         if key in self.DirectAttributesSet:
             return self._machine.setitem(key)
