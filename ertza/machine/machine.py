@@ -4,7 +4,7 @@ import sys
 import time
 import logging
 
-from threading import Event, Thread
+from threading import Event, Thread, Lock
 
 from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError
@@ -24,8 +24,6 @@ from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
-from ..async_utils import Channel
-
 logging = logging.getLogger('ertza.machine')
 
 
@@ -38,6 +36,68 @@ class MachineError(AbstractMachineError):
 
 class FatalMachineError(AbstractFatalMachineError):
     pass
+
+
+class Channel(object):
+    _Channels = {}
+    _Lock = Lock()
+
+    def __init__(self, name, callback):
+        if name in self._Channels:
+            raise ValueError('Name already exists')
+
+        self._name = name
+        self._callback = callback
+        with self._Lock:
+            self._Channels[self.name] = {
+                'ids': [],
+                'objs': {},
+            }
+
+    def suscribe(self, obj):
+        if id(obj) in self.obj_ids:
+            raise ValueError('Object already subscribed.')
+
+        with self._Lock:
+            self.obj_ids.append(id(obj))
+            self.objs[id(obj)] = obj
+
+    def unsuscribe(self, obj):
+        with self._Lock:
+            if id(obj) not in self.obj_ids:
+                raise ValueError('Object not found.')
+
+            self.obj_ids.remove(id(coro))
+            self.objs.pop(id(coro))
+
+    def send(self, message):
+        with self._Lock:
+            objs = list(self.objs.values())
+
+        for obj in objs:
+            try:
+                obj.send(message, callback=self.callback)
+            except Exception:
+                raise
+
+    def close(self, end_message):
+        pass
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def callback(self):
+        return self._callback
+
+    @property
+    def obj_ids(self):
+        return self._Channels[self.name]['ids']
+
+    @property
+    def objs(self):
+        return self._Channels[self.name]['objs']
 
 
 class Machine(AbstractMachine):
@@ -62,7 +122,7 @@ class Machine(AbstractMachine):
         self.unbuffered_commands = None
 
         self.slave_machines = {}
-        self.slaves_channel = Channel('slave_machines')
+        self.slaves_channel = Channel('slave_machines', self._slaves_cb)
         self._slaves_thread = None
         self.alive_machines = {}
         self.master = None
@@ -234,7 +294,7 @@ class Machine(AbstractMachine):
         self.slave_machines = {}
         for s in slaves:
             sm = SlaveMachine(s)
-            self.slave_machines[(slave_sn, slave_ip)] = sm
+            self.slave_machines[(s.serialnumber, s.address)] = sm
 
         return self.slave_machines
 
@@ -275,8 +335,8 @@ class Machine(AbstractMachine):
                                    'at {1} ({0} vs {4})'.format(*infos))
 
             else:
-                sm.start()
-                self.slaves_channel.suscribe(sm.outlet)
+                sm.start(loop=True)
+                self.slaves_channel.suscribe(sm)
 
     def add_slave(self, driver, address, mode, conf={}):
         self._check_operating_mode()
@@ -359,6 +419,8 @@ class Machine(AbstractMachine):
         logging.info('Setting operating mode to {}'.format(mode))
 
         if mode == 'master':
+            self.slave_refresh_interval = float(self.config.get(
+                'slaves', 'refresh_interval', fallback=0.5))
             self.activate_mode(mode)
         elif mode == 'slave':
             master = kwargs.get('master')
@@ -499,7 +561,8 @@ class Machine(AbstractMachine):
                         keys_to_send.append(key)
 
             for key in keys_to_send:
-                rq = SlaveRequest(dest=key.dest,
+                v = self[key.source or key.dest]
+                rq = SlaveRequest(key.dest, v,
                                   source=key.source, setitem=True)
                 try:
                     self.slaves_channel.send(rq)
@@ -507,6 +570,9 @@ class Machine(AbstractMachine):
                     pass
 
             self._slaves_running_event.wait(self.slave_refresh_interval)
+
+    def _slaves_cb(self, rq):
+        pass
 
     def __getitem__(self, key):
         dst = self._get_destination(key)

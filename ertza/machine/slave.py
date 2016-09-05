@@ -126,15 +126,15 @@ class SlaveMachine(AbstractMachine):
 
         self.driver_config = {
             'target_address': self.slave.address,
-            'target_port': int(self.config.get('reply_port', 6969)),
-            'timeout': float(self.config.get('slave_timeout', .5)),
+            'target_port': int(self.config.get('reply_port', fallback=6969)),
+            'timeout': float(self.config.get('slave_timeout', fallback=.5)),
         }
 
-        self.running_ev = Event()
-        self.newdata_ev = Event()
+        self.running_event = Event()
+        self.newdata_event = Event()
 
-        self.timeout = float(self.config.get('slave_timeout', .5))
-        self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
+        self.timeout = float(self.config.get('slave_timeout', fallback=.5))
+        self.refresh_interval = float(self.config.get('refresh_interval', fallback=0.5))
 
         self.bridge = Queue()
 
@@ -146,6 +146,14 @@ class SlaveMachine(AbstractMachine):
 
         self.errors = 0
         self.max_errors = 10
+
+        self.timeout_event = Event()
+        self.fault_event = Event()
+        self.fatal_event = Event()
+        self.watchdog_event = Event()
+
+        self._thread = None
+        self._watchdog_thread = None
 
     def init_driver(self):
         drv = self.slave.driver
@@ -167,31 +175,37 @@ class SlaveMachine(AbstractMachine):
         logging.debug("%s driver loaded" % drv)
         return drv
 
-    def start(self, loop=False):
-        if not loop:
-            self._thread = Thread(target=self.loop)
-            self._thread.daemon = True
+    def start(self, **kwargs):
+        if self._thread:
+            self.running_event.set()
+            self._thread.join()
 
-            self._watcher_thread = Thread(target=self.watcher_loop)
-            self._watcher_thread.daemon = True
+        self.running_event.clear()
+        self.driver.connect()
 
-            self.running_ev.clear()
-            self.driver.connect()
-            self._thread.start()
-        else:
-            if not self._watcher_thread:
-                self.start()
+        self._thread = Thread(target=self.loop)
+        self._thread.daemon = True
+        self._thread.start()
 
-            self._watcher_thread.start()
+        if kwargs.get('watchdog', True):
+            self.start_watchdog()
+
+    def start_watchdog(self):
+        if self._watchdog_thread:
+            self.watchdog_event.set()
+            self._watchdog_thread.join()
+
+        self.watchdog_event.clear()
+        self._watchdog_thread = Thread(target=self._watchdog)
+        self._watchdog_thread.daemon = True
+        self._watchdog_thread.start()
 
     def exit(self):
-        self.running_ev.set()
-        self._watcher_thread.join()
-        self._thread.join()
+        self.running_event.set()
         self.driver.exit()
 
     def loop(self):
-        while not self.running_ev.is_set():
+        while not self.running_event.is_set():
             try:
                 recv_item = self.bridge.get(block=True, timeout=2)
                 if not isinstance(recv_item, SlaveRequest):
@@ -206,6 +220,7 @@ class SlaveMachine(AbstractMachine):
                     else:
                         res = getattr(self.driver, recv_item.attribute)(
                             *recv_item.args)
+
                     recv_item.callback(res)
                 except AttributeError:
                     logging.exception('''Can't find %s in driver''' % recv_item.attribute)
@@ -225,10 +240,10 @@ class SlaveMachine(AbstractMachine):
         smode = self.slave.slave_mode
         self.last_values = {}
         self.set_control_mode(smode)
-        while not self.running_ev.is_set():
+        while not self.running_event.is_set():
             if SlaveMachine.fatal_event.is_set():
                 self.set_to_remote('machine:command:enable', False)
-                self.running_ev.wait(self.refresh_interval)
+                self.running_event.wait(self.refresh_interval)
                 continue
 
             try:
@@ -256,7 +271,7 @@ class SlaveMachine(AbstractMachine):
             except Exception as e:
                 logging.error('Exception in {0} loop: {1}'.format(self.__class__.__name__, e))
 
-            self.running_ev.wait(self.refresh_interval)
+            self.running_event.wait(self.refresh_interval)
 
     def request_from_remote(self, callback, attribute, *args, **kwargs):
         event = kwargs.pop('event', None)
@@ -269,8 +284,29 @@ class SlaveMachine(AbstractMachine):
         self.bridge.put(rq)
         return rq
 
+    def send(self, rq, *args, **kwargs):
+        if rq.item not in self.forward_keys:
+            return
+
+        event = kwargs.pop('event', None)
+        callback = kwargs.pop('callback', None)
+        if event:
+            callback = functools.partial(callback, event=event)
+
+        value = rq.args[0]
+        rq = self._send_if_latest(rq.item, rq.source, value=value)
+
+        if rq is not None:
+            rq.set_callback(callback)
+
+        return rq
+
     def enslave(self):
         self.set_to_remote('machine:operating_mode', 'slave', self.machine.get_address(self.slave.driver))
+
+    @property
+    def forward_keys(self):
+        return self.SLAVE_MODES[self.slave.slave_mode]
 
     @property
     def infos(self):
@@ -324,14 +360,20 @@ class SlaveMachine(AbstractMachine):
 
         return self.set_to_remote('machine:command:control_mode', CONTROL_MODES[mode], block=True)
 
-    def _send_if_latest(self, dest, source=None):
+    def get(self, key, **kwargs):
+        return self.driver.get(key, **kwargs)
+
+    def set(self, key, *args, **kwargs):
+        return self.driver.set(key, *args, **kwargs)
+
+    def _send_if_latest(self, dest, source=None, **kwargs):
         source = source if source is not None else dest
         lvalue = self.last_values.get(dest, None)
 
-        value = None
+        value = kwargs.get('value', None)
 
         try:
-            value = self.machine.machine_keys.get_value_for_slave(self, source)
+            value = self.machine.machine_keys.get_value_for_slave(self, source, value)
         except SlaveMachineError as e:
             logging.warn('Exception in {0!s}: {1!s}'.format(self, e))
         except AbstractMachineError:
@@ -343,13 +385,24 @@ class SlaveMachine(AbstractMachine):
         if value is None:
             raise SlaveMachineError('{0} returned None for {1!s}'.format(source, self))
 
+        rq = None
         if lvalue:
             if value != lvalue:
-                self.set_to_remote(dest, value)
+                rq = self.set_to_remote(dest, value)
                 self.last_values[dest] = value
         else:
-            self.set_to_remote(dest, value)
+            rq = self.set_to_remote(dest, value)
             self.last_values[dest] = value
+
+        return rq
+
+
+    def _watchdog(self):
+        while not self.watchdog_event.is_set():
+            if self.fatal_event.is_set() or self.fault_event.is_set():
+                self.set('machine:command:enable', False)
+
+            self.watchdog_event.wait(self.refresh_interval)
 
     def _ping_cb(self, start_time, data, event=None):
         rtn = self._default_cb(data, event)

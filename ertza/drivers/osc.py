@@ -136,29 +136,41 @@ class OscDriver(AbstractDriver):
             return fut.result
         raise OscDriverTimeout('Timeout while waiting for %s' % repr(fut))
 
-    def __getitem__(self, key):
+    def get(self, key, **kwargs):
         m = self.message('/slave/get', key)
         fut = self.to_machine(m)
         try:
-            ret = self.wait_for_future(fut)
-            return ret
+            if kwargs.get('block', True):
+                ret = self.wait_for_future(fut)
+                return ret
+            else:
+                return fut
         except OscDriverTimeout as e:
             logging.error(e)
             raise e
         except OscDriverError as e:
             logging.error(e)
 
-    def __setitem__(self, key, *args):
+    def set(self, key, *args, **kwargs):
         m = self.message('/slave/set', key, *args)
         fut = self.to_machine(m)
         try:
-            ret = self.wait_for_future(fut)
-            return ret
+            if kwargs.get('block', False):
+                ret = self.wait_for_future(fut)
+                return ret
+            else:
+                return fut
         except OscDriverTimeout as e:
             logging.error(e)
             raise e
         except OscDriverError as e:
             logging.error(e)
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, *args):
+        return self.set(key, *args)
 
     def _send(self, message, uid, *args, **kwargs):
         try:

@@ -12,6 +12,7 @@ from ..utils import retry
 
 logging = logging.getLogger('ertza.drivers.modbus')
 
+
 class ModbusDriverError(AbstractDriverError):
     def __init__(self, exception=None):
         self._parent_exception = exception
@@ -82,7 +83,7 @@ class ModbusDriver(AbstractDriver):
         for key in self.frontend.DEFAULTS_KEYS:
             self[key] = self.frontend[key]
 
-    def __getitem__(self, key):
+    def get(self, key, **kwargs):
         try:
             if len(key.split(':')) == 2:
                 seckey, subkey = key.split(':')
@@ -108,7 +109,7 @@ class ModbusDriver(AbstractDriver):
             logging.error('Got exception in {!r}: {!r}'.format(self, e))
             raise ModbusDriverError(e)
 
-    def __setitem__(self, key, value):
+    def set(self, key, value, **kwargs):
         if len(key.split(':')) == 2:
             seckey, subkey = key.split(':')
         else:
@@ -173,8 +174,15 @@ class ModbusDriver(AbstractDriver):
             raise ModbusDriverError('No data returned from backend '
                                     'for {}: {!s}'.format(key, e))
 
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        return self.set(key, value)
+
     def __repr__(self):
         return '{0.__class__.__name__}'.format(self)
+
 
 if __name__ == "__main__":
     c = {
