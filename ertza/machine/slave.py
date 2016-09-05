@@ -90,7 +90,7 @@ class SlaveRequest(object):
 
     def __repr__(self):
         return '{} {} {} {}'.format('RQ', self.attribute,
-                                    ' '.join(self.args), self.callback)
+                                    ' '.join(map(str, self.args)), self.callback)
 
 
 class SlaveMachine(AbstractMachine):
