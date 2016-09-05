@@ -208,11 +208,11 @@ class Ertza(object):
                 except KeyError:
                     raise KeyError('Unable to get %s processor' % message.protocol)
 
-                self._execute(message, p)
-
-                self.machine.reply(message)
-
-                machine_queue.task_done()
+                try:
+                    self._execute(message, p)
+                    self.machine.reply(message)
+                finally:
+                    machine_queue.task_done()
         except Exception as e:
             logger.exception("Exception in %s loop: %s" % (name, e))
 
