@@ -91,7 +91,7 @@ class MasterMachineMode(StandaloneMachineMode):
 
         self.guard_interval = 0.03
 
-        self._slv_config = SlavesConfig(self._machine.config, self._machine.slaves)
+        self._slv_config = SlavesConfig(self._machine.config, self._machine.slave_machines)
 
     def _send_to_slave(self, slave, mode=None, key='', value=None):
         if not mode:
