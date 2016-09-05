@@ -39,6 +39,7 @@ class SerialServer(sr.Serial):
         self.break_condition = False
 
         self.data_buffer = b''
+        self.max_buffer_length = 256
 
         self.running = False
         self._last_read_time = time.time()
@@ -59,6 +60,7 @@ class SerialServer(sr.Serial):
 
                 self._last_read_time = time.time()
                 self.data_buffer += (data)
+                self.limit_buffer_length()
                 self.find_serial_packets()
 
             except sr.SerialException as e:
@@ -94,6 +96,15 @@ class SerialServer(sr.Serial):
 
     def exit(self):
         self.close()
+
+    def limit_buffer_length(self):
+        if len(self.data_buffer) > self.max_buffer_length:
+            pos = self.data_buffer.rfind(SerialCommandString.CmdEnd)
+            if pos >= 0:
+                discarded_data, self.data_buffer = self.data_buffer[:pos+2], \
+                    self.data_buffer[pos+2:]
+                logging.error('Data buffer too long. {} bytes discarded.'
+                              .format(len(discarded_data)))
 
     def find_serial_packets(self):
         pos = self.data_buffer.find(SerialCommandString.CmdEnd)
