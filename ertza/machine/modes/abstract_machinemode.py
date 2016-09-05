@@ -37,10 +37,10 @@ class AbstractMachineMode(object):
     )
 
     StaticKeys = (
-        'machine:acceleration',
-        'machine:decceleration',
-        'machine:torque_rise_time',
-        'machine:torque_fall_time',
+        'acceleration',
+        'decceleration',
+        'torque_rise_time',
+        'torque_fall_time',
     )
 
     def __init__(self, machine):
