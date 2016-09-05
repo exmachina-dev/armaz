@@ -67,8 +67,8 @@ class Channel(object):
             if id(obj) not in self.obj_ids:
                 raise ValueError('Object not found.')
 
-            self.obj_ids.remove(id(coro))
-            self.objs.pop(id(coro))
+            self.obj_ids.remove(id(obj))
+            self.objs.pop(id(obj))
 
     def send(self, message):
         with self._Lock:
