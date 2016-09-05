@@ -2,7 +2,7 @@
 
 import logging
 import bitstring
-from threading import Event
+from threading import Event, Lock
 
 from pylibmodbus import ModbusTcp as ModbusClient
 from pylibmodbus import ModbusException
@@ -46,6 +46,7 @@ class ModbusBackend(object):
         self.connected = False
 
         self._connecting = Event()
+        self._reconnecting = Lock()
         self._end = ModbusClient(self.address, self.port)
         self._end.set_response_timeout(1)
 
@@ -73,9 +74,15 @@ class ModbusBackend(object):
         self.connected = False
 
     def reconnect(self):
-        self.close()
-        self._end.set_response_timeout(1)
-        self.connect()
+        if self._reconnecting.locked():
+            logging.info('Reconnection in progress, skipping.')
+            return
+        with self._reconnecting:
+            self.close()
+
+            self._end = ModbusClient(self.address, self.port)
+            self._end.set_response_timeout(1)
+            self.connect()
 
     def write_netdata(self, netdata, data, data_format=None):
         self._check_netdata(netdata)
