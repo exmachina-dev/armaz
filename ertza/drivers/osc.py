@@ -155,7 +155,7 @@ class OscDriver(AbstractDriver):
         m = self.message('/slave/set', key, *args)
         fut = self.to_machine(m)
         try:
-            if kwargs.get('block', False):
+            if kwargs.get('block', True):
                 ret = self.wait_for_future(fut)
                 return ret
             else:

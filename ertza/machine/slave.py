@@ -460,14 +460,6 @@ class SlaveMachine(AbstractMachine):
                 event.set()
             raise SlaveMachineError('No data')
 
-        if not isinstance(data, SlaveRequest):
-            try:
-                data = data.result
-            except AttributeError:
-                return
-            else:
-                return
-
         if '/ok' in data.path:
             return data
         elif '/error' in data.path:
