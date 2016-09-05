@@ -13,7 +13,7 @@ def file_content(filename):
     return codecs.open(filename, 'r', 'utf-8').read()
 
 setup(
-    name='Ertza',
+    name='ertza',
     version=__version__,
     packages = find_packages(),
     description="Firmware found in Eisla product range by ExMachina SAS.",
