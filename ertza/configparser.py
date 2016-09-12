@@ -80,8 +80,10 @@ class ProfileError(ConfigParserError):
 
 
 class _ChainMap(ChainMap):
-    def get(self, key, **kwargs):
+    def get(self, key, default=None, **kwargs):
         try:
+            if default is not None:
+                kwargs['fallback'] = default
             return super().get(key, default=kwargs['fallback'])
         except KeyError:
             return super().get(key)
