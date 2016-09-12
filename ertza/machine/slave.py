@@ -205,6 +205,20 @@ class SlaveMachine(AbstractMachine):
         self.driver.exit()
 
     def loop(self):
+        while True:
+            try:
+                self.set_control_mode(self.slave.slave_mode)
+                self.set('machine:command:enable', True)
+                break
+            except SlaveMachineError as e:
+                logging.error('Exception in {n} loop: {e}'.format(
+                    n=self.__class__.__name__, e=e))
+            except AbstractTimeoutError as e:
+                logging.error('Timeout for {!s}'.format(self))
+            except Exception as e:
+                logging.error('Uncatched exception in {n} loop: {e}'.format(
+                    n=self.__class__.__name__, e=e))
+
         while not self.running_event.is_set():
             try:
                 recv_item = self.bridge.get(block=True, timeout=2)
