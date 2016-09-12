@@ -38,7 +38,7 @@ class AbstractMachineMode(object):
 
     StaticKeys = (
         'acceleration',
-        'decceleration',
+        'deceleration',
         'torque_rise_time',
         'torque_fall_time',
     )
