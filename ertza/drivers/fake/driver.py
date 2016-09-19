@@ -182,7 +182,7 @@ class FakeDriver(AbstractDriver):
             try:
                 return self.fake_data[key]
             except KeyError:
-                if key in ('velocity', 'current_ratio'):
+                if key in ('torque', 'velocity', 'current_ratio'):
                     return random() * 100,
                 logging.debug('Unrecognized key: {}'.format(key))
                 return None
