@@ -5,7 +5,7 @@ import struct
 from ertza.commands import SerialCommand
 
 from threading import Event
-from ....drivers.modbus import ModbusCommunicationError
+from ertza.drivers.modbus import ModbusCommunicationError
 
 
 class MachineSet(SerialCommand):
