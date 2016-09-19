@@ -208,7 +208,7 @@ class SlaveMachine(AbstractMachine):
         while True:
             try:
                 self.set_control_mode(self.slave.slave_mode)
-                self.set('machine:command:enable', True)
+                self.set('machine:command:enable', False)
                 break
             except SlaveMachineError as e:
                 logging.error('Exception in {n} loop: {e}'.format(
