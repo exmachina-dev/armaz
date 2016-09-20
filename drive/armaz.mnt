@@ -542,6 +542,9 @@ Event ONERROR
 
                 Case _ecMOTION_IN_PROGRESS
                     'Don't do anything
+                    
+                Case _ecVEL_FATAL, _ecFOLLOWING_ERROR
+                    'Don't do anything
 
                 Case Else
                     'All other errors and warnings handled here
