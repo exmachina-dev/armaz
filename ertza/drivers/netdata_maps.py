@@ -82,6 +82,7 @@ MicroflexE100Map = {
     'entq_ki':              _p(_mfe100['entq_ki'], 0, float, 'rw'),
     'entq_kd':              _p(_mfe100['entq_kd'], 0, float, 'rw'),
 
+    'current':              _p(_mfe100['current'], 0, float, 'r'),
     'velocity':             _p(_mfe100['velocity'], 0, float, 'r'),
     'position':             _p(_mfe100['position'], 0, float, 'r'),
     'position_target':      _p(_mfe100['position_target'], 0, float, 'r'),
