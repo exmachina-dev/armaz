@@ -105,7 +105,7 @@ class SlaveMachine(AbstractMachine):
             SlaveKey('machine:torque_fall_time', 'machine:torque_fall_time'),
         ),
         'enhanced_torque': (
-            SlaveKey('machine:torque_ref', 'machine:current_ratio'),
+            SlaveKey('machine:torque_ref', 'machine:current'),
             SlaveKey('machine:velocity_ref', 'machine:velocity'),
             SlaveKey('machine:torque_rise_time', None),
             SlaveKey('machine:torque_fall_time', None),
@@ -205,6 +205,20 @@ class SlaveMachine(AbstractMachine):
         self.driver.exit()
 
     def loop(self):
+        while True:
+            try:
+                self.set_control_mode(self.slave.slave_mode)
+                self.set('machine:command:enable', False)
+                break
+            except SlaveMachineError as e:
+                logging.error('Exception in {n} loop: {e}'.format(
+                    n=self.__class__.__name__, e=e))
+            except AbstractTimeoutError as e:
+                logging.error('Timeout for {!s}'.format(self))
+            except Exception as e:
+                logging.error('Uncatched exception in {n} loop: {e}'.format(
+                    n=self.__class__.__name__, e=e))
+
         while not self.running_event.is_set():
             try:
                 recv_item = self.bridge.get(block=True, timeout=2)

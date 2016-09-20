@@ -30,7 +30,9 @@ class StandaloneMachineMode(AbstractMachineMode):
             res = super().__getitem__(key)
         except ContinueException:
             if key in self.StaticKeys:
-                res = self._last_values[key]
+                res = self._last_values.get(key, None)
+                if res is None:
+                    res = self._machine.driver[key]
             else:
                 res = self._machine.driver[key]
 

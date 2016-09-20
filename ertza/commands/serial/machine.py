@@ -4,6 +4,9 @@ import struct
 
 from ertza.commands import SerialCommand
 
+from threading import Event
+from ertza.drivers.modbus import ModbusCommunicationError
+
 
 class MachineSet(SerialCommand):
     _uint_keys = (
@@ -27,12 +30,16 @@ class MachineSet(SerialCommand):
         'machine:command:stop',
     )
 
+    new_command = Event()
+    max_errors = 3
+
     def execute(self, c):
         if len(c.args) < 2:
             self.error(c, 'Invalid number of arguments for %s' % self.alias)
             return
 
         try:
+            MachineSet.new_command.set()
             k, v, = c.args
             nk = k.decode().replace('.', ':')
             vt = None
@@ -46,14 +53,23 @@ class MachineSet(SerialCommand):
                 v = struct.unpack('?', v)[0]
                 vt = bool
 
-            self.machine[nk] = v
-            nk = nk.split(':', maxsplit=1)[1] if nk.startswith('machine:') else nk
-            nv = self.machine.driver.frontend.input_value(
-                nk, self.machine.driver.frontend.output_value(nk, v))
-            if vt is not None:
-                self.ok(c, k, vt(nv))
-            else:
-                self.ok(c, k, nv)
+            MachineSet.new_command.clear()
+            while not MachineSet.new_command.is_set():
+                try:
+                    self.machine[nk] = v
+                    nk = nk.split(':', maxsplit=1)[1] if nk.startswith('machine:') else nk
+                    nv = self.machine.driver.frontend.input_value(
+                        nk, self.machine.driver.frontend.output_value(nk, v))
+                    if vt is not None:
+                        self.ok(c, k, vt(nv))
+                    else:
+                        self.ok(c, k, nv)
+                    break
+                except ModbusCommunicationError as e:
+                    if errors >= MachineSet.max_errors:
+                        raise e
+                    MachineSet.new_command.wait(0.3)
+
         except Exception as e:
             self.error(c, k, str(e))
 

@@ -453,6 +453,7 @@ class Machine(AbstractMachine):
         if mode == 'standalone':
             self._machine_keys = StandaloneMachineMode(self)
             self.operating_mode = mode
+            self['machine:command:timeout_enable'] = False
         elif mode == 'master':
             if not self.slave_machines:
                 raise MachineError('No slaves found')
@@ -462,6 +463,7 @@ class Machine(AbstractMachine):
 
             self._machine_keys = MasterMachineMode(self)
             self.operating_mode = mode
+            self['machine:command:timeout_enable'] = False
 
             self.start_slaves_loop()
         elif mode == 'slave':
@@ -473,6 +475,7 @@ class Machine(AbstractMachine):
 
             self._machine_keys = SlaveMachineMode(self)
             self.operating_mode = mode
+            self['machine:command:timeout_enable'] = True
 
             self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
             self._timeout_thread = Thread(target=self._timeout_watcher)
