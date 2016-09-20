@@ -156,6 +156,7 @@ Loop
             
         Wait(_enTqEnableRefreshRate)
     Else
+        ResetEnhancedTorqueMode
         Wait(_enTqDisableRefreshRate)
     End If
 End Loop
