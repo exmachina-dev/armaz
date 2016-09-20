@@ -280,7 +280,7 @@ class ErtzaActions(object):
             'machine:entq_kp', 'machine:entq_kp_vel',
             'machine:entq_ki', 'machine:entq_kd',
 
-            'machine:velocity', 'machine:position',
+            'machine:current', 'machine:velocity', 'machine:position',
             'machine:position_target', 'machine:position_remaining',
             'machine:encoder_ticks', 'machine:encoder_velocity',
             'machine:velocity_error', 'machine:follow_error',
