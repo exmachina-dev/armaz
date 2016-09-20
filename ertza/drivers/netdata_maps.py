@@ -26,6 +26,7 @@ _mfe100 = {
     'entq_ki':              _n(16, 'float:32'),
     'entq_kd':              _n(17, 'float:32'),
 
+    'current':              _n(50, 'float:32'),
     'velocity':             _n(51, 'float:32'),
     'position':             _n(52, 'float:32'),
     'position_target':      _n(53, 'float:32'),
