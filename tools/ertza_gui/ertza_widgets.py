@@ -313,3 +313,9 @@ class UpdatableTableWidget(QtGui.QTableWidget):
             value = self._vtypes[key](value)
 
         self.valueChanged.emit(key, value)
+
+
+class DoubleSpinBox(QtGui.QDoubleSpinBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setKeyboardTracking(False)

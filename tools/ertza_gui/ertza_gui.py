@@ -11,7 +11,7 @@ import collections
 import liblo as lo
 import logging as lg
 
-from ertza_widgets import SwitchWidget, PushButton, UpdatableTableWidget
+from ertza_widgets import SwitchWidget, PushButton, UpdatableTableWidget, DoubleSpinBox
 
 VERSION = '0.0.1'
 
@@ -526,13 +526,13 @@ class ErtzaGui(QtGui.QMainWindow):
         tq_frame = QtGui.QFrame()
         tq_frame.setLayout(tq_grid)
 
-        self.ctl_torque_ref_input = QtGui.QDoubleSpinBox()
-        self.ctl_tq_rise_time_input = QtGui.QDoubleSpinBox()
-        self.ctl_tq_fall_time_input = QtGui.QDoubleSpinBox()
+        self.ctl_torque_ref_input = DoubleSpinBox()
+        self.ctl_tq_rise_time_input = DoubleSpinBox()
+        self.ctl_tq_fall_time_input = DoubleSpinBox()
 
-        self.ctl_torque_ref_input.editingFinished.connect(self.actions.isend_torque_ref)
-        self.ctl_tq_rise_time_input.editingFinished.connect(self.actions.isend_torque_rise_time)
-        self.ctl_tq_fall_time_input.editingFinished.connect(self.actions.isend_torque_fall_time)
+        self.ctl_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
+        self.ctl_tq_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
+        self.ctl_tq_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
 
         self.ctl_torque_ref_input.setRange(-100, 100)
         self.ctl_tq_rise_time_input.setRange(0, 100000)
@@ -557,17 +557,17 @@ class ErtzaGui(QtGui.QMainWindow):
         vl_frame = QtGui.QFrame()
         vl_frame.setLayout(vl_grid)
 
-        self.ctl_velocity_ref_input = QtGui.QDoubleSpinBox()
-        self.ctl_vl_acceleration_input = QtGui.QDoubleSpinBox()
-        self.ctl_vl_deceleration_input = QtGui.QDoubleSpinBox()
+        self.ctl_velocity_ref_input = DoubleSpinBox()
+        self.ctl_vl_acceleration_input = DoubleSpinBox()
+        self.ctl_vl_deceleration_input = DoubleSpinBox()
 
         self.ctl_velocity_ref_input.setRange(-100000, 100000)
         self.ctl_vl_acceleration_input.setRange(0, 10000)
         self.ctl_vl_deceleration_input.setRange(0, 10000)
 
-        self.ctl_velocity_ref_input.editingFinished.connect(self.actions.isend_velocity_ref)
-        self.ctl_vl_acceleration_input.editingFinished.connect(self.actions.isend_acceleration)
-        self.ctl_vl_deceleration_input.editingFinished.connect(self.actions.isend_deceleration)
+        self.ctl_velocity_ref_input.valueChanged.connect(self.actions.isend_velocity_ref)
+        self.ctl_vl_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
+        self.ctl_vl_deceleration_input.valueChanged.connect(self.actions.isend_deceleration)
 
         self.ctl_velocity_ref_input.setSuffix(' rpm')
         self.ctl_vl_acceleration_input.setSuffix(' ms.s-1')
@@ -590,10 +590,10 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.ctl_ps_go_but = PushButton('GO')
         self.ctl_ps_set_home_but = PushButton('Set home')
-        self.ctl_position_ref_input = QtGui.QDoubleSpinBox()
-        self.ctl_ps_velocity_input = QtGui.QDoubleSpinBox()
-        self.ctl_ps_acceleration_input = QtGui.QDoubleSpinBox()
-        self.ctl_ps_deceleration_input = QtGui.QDoubleSpinBox()
+        self.ctl_position_ref_input = DoubleSpinBox()
+        self.ctl_ps_velocity_input = DoubleSpinBox()
+        self.ctl_ps_acceleration_input = DoubleSpinBox()
+        self.ctl_ps_deceleration_input = DoubleSpinBox()
         self.ctl_ps_position_mode_input = SwitchWidget()
         self.ctl_ps_move_mode_input = SwitchWidget()
 
@@ -608,10 +608,10 @@ class ErtzaGui(QtGui.QMainWindow):
 
         self.ctl_ps_go_but.clicked.connect(self.actions.isend_command_go)
         self.ctl_ps_set_home_but.clicked.connect(self.actions.isend_command_set_home)
-        self.ctl_position_ref_input.editingFinished.connect(self.actions.isend_position_ref)
-        self.ctl_ps_velocity_input.editingFinished.connect(self.actions.isend_velocity_ref)
-        self.ctl_ps_acceleration_input.editingFinished.connect(self.actions.isend_acceleration)
-        self.ctl_ps_deceleration_input.editingFinished.connect(self.actions.isend_deceleration)
+        self.ctl_position_ref_input.valueChanged.connect(self.actions.isend_position_ref)
+        self.ctl_ps_velocity_input.valueChanged.connect(self.actions.isend_velocity_ref)
+        self.ctl_ps_acceleration_input.valueChanged.connect(self.actions.isend_acceleration)
+        self.ctl_ps_deceleration_input.valueChanged.connect(self.actions.isend_deceleration)
 
         self.ctl_position_ref_input.setSuffix(' ticks')
         self.ctl_ps_velocity_input.setSuffix(' rpm')
@@ -646,15 +646,15 @@ class ErtzaGui(QtGui.QMainWindow):
         et_frame = QtGui.QFrame()
         et_frame.setLayout(et_grid)
 
-        self.ctl_et_torque_ref_input = QtGui.QDoubleSpinBox()
-        self.ctl_et_velocity_ref_input = QtGui.QDoubleSpinBox()
-        self.ctl_et_rise_time_input = QtGui.QDoubleSpinBox()
-        self.ctl_et_fall_time_input = QtGui.QDoubleSpinBox()
+        self.ctl_et_torque_ref_input = DoubleSpinBox()
+        self.ctl_et_velocity_ref_input = DoubleSpinBox()
+        self.ctl_et_rise_time_input = DoubleSpinBox()
+        self.ctl_et_fall_time_input = DoubleSpinBox()
 
-        self.ctl_et_torque_ref_input.editingFinished.connect(self.actions.isend_torque_ref)
-        self.ctl_et_velocity_ref_input.editingFinished.connect(self.actions.isend_velocity_ref)
-        self.ctl_et_rise_time_input.editingFinished.connect(self.actions.isend_torque_rise_time)
-        self.ctl_et_fall_time_input.editingFinished.connect(self.actions.isend_torque_fall_time)
+        self.ctl_et_torque_ref_input.valueChanged.connect(self.actions.isend_torque_ref)
+        self.ctl_et_velocity_ref_input.valueChanged.connect(self.actions.isend_velocity_ref)
+        self.ctl_et_rise_time_input.valueChanged.connect(self.actions.isend_torque_rise_time)
+        self.ctl_et_fall_time_input.valueChanged.connect(self.actions.isend_torque_fall_time)
 
         self.ctl_et_torque_ref_input.setRange(-200, 200)
         self.ctl_et_velocity_ref_input.setRange(-10000, 10000)
@@ -761,7 +761,7 @@ class ErtzaGui(QtGui.QMainWindow):
         self.stp_clear_group = QtGui.QButtonGroup()
         self.stp_profile_options_table = UpdatableTableWidget(
             clear_column=True, clear_group=self.stp_clear_group)
-        self.stp_profile_options_table.setHorizontalHeaderLabels(('Key', 'Value', 'Unit'))
+        self.stp_profile_options_table.setHorizontalHeaderLabels(('Key', 'Value', 'Unit', ''))
 
         self.stp_delete_pfl_but.color = QtGui.QColor(156, 96, 96)
         self.stp_unload_pfl_but.color = QtGui.QColor(156, 96, 96)
