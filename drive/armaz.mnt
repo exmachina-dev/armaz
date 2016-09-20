@@ -27,9 +27,9 @@ End Bitfield
 Const _bus = _busETHERNET
 
 Const _netdataRefreshRate = 200 
-Const _statusSlowRefreshRate = 10 
+Const _statusSlowRefreshRate = 1000
 
-Const _enTqEnableRefreshRate = 0
+Const _enTqEnableRefreshRate = 10
 Const _enTqDisableRefreshRate = 100
 
 Const _cmdTimeout = 1000     'Command timeout
@@ -154,7 +154,7 @@ Loop
         
         enTqVelErrorPrev = enTqVelError
             
-        'Wait(_enTqEnableRefreshRate)
+        Wait(_enTqEnableRefreshRate)
     Else
         Wait(_enTqDisableRefreshRate)
     End If
@@ -165,7 +165,6 @@ Task UpdateNetdataValuesTask
     Loop
         NetdataValues
         Status
-        StatusSlow
         CommandTimeout
         Wait(_netdataRefreshRate)
     End Loop
