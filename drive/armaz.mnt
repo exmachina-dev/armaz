@@ -21,14 +21,15 @@ Bitfield CommandNetData
     set_home As 10 To 10
     go_home As 11 To 11
     stop_command As 12 To 12
+    timeout_enable As 13 To 13
 End Bitfield
 
 Const _bus = _busETHERNET
 
 Const _netdataRefreshRate = 200 
-Const _statusSlowRefreshRate = 10 
+Const _statusSlowRefreshRate = 1000
 
-Const _enTqEnableRefreshRate = 0
+Const _enTqEnableRefreshRate = 10
 Const _enTqDisableRefreshRate = 100
 
 Const _cmdTimeout = 1000     'Command timeout
@@ -54,6 +55,7 @@ End If
 
 Dim cmdTime As Time
 Dim cmdTimeoutStatus As Integer = 0
+Dim timeoutEnabled As Integer = 1
 Dim positionMode As Integer
 Dim moveMode As Integer
 Dim enTqMode As Integer = 0
@@ -83,6 +85,10 @@ TaskPriority(UpdateNetdataValuesTask, 10)
 Run(UpdateNetdataValuesTask)
 Run(UpdateStatusSlowTask)
 Loop
+    If DRIVEENABLESWITCH(_axis) <> 1 Then
+        DRIVEENABLE(_axis) = 0
+    End If
+    
     If enTqMode And DRIVEENABLE(_axis) Then
         If enTqVelRef = 0 Then
             TORQUEREF(_axis) = 0
@@ -152,8 +158,9 @@ Loop
         
         enTqVelErrorPrev = enTqVelError
             
-        'Wait(_enTqEnableRefreshRate)
+        Wait(_enTqEnableRefreshRate)
     Else
+        ResetEnhancedTorqueMode
         Wait(_enTqDisableRefreshRate)
     End If
 End Loop
@@ -163,8 +170,7 @@ Task UpdateNetdataValuesTask
     Loop
         NetdataValues
         Status
-        StatusSlow
-        'CommandTimeout
+        CommandTimeout
         Wait(_netdataRefreshRate)
     End Loop
 End Task
@@ -235,8 +241,9 @@ Sub NetdataValues()
 End Sub
 
 Sub CommandTimeout()
-    If cmdTime > _cmdTimeout Then
-        STOP(_axis)
+    If timeoutEnabled <> 0 AndAlso cmdTime > _cmdTimeout Then
+        DRIVEENABLE(_axis) = 0
+        ResetEnhancedTorqueMode
         cmdTimeoutStatus = 1
     End If
 End Sub
@@ -351,6 +358,12 @@ Event NETDATA1
     If command.stop_command <> 0 Then
         STOP(_axis)
         command.stop_command = 0
+    End If
+    
+    If command.timeout_enable <> 0 Then
+        timeoutEnabled = 1
+    Else
+        timeoutEnabled = 0
     End If
 
     NETINTEGER(1) = command.all
@@ -528,6 +541,9 @@ Event ONERROR
                     'Handle integrator windup
 
                 Case _ecMOTION_IN_PROGRESS
+                    'Don't do anything
+                    
+                Case _ecVEL_FATAL, _ecFOLLOWING_ERROR
                     'Don't do anything
 
                 Case Else
