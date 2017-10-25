@@ -410,7 +410,6 @@ class SlaveMachine(AbstractMachine):
 
         return rq
 
-
     def _watchdog(self):
         while not self.watchdog_event.is_set():
             if self.fatal_event.is_set() or self.fault_event.is_set():
