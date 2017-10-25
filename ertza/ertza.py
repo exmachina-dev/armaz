@@ -106,8 +106,8 @@ class Ertza(object):
         try:
             i = machine.config.get('machine', 'interface', fallback='eth1')
             logger.info('Configuring {} interface'.format(i))
-            eth = EthernetInterface(i)
             try:
+                eth = EthernetInterface(i)
                 logger.info('Setting interface {} to up'.format(i))
                 eth.link_up()
                 logger.info('Setting up default route'.format(i))
