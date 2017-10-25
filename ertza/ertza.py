@@ -106,6 +106,7 @@ class Ertza(object):
         try:
             i = machine.config.get('machine', 'interface', fallback='eth1')
             logger.info('Configuring {} interface'.format(i))
+            eth = None
             try:
                 eth = EthernetInterface(i)
                 logger.info('Setting interface {} to up'.format(i))
@@ -116,17 +117,20 @@ class Ertza(object):
                 logger.error(e)
 
             ip = machine.config.get('machine', 'ip_address', fallback=None)
-            if not ip:
-                ip = '10'
-                for byte in eth.mac_address.split(':')[3:6]:
-                    ip += '.{}'.format(int('0x{}'.format(byte), base=0))
-                ip += '/8'
+            if eth:
+                try:
+                    if not ip:
+                        ip = '10'
+                        for byte in eth.mac_address.split(':')[3:6]:
+                            ip += '.{}'.format(int('0x{}'.format(byte), base=0))
+                            ip += '/8'
 
-            try:
-                logger.info('Adding ip {} to {}'.format(ip, i))
-                eth.add_ip(ip)
-            except Exception as e:
-                logger.error(e)
+                    logger.info('Adding ip {} to {}'.format(ip, i))
+                    eth.add_ip(ip)
+                except Exception as e:
+                    logger.error(e)
+            else:
+                logger.warn('Speciied interface is not available: {}'.format(i))
             machine.ethernet_interface = eth
         except IndexError:
             logger.warn('No IP address found')
