@@ -44,9 +44,9 @@ class Test_DriverFrontend(object):
 
         assert self.fe.output_value('nonexistingkey', 500) == 500
 
-        assert self.fe.output_value('velocity_ref', 400) == 4000   # divided by gearbox_ratio
+        assert self.fe.output_value('velocity_ref', 400) == 4000   # multiplied by gearbox_ratio
 
-        assert self.fe.output_value('postion_ref', 400) == 400
+        assert self.fe.output_value('position_ref', 400) == 400
 
         assert self.fe.output_value('torque_ref', 10) == 1000.0
 
@@ -97,12 +97,13 @@ class Test_DriverFrontend(object):
 
     def test_limits(self):
         keys = ('velocity_ref', 'position_ref', 'acceleration', 'deceleration')
-        values = (5000.0, 50000.0, 8000.0, 8000.0)
+        values = (500.0, 50000.0, 8000.0, 8000.0)
 
         self.conf['motor']['custom_max_position'] = 5000
         self.conf['motor']['custom_min_position'] = -5000
         self.conf['motor']['max_acceleration'] = 8000
         self.conf['motor']['max_deceleration'] = 8000
+        self.conf['motor']['custom_max_velocity'] = 500
 
         for i, k in enumerate(keys):
             assert self.fe.output_value(k, 10000) == values[i]
