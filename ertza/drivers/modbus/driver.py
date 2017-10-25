@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from threading import Thread, Event
+from collections import namedtuple
 import logging
 
 from ..abstract_driver import AbstractDriver, AbstractDriverError
@@ -11,6 +13,8 @@ from .backend import ModbusBackend, ModbusBackendError
 from ..utils import retry
 
 logging = logging.getLogger('ertza.drivers.modbus')
+
+ModbusValue = namedtuple('modbus_value', ('addr', 'data', 'fmt'))
 
 
 class ModbusDriverError(AbstractDriverError):
@@ -51,6 +55,14 @@ class ModbusDriver(AbstractDriver):
 
         self.frontend = DriverFrontend()
 
+        self.watcher_thread = None
+        self.watcher_refresh_interval = 0.2
+        self.watcher_event = Event()
+
+        self._read_data = {}
+        self._write_data = {}
+        self._last_write_data = {}
+
     @retry(ModbusDriverError, 5, 5, 2)
     def connect(self):
         try:
@@ -63,10 +75,25 @@ class ModbusDriver(AbstractDriver):
             raise ModbusDriverError('Failed to connect {0}:{1}: {2}'.format(
                 self.target_address, self.target_port, e))
 
-    def exit(self):
-        self['command:enable'] = False
+    def start(self):
+        if self.watcher_thread is not None:
+            raise ModbusDriverError('Driver already started')
 
+        self.watcher_event.clear()
+        self.watcher_thread = Thread(target=self._watcher_loop)
+        self.watcher_thread.daemon = True
+        self.watcher_thread.start()
+
+    def stop(self):
+        self['command:enable'] = False
+        self.watcher_event.set()
+        self.watcher_thread.join()
+
+        self.watcher_thread = None
         self.back.close()
+
+    def exit(self):
+        self.stop()
 
     def get_attribute_map(self):
         attr_map = {}
@@ -81,7 +108,7 @@ class ModbusDriver(AbstractDriver):
 
     def send_default_values(self):
         for key in self.frontend.DEFAULTS_KEYS:
-            self[key] = self.frontend[key]
+            self.set(key, self.frontend[key])
 
     def get(self, key, **kwargs):
         try:
@@ -161,6 +188,26 @@ class ModbusDriver(AbstractDriver):
 
         return self.back.write_netdata(ndk.netdata.addr, data, ndk.netdata.fmt)
 
+    def read_drive_data(self):
+        data_to_read = ('status', 'error_code', 'velocity', 'position',
+                        'position_remaining', 'torque', 'current_ratio')
+
+        for key in data_to_read:
+            pass
+
+    def write_drive_data(self):
+        data_to_write = ('command', 'torque_ref', 'velocity_ref', 'position_ref',
+                         'torque_rise_time',' torque_fall_time',
+                         'acceleration', 'deceleration')
+
+        _write_data_keys = tuple(self._write_data.keys())
+        for key in _write_data_keys:
+            value = self._write_data[key]
+            last_value = self._last_write_data.get(key, None)
+            if value.data != lvalue:
+                self.back.write_netdata(value.addr, value.data, value.fmt)
+                self._last_write_data[key] = value.data
+
     def _get_value(self, ndk, key):
         nd, st, vt, md = ndk.netdata, ndk.start, ndk.vtype, ndk.mode
 
@@ -173,6 +220,15 @@ class ModbusDriver(AbstractDriver):
         except ModbusBackendError as e:
             raise ModbusDriverError('No data returned from backend '
                                     'for {}: {!s}'.format(key, e))
+
+    def _watcher_loop(self):
+        self.connect()
+
+        while not self.watcher_event.is_set():
+            self.read_drive_data()
+            self.write_drive_data()
+            self.watcher_event.wait(self.watcher_refresh_interval)
+
 
     def __getitem__(self, key):
         return self.get(key)
