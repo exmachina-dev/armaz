@@ -319,3 +319,48 @@ class DoubleSpinBox(QtGui.QDoubleSpinBox):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setKeyboardTracking(False)
+
+#    @QtCore.Slot(object)
+#    def update_value(self, obj):
+#        print(type(obj))
+#        key, args = obj[0], obj[1:]
+#        value = vtype = unit = None
+#        if isinstance(args, (tuple, list)):
+#            if len(args) == 1:
+#                value = args[0]
+#            elif len(args) == 2:
+#                vtype, unit = args
+#            elif len(args) == 3:
+#                value, vtype, unit = args
+#        else:
+#            value = args
+#
+#        if isinstance(value, bool):
+#            value = 'on' if value else 'off'
+#        elif isinstance(value, float):
+#            value = '{:.2f}'.format(value)
+#
+#        if key not in self._keys:
+#            self._keys.append(key)
+#            self.setRowCount(len(self._keys))
+#            self.setItem(len(self._keys)-1, 0, QtGui.QTableWidgetItem(str(key)))
+#
+#        i = self._keys.index(key)
+#
+#        if self.clear_column:
+#            button = QtGui.QPushButton('Clear')
+#            self.clear_group.addButton(button, i)
+#            self.setCellWidget(i, 3, button)
+#
+#        if value is not None:
+#            self.setItem(i, 1, QtGui.QTableWidgetItem(str(value)))
+#
+#        if unit is not None:
+#            self.setItem(i, 2, QtGui.QTableWidgetItem(str(unit)))
+#
+#        if vtype is not None:
+#            if hasattr(__builtins__, vtype):
+#                self._vtypes[key] = getattr(__builtins__, vtype)
+#
+#        self.horizontalHeader().stretchLastSection()
+#        self.resizeColumnsToContents()
