@@ -46,7 +46,7 @@ class Test_DriverFrontend(object):
 
         assert self.fe.output_value('velocity_ref', 400) == 4000   # multiplied by gearbox_ratio
 
-        assert self.fe.output_value('position_ref', 400) == 400
+        assert self.fe.output_value('position_ref', 400) == 4000   # multiplied by gearbox_ratio
 
         assert self.fe.output_value('torque_ref', 10) == 1000.0
 
@@ -97,7 +97,7 @@ class Test_DriverFrontend(object):
 
     def test_limits(self):
         keys = ('velocity_ref', 'position_ref', 'acceleration', 'deceleration')
-        values = (500.0, 50000.0, 8000.0, 8000.0)
+        values = (5000.0, 50000.0, 8000.0, 8000.0)
 
         self.conf['motor']['custom_max_position'] = 5000
         self.conf['motor']['custom_min_position'] = -5000
