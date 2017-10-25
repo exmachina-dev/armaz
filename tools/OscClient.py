@@ -14,15 +14,19 @@ def sender(client, target):
 
     print('Sending to %s:%d' % (target.hostname, target.port))
 
+    last_command = None
+
     while running:
         osc_c = input("OSC command: ")
         if not osc_c:
-            running = False
-            sys.exit()
+            if last_command:
+                path, args, = last_command.split(' ')
+                client.send(target, path, args)
 
         try:
             path, args, = osc_c.split(' ')
             client.send(target, path, args)
+            last_command = osc_c
         except ValueError:
             client.send(target, osc_c)
 
