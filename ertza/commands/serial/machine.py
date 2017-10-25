@@ -54,6 +54,7 @@ class MachineSet(SerialCommand):
                 vt = bool
 
             MachineSet.new_command.clear()
+            errors = 0
             while not MachineSet.new_command.is_set():
                 try:
                     self.machine[nk] = v
@@ -66,6 +67,7 @@ class MachineSet(SerialCommand):
                         self.ok(c, k, nv)
                     break
                 except ModbusCommunicationError as e:
+                    errors += 1
                     if errors >= MachineSet.max_errors:
                         raise e
                     MachineSet.new_command.wait(0.3)
