@@ -130,7 +130,7 @@ class Ertza(object):
                 except Exception as e:
                     logger.error(e)
             else:
-                logger.warn('Speciied interface is not available: {}'.format(i))
+                logger.warn('Specified interface is not available: {}'.format(i))
             machine.ethernet_interface = eth
         except IndexError:
             logger.warn('No IP address found')
@@ -267,13 +267,16 @@ class Ertza(object):
 
             while self.machine.config.has_option("thermistors",
                                                  "port_TH%d" % th_p):
-                adc_channel = self.machine.config.getint("thermistors",
-                                                         "port_TH%d" % th_p)
-                therm = Thermistor(adc_channel, 'TH{}'.format(th_p))
-                self.machine.thermistors.append(therm)
-                logger.debug('Found thermistor TH{} '
-                             'at ADC channel {}'.format(th_p, adc_channel))
-                th_p += 1
+                try:
+                    adc_channel = self.machine.config.getint("thermistors",
+                                                            "port_TH%d" % th_p)
+                    therm = Thermistor(adc_channel, 'TH{}'.format(th_p))
+                    self.machine.thermistors.append(therm)
+                    logger.debug('Found thermistor TH{} '
+                                'at ADC channel {}'.format(th_p, adc_channel))
+                    th_p += 1
+                except Exception as e:
+                    logger.warn('Unable to configure thermistor TH{}: {!s}'.format(th_p, e))
 
     def _config_fans(self):
         self.machine.fans = []
@@ -284,18 +287,19 @@ class Ertza(object):
 
             f_p = 0
             while self.machine.config.has_option("fans", "address_F%d" % f_p):
-                fan_channel = self.machine.config.getint("fans",
-                                                         "address_F%d" % f_p)
-                fan = Fan(fan_channel)
-                fan.min_speed = float(self.machine.config.get(
-                    "fans", 'min_speed_F{}'.format(f_p), fallback=0.0))
-                self.machine.fans.append(fan)
-                logger.debug(
-                    "Found fan F%d at channel %d" % (f_p, fan_channel))
-                f_p += 1
-
-        for f in self.machine.fans:
-            f.set_value(1)
+                try:
+                    fan_channel = self.machine.config.getint("fans",
+                                                            "address_F%d" % f_p)
+                    fan = Fan(fan_channel)
+                    fan.min_speed = float(self.machine.config.get(
+                        "fans", 'min_speed_F{}'.format(f_p), fallback=0.0))
+                    fan.set_value(1)
+                    self.machine.fans.append(fan)
+                    logger.debug(
+                        "Found fan F%d at channel %d" % (f_p, fan_channel))
+                    f_p += 1
+                except Exception as e:
+                    logger.warn('Unable to configure fan F{}: {!s}'.format(f_p, e))
 
         th_cf = self.machine.config["thermistors"]
         tw_cf = self.machine.config["temperature_watchers"]
