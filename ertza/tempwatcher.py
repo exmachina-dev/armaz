@@ -61,24 +61,26 @@ class TempWatcher(object):
 
     def keep_temperature(self):
         while self.enabled:
+            power = 1.0
+
             try:
                 self.update_temp()
+
+                error = self.target_temp - self.current_temp
+                error *= -1
+
+                self.running_time += self.interval
+                _P = self.P * error
+
+                self.error_integral += error * self.interval
+                # Clamp error_integral to max output power; More reactive I
+                self.error_integral = max(min(self.error_integral, 100.0), 00.0)
+                _I = self.I * self.error_integral
+
+                power = _P + _I
+                power = max(min(power, 1.0), 0.0)
             except (ValueError, KeyError) as e:
                 logging.warn('Unable to update temperature: {!s}'.format(e))
-
-            error = self.target_temp - self.current_temp
-            error *= -1
-
-            self.running_time += self.interval
-            _P = self.P * error
-
-            self.error_integral += error * self.interval
-            # Clamp error_integral to max output power; More reactive I
-            self.error_integral = max(min(self.error_integral, 100.0), 00.0)
-            _I = self.I * self.error_integral
-
-            power = _P + _I
-            power = max(min(power, 1.0), 0.0)
 
             self.fan.set_value(power)
             logging.debug('Current temp for {}: {:.2f} deg C, Fan '
