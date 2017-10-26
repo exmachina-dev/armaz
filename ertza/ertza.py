@@ -310,8 +310,8 @@ class Ertza(object):
 
             for t, therm in enumerate(self.machine.thermistors):
                 for f, fan in enumerate(self.machine.fans):
-                    if tw_cf.getboolean("connect_TH{}_to_F{}".format(t, f),
-                                        fallback=False):
+                    if tw_cf.get("connect_TH{}_to_F{}".format(t, f),
+                                 fallback=False):
                         tw = TempWatcher(therm, fan,
                                          "TempWatcher-{}-{}".format(t, f))
                         tw.set_target_temperature(float(
