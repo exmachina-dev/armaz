@@ -123,7 +123,7 @@ class Ertza(object):
                         ip = '10'
                         for byte in eth.mac_address.split(':')[3:6]:
                             ip += '.{}'.format(int('0x{}'.format(byte), base=0))
-                            ip += '/8'
+                        ip += '/8'
 
                     logger.info('Adding ip {} to {}'.format(ip, i))
                     eth.add_ip(ip)
