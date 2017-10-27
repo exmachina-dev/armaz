@@ -62,6 +62,7 @@ class TempWatcher(object):
     def keep_temperature(self):
         while self.enabled:
             power = 1.0
+            error = 0.0
 
             try:
                 self.update_temp()
@@ -79,15 +80,15 @@ class TempWatcher(object):
 
                 power = _P + _I
                 power = max(min(power, 1.0), 0.0)
+                logging.debug('Current temp for {}: {:.2f} deg C, Fan '
+                              '{} set to {:.2f} | E: {:.2f} I: {}'.format(
+                                  self.thermistor.name, self.current_temp,
+                                  self.fan.channel, power, error,
+                                  self.error_integral))
             except (ValueError, KeyError) as e:
                 logging.warn('Unable to update temperature: {!s}'.format(e))
 
             self.fan.set_value(power)
-            logging.debug('Current temp for {}: {:.2f} deg C, Fan '
-                          '{} set to {:.2f} | E: {:.2f} I: {}'.format(
-                              self.thermistor.name, self.current_temp,
-                              self.fan.channel, power, error,
-                              self.error_integral))
             time.sleep(self.interval)
         self.disabled = True
 
