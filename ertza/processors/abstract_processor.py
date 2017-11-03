@@ -61,6 +61,12 @@ class AbstractProcessor(object):
 
         return False
 
+    def send_announce(self):
+        pass
+
+    def send_alive(self):
+        pass
+
     def synchronize(self, command):
         alias = self._check_in_commands(command)
         if alias:

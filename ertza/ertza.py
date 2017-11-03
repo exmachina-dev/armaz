@@ -180,11 +180,11 @@ class Ertza(object):
         unbuffered_commands_thread.start()
         # synced_commands_thread.start()
 
-        self.machine.start()
-
         for name, comm in self.machine.comms.items():
             comm.start()
             logger.info("%s communication module started" % name)
+
+        self.machine.start()
 
         try:
             self.machine.load_startup_mode()
@@ -194,6 +194,10 @@ class Ertza(object):
         for l in self.machine.leds:
             if l.function == 'status':
                 l.set_blink(50)
+
+        for name, comm in self.machine.comms.items():
+            comm.send_alive()
+            logger.info("Sending alive message with %s communication module" % name)
 
         logger.info("Ertza ready")
 

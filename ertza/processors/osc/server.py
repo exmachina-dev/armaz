@@ -33,6 +33,13 @@ class OscServer(lo.Server):
         self._t.daemon = True
         self._t.start()
 
+        self.send_announce()
+
+    def send_announce(self):
+        m = OscMessage('/announce', self.machine.serialnumber, self.machine.osc_address, hostname='255.255.255.255')
+        self.send_message(m)
+
+    def send_alive(self):
         m = OscMessage('/alive', self.machine.serialnumber, self.machine.osc_address, hostname='255.255.255.255')
         self.send_message(m)
 

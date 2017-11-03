@@ -75,6 +75,14 @@ class SerialServer(sr.Serial):
         self._t.daemon = True
         self._t.start()
 
+        self.send_announce()
+
+    def send_announce(self):
+        m = SerialMessage()
+        m.cmd_bytes['data'] = 'announce'
+        self.send_message(m)
+
+    def send_alive(self):
         m = SerialMessage()
         m.cmd_bytes['data'] = 'alive'
         self.send_message(m)
