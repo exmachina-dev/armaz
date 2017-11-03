@@ -15,6 +15,7 @@ available_variants = (
     'ARMAZ.FAST',
     'ARMAZ.FLAT',
     'ARMAZ.BOLD',
+    'MOTIONSERVER',
 )
 
 pin_usage = OrderedDict()
@@ -110,8 +111,6 @@ def check_dict(check_dict, orig_dict):
                 check_errors += 1
         except KeyError:
             print('    Unrecognized key: {}'.format(key))
-
-    return check_errors
 
     return check_errors
 
