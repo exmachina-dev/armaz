@@ -87,7 +87,8 @@ class ModbusDriver(AbstractDriver):
     def stop(self):
         self['command:enable'] = False
         self.watcher_event.set()
-        self.watcher_thread.join()
+        if self.watcher_thread:
+            self.watcher_thread.join()
 
         self.watcher_thread = None
         self.back.close()
