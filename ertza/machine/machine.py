@@ -592,6 +592,10 @@ class Machine(AbstractMachine):
                 self.machine_keys['machine:command:enable'] = True
                 self._timeout_event.clear()
             self._last_command_time = time.time()
+        elif self.master_mode:
+            if 'command:enable' in key:
+                for sm in self.slave_machines.values():
+                    sm.set_to_remote('machine:command:enable', True if value else False)
 
         self.machine_keys[key] = value
 
