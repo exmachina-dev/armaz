@@ -40,7 +40,7 @@ if __name__ == '__main__':
                         %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M')
 
-    PWM.set_frequency(100)
+    PWM.set_frequency(200000)
 
     fan0 = Fan(0)
     fan1 = Fan(1)
