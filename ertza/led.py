@@ -15,9 +15,13 @@ class Led(object):
 
         self._function = function
 
+        with open(self.trigger, mode='r') as f:
+            self._mode = f.readline()
+
     def set_trigger(self, new_trigger):
         with open(self.trigger, mode='w') as f:
             f.write(str(new_trigger))
+            self._mode = new_trigger
 
     def set_brightness(self, new_brightness):
         with open(self.brightness, mode='w') as f:
@@ -31,6 +35,18 @@ class Led(object):
     @property
     def function(self):
         return self._function
+
+    def on(self):
+        self.set_trigger('default-on')
+
+    def off(self):
+        self.set_trigger('default-off')
+
+    def toggle(self):
+        if self.mode == 'default-on':
+            self.off()
+        else:
+            self.on()
 
 if __name__ == '__main__':
     import time

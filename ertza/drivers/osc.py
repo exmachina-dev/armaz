@@ -22,14 +22,11 @@ class OscDriverTimeout(OscDriverError, AbstractTimeoutError):
 
 
 class OscDriver(AbstractDriver):
-
     def __init__(self, config, machine):
         self.target_address = config.get("target_address")
         self.target_port = int(config.get("target_port"))
         self.target = OscAddress(hostname=self.target_address,
                                  port=self.target_port)
-
-        self.machine = machine
 
         self.outlet, self.inlet = None, None
         self.osc_pipe = None
@@ -50,8 +47,7 @@ class OscDriver(AbstractDriver):
 
     def register(self):
         try:
-            sn = self.machine.serialnumber if self.machine.serialnumber \
-                else False
+            sn = self.MOTIONSERVER.serialnumber or False
             if sn:
                 m = self.message('/slave/register', sn, types='s')
             else:

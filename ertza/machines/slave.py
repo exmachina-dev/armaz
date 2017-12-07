@@ -117,23 +117,28 @@ class SlaveMachine(AbstractMachine):
         ),
     }
 
-    def __init__(self, slave):
+    def __init__(self, **kwargs):
+        for k in ('address', 'driver_type', 'motion_mode', 'config'):
+            if k not in kwargs:
+                raise ValueError('Missing required argument: %s' % k)
 
-        self.config = slave.config
-        self.driver = None
+        self.config = kwargs['config']
+        self.driver_type = kwargs['driver_type']
 
-        self.slave = slave
+        addr = kwargs['address'].split(':')[0:2]
+        port = 6969
+        if len(addr) == 2:
+            addr, port = addr
+        else:
+            addr, = addr
 
         self.driver_config = {
-            'target_address': self.slave.address,
-            'target_port': int(self.config.get('reply_port', 6969)),
-            'timeout': float(self.config.get('slave_timeout', .5)),
+            'target_address': addr,
+            'target_port': int(port),
+            'timeout': float(self.config.get('timeout', .5)),
         }
 
-        self.running_event = Event()
-        self.newdata_event = Event()
-
-        self.timeout = float(self.config.get('slave_timeout', .5))
+        self.timeout = self.driver_config['timeout']
         self.refresh_interval = float(self.config.get('refresh_interval', 0.5))
 
         self.bridge = Queue()
@@ -147,30 +152,29 @@ class SlaveMachine(AbstractMachine):
         self.errors = 0
         self.max_errors = 10
 
-        self.timeout_event = Event()
-        self.fault_event = Event()
-        self.fatal_event = Event()
-        self.watchdog_event = Event()
+        self.watchdog_ev = Event()
 
         self._thread = None
         self._watchdog_thread = None
 
     def init_driver(self):
-        drv = self.slave.driver
+        drv = self.driver_type
+        if not drv:
+            e = ValueError('Driver not defined for machine with S/N %s' % (self.serialnumber))
+            logging.error('{!s}'.format(e))
+            raise e
+
         logging.info("Loading %s driver" % drv)
-        if drv is not None:
-            try:
-                driver = Driver().get_driver(drv)
-                self.driver = driver(self.driver_config, self.machine)
-                self.inlet = self.driver.init_queue()
-            except KeyError:
-                logging.error("Unable to get %s driver, aborting." % drv)
-                return
-            except AbstractDriverError as e:
-                raise SlaveMachineError('Unable to intialize driver: %s' % e)
-        else:
-            logging.error("Machine driver is not defined, aborting.")
-            return False
+
+        try:
+            driver = Driver().get_driver(drv)
+            self.driver = driver(self.driver_config)
+            self.inlet = self.driver.init_queue()
+        except KeyError:
+            logging.error("Unable to get %s driver, aborting." % drv)
+            return
+        except AbstractDriverError as e:
+            raise SlaveMachineError('Unable to intialize driver: %s' % e)
 
         logging.debug("%s driver loaded" % drv)
         return drv

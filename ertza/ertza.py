@@ -13,7 +13,7 @@ from multiprocessing import JoinableQueue
 import queue
 
 from .configparser import ConfigParser, ProfileError
-from .machine import Machine, MachineError
+from .motion import MotionUnit, MotionError
 
 from .processors import OscProcessor, SerialProcessor
 
@@ -31,7 +31,7 @@ from .led import Led
 
 from .network_utils import EthernetInterface
 
-version = "0.1.0~Siderunner"
+version = "2.1.0~Motion"
 
 _DEFAULT_CONF = "/etc/ertza/default.conf"
 _MACHINE_CONF = "/etc/ertza/machine.conf"
@@ -59,9 +59,8 @@ class Ertza(object):
         """ Init """
         logger.info("Ertza initializing. Version: " + version)
 
-        machine = Machine()
-        self.machine = machine
-        machine.version = version
+        self.motion_unit = MotionUnit()
+        self.mu.version = version
 
         if not os.path.isfile(_DEFAULT_CONF):
             logger.error(_DEFAULT_CONF + " does not exist, exiting.")
@@ -74,37 +73,38 @@ class Ertza(object):
 
         logger.info('Custom file: %s' % custom_conf)
 
-        machine.config = ConfigParser(_DEFAULT_CONF,
+        self.mu.config = ConfigParser(_DEFAULT_CONF,
                                       _MACHINE_CONF,
                                       custom_conf)
 
         self._config_leds()
-        for l in self.machine.leds:
+        for l in self.mu.leds:
             if l.function == 'status':
                 l.set_blink(500)
+            if l.function == 'error':
+                l.on()
 
         # Get loglevel from config file
-        level = self.machine.config.getint('system', 'loglevel', fallback=10)
+        level = int(self.mu.config.get('system', 'loglevel', fallback=10))
         if level > 0:
             lg.getLogger('').setLevel(level)
             logger.setLevel(level)
             logger.info("Log level set to %d" % level)
 
-        machine.cape_infos = machine.config.find_cape('ARMAZCAPE')
+        self.mu.cape_infos = self.mu.config.find_cape('ARMAZCAPE')
 
-        if machine.cape_infos:
-            name = machine.cape_infos['name']
-            logger.info('Found cape %s with S/N %s' % (name, machine.serialnumber))
-            SerialCommandString.SerialNumber = machine.serialnumber
+        if self.mu.cape_infos:
+            name = self.mu.cape_infos['name']
+            logger.info('Found cape %s with S/N %s' % (name, self.mu.serialnumber))
+            SerialCommandString.SerialNumber = self.mu.serialnumber
 
-        machine.config.load_variant()
         try:
-            machine.config.load_profile()
+            self.mu.config.load_profile()
         except ProfileError as e:
             logger.info('Unable to load profile: {!s}'.format(e))
 
         try:
-            i = machine.config.get('machine', 'interface', fallback='eth1')
+            i = self.mu.config.get('server', 'interface', fallback='eth0')
             logger.info('Configuring {} interface'.format(i))
             eth = None
             try:
@@ -116,7 +116,7 @@ class Ertza(object):
             except Exception as e:
                 logger.error(e)
 
-            ip = machine.config.get('machine', 'ip_address', fallback=None)
+            ip = self.mu.config.get('server', 'ip_address', fallback=None)
             if eth:
                 try:
                     if not ip:
@@ -131,33 +131,24 @@ class Ertza(object):
                     logger.error(e)
             else:
                 logger.warn('Specified interface is not available: {}'.format(i))
-            machine.ethernet_interface = eth
+            self.mu.ethernet_interface = eth
         except IndexError:
             logger.warn('No IP address found')
 
-        drv = machine.init_driver()
-        if drv:
-            logger.info("Loaded %s driver for machine" % drv)
-        else:
-            logger.error("Unable to find driver, exiting.")
-            sys.exit(1)
-
+        self._config_external_switches()
         self._config_thermistors()
         self._config_fans()
-        self._config_external_switches()
 
         # Create queue of commands
-        self.machine.commands = JoinableQueue(10)
-        self.machine.unbuffered_commands = JoinableQueue(10)
-        self.machine.sync_commands = JoinableQueue()
+        self.mu.commands = JoinableQueue(20)
 
-        if not machine.config.get('osc', 'disable', fallback=False):
-            machine.processors['OSC'] = OscProcessor(self.machine)
-            machine.comms['OSC'] = OscServer(self.machine)
+        if not self.mu.config.get('osc', 'disable', fallback=False):
+            self.mu.processors['OSC'] = OscProcessor(self.mu)
+            self.mu.comms['OSC'] = OscServer(self.mu)
 
-        if not machine.config.get('serial', 'disable', fallback=False):
-            machine.processors['Serial'] = SerialProcessor(self.machine)
-            machine.comms['Serial'] = SerialServer(self.machine)
+        if not self.mu.config.get('serial', 'disable', fallback=False):
+            self.mu.processors['Serial'] = SerialProcessor(self.mu)
+            self.mu.comms['Serial'] = SerialServer(self.mu)
 
     def start(self):
         """ Start the processes """
@@ -165,117 +156,89 @@ class Ertza(object):
 
         # Start the processes
         commands_thread = Thread(target=self.loop,
-                                 args=(self.machine.commands, "command"))
-        unbuffered_commands_thread = Thread(target=self.loop,
-                                            args=(self.machine.unbuffered_commands,
-                                                  "unbuffered"))
-        synced_commands_thread = Thread(target=self.eventloop,
-                                        args=(self.machine.sync_commands, "sync"))
+                                 args=(self.mu.commands, "command"))
 
         commands_thread.deamon = True
-        unbuffered_commands_thread.deamon = True
-        synced_commands_thread.deamon = True
-
         commands_thread.start()
-        unbuffered_commands_thread.start()
-        # synced_commands_thread.start()
 
-        for name, comm in self.machine.comms.items():
+        for name, comm in self.mu.comms.items():
             comm.start()
             logger.info("%s communication module started" % name)
 
-        self.machine.start()
+        self.mu.start()
 
-        try:
-            self.machine.load_startup_mode()
-        except MachineError as e:
-            logger.error(str(e))
-
-        for l in self.machine.leds:
+        for l in self.mu.leds:
             if l.function == 'status':
                 l.set_blink(50)
+            elif l.function == 'error':
+                l.off()
 
-        for name, comm in self.machine.comms.items():
+        for name, comm in self.mu.comms.items():
             comm.send_alive()
             logger.info("Sending alive message with %s communication module" % name)
 
         logger.info("Ertza ready")
 
-    def loop(self, machine_queue, name):
-        """ When a new command comes in, execute it """
+    def loop(self, message_queue, name):
+        """ When a new message comes in, dispatch it """
 
         try:
             while self.running:
                 try:
-                    message = machine_queue.get(block=True, timeout=1)
+                    message = message_queue.get(block=True, timeout=1)
                 except queue.Empty:
                     continue
 
                 logger.debug("Executing %s from %s" % (message.command, name))
 
                 try:
-                    p = self.machine.processors[message.protocol]
+                    p = self.mu.processors[message.protocol]
                 except KeyError:
                     raise KeyError('Unable to get %s processor' % message.protocol)
 
                 try:
-                    self._execute(message, p)
-                    self.machine.reply(message)
+                    self.mu.handle(message, p)
                 finally:
-                    machine_queue.task_done()
+                    message_queue.task_done()
         except Exception as e:
             logger.exception("Exception in %s loop: %s" % (name, e))
 
-    def eventloop(self, machine_queue, name):
-        """ When a new event comes in, execute the pending gcode """
-
-        while self.running:
-            try:
-                # Returns False on timeout, else True
-                if self.machine.wait_until_sync_event():
-                    try:
-                        message = machine_queue.get(block=True, timeout=1)
-                    except queue.Empty:
-                        continue
-
-                    try:
-                        p = self.machine.processors[message.protocol]
-                    except KeyError:
-                        raise KeyError('Unable to get %s processor' % message.protocol)
-
-                    self._synchronize(message, p)
-
-                    logger.info("Event handled for %s from %s %s" % (
-                        message.target, name, message))
-                    machine_queue.task_done()
-            except Exception:
-                logger.exception("Exception in {} eventloop: ".format(name))
-
     def exit(self):
-        self.machine.exit()
+        logger.info('Stopping motion unit')
+        self.mu.stop()
 
         self.running = False
 
-        for f in self.machine.fans:
+        for f in self.mu.fans:
             f.set_value(0)
 
-        for l in self.machine.leds:
-            l.set_trigger('default-on')
+        for l in self.mu.leds:
+            if l.function == 'status':
+                l.off()
+            elif l.function == 'error':
+                l.off()
+
+        logger.info('Exited.')
+
+    @property
+    def mu(self):
+        return self.motion_unit
 
     def _config_thermistors(self):
 
         # Get available thermistors
-        self.machine.thermistors = []
-        if self.machine.config.getboolean('thermistors', 'got_thermistors'):
+        self.mu.thermistors = []
+
+        if self.mu.config.getboolean('thermistors', 'got_thermistors'):
             th_p = 0
 
-            while self.machine.config.has_option("thermistors",
+            while self.mu.config.has_option("thermistors",
                                                  "port_TH%d" % th_p):
                 try:
-                    adc_channel = self.machine.config.getint("thermistors",
+                    adc_channel = self.mu.config.getint("thermistors",
                                                             "port_TH%d" % th_p)
                     therm = Thermistor(adc_channel, 'TH{}'.format(th_p))
-                    self.machine.thermistors.append(therm)
+                    self.mu.thermistors.append(therm)
                     logger.debug('Found thermistor TH{} '
                                 'at ADC channel {}'.format(th_p, adc_channel))
                     th_p += 1
@@ -283,37 +246,37 @@ class Ertza(object):
                     logger.warn('Unable to configure thermistor TH{}: {!s}'.format(th_p, e))
 
     def _config_fans(self):
-        self.machine.fans = []
+        self.mu.fans = []
 
         # Get available fans
-        if self.machine.config.getboolean('fans', 'got_fans'):
+        if self.mu.config.getboolean('fans', 'got_fans'):
             PWM.set_frequency(1560)
 
             f_p = 0
-            while self.machine.config.has_option("fans", "address_F%d" % f_p):
+            while self.mu.config.has_option("fans", "address_F%d" % f_p):
                 try:
-                    fan_channel = self.machine.config.getint("fans",
+                    fan_channel = self.mu.config.getint("fans",
                                                             "address_F%d" % f_p)
                     fan = Fan(fan_channel)
-                    fan.min_speed = float(self.machine.config.get(
+                    fan.min_speed = float(self.mu.config.get(
                         "fans", 'min_speed_F{}'.format(f_p), fallback=0.0))
                     fan.set_value(1)
-                    self.machine.fans.append(fan)
+                    self.mu.fans.append(fan)
                     logger.debug(
                         "Found fan F%d at channel %d" % (f_p, fan_channel))
                     f_p += 1
                 except Exception as e:
                     logger.warn('Unable to configure fan F{}: {!s}'.format(f_p, e))
 
-        th_cf = self.machine.config["thermistors"]
-        tw_cf = self.machine.config["temperature_watchers"]
+        th_cf = self.mu.config["thermistors"]
+        tw_cf = self.mu.config["temperature_watchers"]
 
         # Connect fans to thermistors
-        if self.machine.fans:
-            self.machine.temperature_watchers = []
+        if self.mu.fans:
+            self.mu.temperature_watchers = []
 
-            for t, therm in enumerate(self.machine.thermistors):
-                for f, fan in enumerate(self.machine.fans):
+            for t, therm in enumerate(self.mu.thermistors):
+                for f, fan in enumerate(self.mu.fans):
                     if tw_cf.get("connect_TH{}_to_F{}".format(t, f),
                                  fallback=False):
                         tw = TempWatcher(therm, fan,
@@ -325,65 +288,62 @@ class Ertza(object):
                         tw.interval = float(th_cf.get('update_interval_TH{}'.format(t),
                                                       fallback=5))
                         tw.enable()
-                        self.machine.temperature_watchers.append(tw)
-        elif self.machine.thermistors:
-            self.machine.temperature_watchers = []
-            for t, therm in enumerate(self.machine.thermistors):
+                        self.mu.temperature_watchers.append(tw)
+        elif self.mu.thermistors:
+            self.mu.temperature_watchers = []
+            for t, therm in enumerate(self.mu.thermistors):
                 tw = TempWatcher(therm, None, "TempLogger-%d" % t)
                 tw.set_max_temperature(float(
                     th_cf.get("max_temperature_TH%d" % t)))
                 tw.interval = float(th_cf.get('update_interval_TH{}'.format(t),
                                               fallback=5))
                 tw.enable(mode=False)
-                self.machine.temperature_watchers.append(tw)
+                self.mu.temperature_watchers.append(tw)
 
     def _config_external_switches(self):
-        Switch.callback = self.machine.switch_callback
+        Switch.callback = self.mu.switch_callback
 
         # Create external switches
-        self.machine.switches = []
+        self.mu.switches = []
         esw_p = 0
-        while self.machine.config.has_option("switches",
+        while self.mu.config.has_option("switches",
                                              "keycode_ESW%d" % esw_p):
             esw_n = "ESW%d" % esw_p
-            esw_kc = self.machine.config.getint("switches",
+            esw_kc = self.mu.config.getint("switches",
                                                 "keycode_%s" % esw_n)
-            name = self.machine.config.get("switches",
+            name = self.mu.config.get("switches",
                                            "name_%s" % esw_n, fallback=esw_n)
             esw = Switch(esw_kc, name)
-            esw.invert = self.machine.config.getboolean("switches",
+            esw.invert = self.mu.config.getboolean("switches",
                                                         "invert_%s" % esw_n)
-            esw.function = self.machine.config.get("switches",
+            esw.function = self.mu.config.get("switches",
                                                    "function_%s" % esw_n)
-            self.machine.switches.append(esw)
+            self.mu.switches.append(esw)
             logger.debug("Found switch %s at keycode %d" % (name, esw_kc))
             esw_p += 1
 
     def _config_leds(self):
 
         # Create leds
-        self.machine.leds = []
-        if self.machine.config.getboolean('leds', 'got_leds'):
+        self.mu.leds = []
+        if self.mu.config.getboolean('leds', 'got_leds'):
             led_i = 0
-            while self.machine.config.has_option("leds", "file_L%d" % led_i):
+            while self.mu.config.has_option("leds", "file_L%d" % led_i):
                 led_n = "L%d" % led_i
-                led_f = self.machine.config.get("leds", "file_%s" % led_n)
-                led_fn = self.machine.config.get("leds", "function_%s" % led_n,
+                led_f = self.mu.config.get("leds", "file_%s" % led_n)
+                led_fn = self.mu.config.get("leds", "function_%s" % led_n,
                                                  fallback=None)
                 led = Led(led_f, led_fn)
-                led_t = self.machine.config.get("leds", "trigger_%s" % led_n,
+                led_t = self.mu.config.get("leds", "trigger_%s" % led_n,
                                                 fallback='none')
                 led.set_trigger(led_t)
                 if led_t == "timer":
-                    led.set_blink(self.machine.config.get("leds",
+                    led.set_blink(self.mu.config.get("leds",
                                                           "blink_%s" % led_n,
                                                           fallback='500'))
-                self.machine.leds.append(led)
+                self.mu.leds.append(led)
                 logger.debug("Found led %s, trigger: %s" % (led_n, led_t))
                 led_i += 1
-
-    def _execute(self, c, p):
-        p.execute(c)
 
 
 def main(parent_args=None):

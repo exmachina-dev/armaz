@@ -1,41 +1,79 @@
 # -*- coding: utf-8 -*-
+# vim: fenc=utf-8 shiftwidth=4 softtabstop=4
+#
+# Copyright © 2017 Benoit Rapidel, ExMachina <benoit.rapidel+devs@exmachina.fr>
+#
+# Distributed under terms of the GPLv3+ license.
 
+"""
+
+"""
 import sys
 import time
 import logging
 
 from threading import Event, Thread, Lock
 
-from .abstract_machine import AbstractMachine
-from .abstract_machine import AbstractMachineError
-from .abstract_machine import AbstractFatalMachineError
-
-from .modes import StandaloneMachineMode
-from .modes import MasterMachineMode
-from .modes import SlaveMachineMode
-
-from ..drivers import Driver
-from ..drivers import AbstractDriverError
-
-from .slave import Slave, SlaveMachine
-from .slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+from ..processors.osc.message import OscMessage
+from ..machines.machine import Machine
+from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 
 from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
-logging = logging.getLogger('ertza.machine')
+logging = logging.getLogger('ertza.motion')
 
 
-OPERATING_MODES = ('standalone', 'master', 'slave')
-
-
-class MachineError(AbstractMachineError):
+class MotionError(Exception):
     pass
 
 
-class FatalMachineError(AbstractFatalMachineError):
+class FatalMotionError(MotionError):
     pass
+
+
+class Filter(object):
+    def __init__(self, *args, **kwargs):
+        self.is_exclusive = kwargs.pop('exclusive', False)
+        self.target = kwargs.pop('target', None)
+
+        # Filter kwargs
+        self.protocol = kwargs.pop('protocol', '').upper()
+        self.alias_mask = kwargs.pop('alias_mask', None)
+        self.args_length = kwargs.pop('args_length', None)
+        self.sender = kwargs.pop('sender', None)
+
+    def accepts(self, message, processor=None):
+        """
+            For a filter to accept a message,
+            the message must fulfill all conditions.
+        """
+        if self.protocol and \
+                message.protocol.upper() != self.protocol.upper():
+            return False
+        if self.alias_mask and \
+                not message.path.startswith(self.alias_mask):
+            return False
+        if self.args_length is not None and \
+                len(message.args) != self.args_length:
+            return False
+        if self.sender is not None and \
+                message.sender.hostname != self.sender:
+            return False
+
+        return True
+
+    def handle(self, m, p):
+        if self.target:
+            self.target(m)
+
+    def __str__(self):
+        return str(repr(self))
+
+    def __repr__(self):
+        return '%s: %s %s' % (self.__class__.__name__, self.protocol,
+                              self.alias_mask)
 
 
 class Channel(object):
@@ -100,18 +138,16 @@ class Channel(object):
         return self._Channels[self.name]['objs']
 
 
-class Machine(AbstractMachine):
-    def __init__(self):
+class MotionUnit(object):
+    def __init__(self, *args, **kwargs):
+        # AbstractMachine.MOTIONSERVER = self
 
-        SlaveMachine.machine = self
         self.fatal_event = Event()
-        SlaveMachine.fatal_event = self.fatal_event
-        FatalSlaveMachineError.fatal_event = self.fatal_event
 
         self.version = None
 
         self.config = None
-        self.driver = None
+
         self.cape_infos = None
         self.ethernet_interface = None
 
@@ -121,57 +157,125 @@ class Machine(AbstractMachine):
         self.synced_commands = None
         self.unbuffered_commands = None
 
-        self.slave_machines = {}
-        self.slaves_channel = Channel('slave_machines', self._slaves_cb)
-        self._slaves_thread = None
+        self.machines = {}
         self.alive_machines = {}
-        self.master = None
-        self.operating_mode = None
-        self._machine_keys = None
+        # self.machines_channel = Channel('machines', self._machines_cb)
+        # self._machines_thread = None
 
-        self._profile_parameters = {
-            'ip_address': _p(str, None, self.set_ip_address),
-            'operating_mode': _p(str, None, self.set_operating_mode),
-        }
+        # self._machine_keys = None
+
+        # self._profile_parameters = {
+        #     'ip_address': _p(str, None, self.set_ip_address),
+        #     'operating_mode': _p(str, None, self.set_operating_mode),
+        # }
 
         self._last_command_time = time.time()
         self._running_event = Event()
-        self._slaves_running_event = Event()
         self._timeout_event = Event()
 
         self.slave_refresh_interval = 1
 
+        self.remotes = {}
         self.switch_callback = self._switch_cb
         self.switch_states = {}
 
-    def init_driver(self):
-        drv = self.config.get('machine', 'driver', fallback=None)
-        logging.info("Loading %s driver" % drv)
-        if drv is not None:
-            try:
-                driver_config = self.config['driver_' + drv]
-            except KeyError:
-                driver_config = {}
-                logging.error("Unable to get config for %s driver" % drv)
-
-            try:
-                self.driver = Driver().get_driver(drv)(driver_config)
-            except KeyError:
-                logging.error("Unable to get %s driver, exiting." % drv)
-                sys.exit()
-        else:
-            logging.error("Machine driver is not defined, aborting.")
-            return False
-
-        logging.debug("%s driver loaded" % drv)
-
-        self.driver.frontend.load_config(self.config, 'motor')
-        return drv
+        self.target_filters = list()
 
     def start(self):
-        self.driver.connect()
+        self.register_filter(alias_mask='/identify', protocol='OSC', exclusive=True, is_reply=True,
+                             target=self.update_alive_machines, args_length=2)
+        self.discover_machines()
 
-        self.driver.send_default_values()
+    def stop(self):
+        "Stop all machines and motion server"
+
+        self._running_event.set()
+
+        if self.machines:
+            for m in self.machines.values():
+                m.exit()
+
+    def handle(self, *args, **kwargs):
+        """
+        Filter a message coming from a processor, apply filters
+        and decide what to do
+        """
+        m, p = args
+        f = self.target_filters
+
+        for f in self.target_filters:
+            if f.accepts(m, p):
+                f.handle(m, p)
+                logging.debug('%s handled by %s', repr(m), str(f))
+                if f.is_exclusive:
+                    return
+
+        p.execute(m)
+
+    def discover_machines(self):
+        """
+        Send a identify request to broadcast.
+        """
+
+        self.alive_machines = {}
+        m = OscMessage('/identify', hostname='255.255.255.255')
+        self.send_message(m)
+
+    def update_alive_machines(self, m):
+        if len(m.args) != 2:
+            return False
+        sn, ip = m.args
+        ip, pt = ip.split(':')
+        if '/' in ip:
+            ip, nm = ip.split('/')
+        else:
+            nm = None
+
+        self.alive_machines[(sn, ip,)] = {
+            'serialnumber': sn,
+            'ip_address': ip,
+            'port': pt,
+            'cidr': nm,
+        }
+
+        self.register_machine(sn, ip)
+
+    def register_filter(self, new_filter=None, **kwargs):
+        if new_filter:
+            if not isinstance(new_filter, Filter):
+                raise TypeError('Unexpected type %s for new_filter' % type(new_filter))
+        else:
+            new_filter = Filter(**kwargs)
+
+        self.target_filters.append(new_filter)
+
+    def register_machine(self, sn=None, ip=None):
+        if sn is None and ip is None:
+            raise ValueError('sn and ip can\'t be both None')
+
+        alive_keys = list(self.alive_machines.keys())
+
+        sni = None
+        ipi = None
+        for i, k in enumerate(alive_keys):
+            if sn and sn == k[0]:
+                sni = i
+
+            if ip and ip == k[1]:
+                ipi = i
+
+        i = sni or ipi
+        if i is None:
+            raise KeyError('Machine not found')
+        m = self.alive_machines[alive_keys[i]]
+
+        asn, aip = alive_keys[i]
+
+        machine = Machine(**m)
+        # Redirect all trafic from this machine to its Machine
+        self.register_filter(sender=aip, target=machine.handle, exclusive=True)
+        self.machines[(asn, aip,)] = machine
+
 
     def start_slaves_loop(self):
         if self._slaves_thread is not None:
@@ -185,30 +289,6 @@ class Machine(AbstractMachine):
 
         self._slaves_thread.start()
 
-    def exit(self):
-        self.driver.exit()
-        self._running_event.set()
-
-        if self.master_mode:
-            for s in self.slave_machines.values():
-                s.exit()
-
-        for n, c in self.comms.items():
-            c.exit()
-
-    def load_startup_mode(self):
-        m = self.config.get('machine', 'operating_mode', fallback='standalone')
-        logging.info('Loading {} operating mode'.format(m))
-
-        if m == 'master':
-            self.load_slaves()
-
-        if m == 'slave':
-            master = self.config.get('machine', 'master')
-            self.set_operating_mode(m, master=master)
-        else:
-            self.set_operating_mode(m)
-
     def reply(self, command):
         if command.answer is not None:
             self.send_message(command.protocol, command.answer)
@@ -219,43 +299,9 @@ class Machine(AbstractMachine):
     @property
     def machine_keys(self):
         if not self._machine_keys:
-            raise MachineError('No machine keys yet')
+            raise MotionError('No machine keys yet')
 
         return self._machine_keys
-
-    @property
-    def infos(self):
-        rev = self.cape_infos['revision'] if self.cape_infos \
-            else '0000'
-        var = self.config['machine']['variant'].split('.')
-
-        return ('identify', var[0].upper(), var[1].upper(), rev)
-
-    @property
-    def serialnumber(self):
-        if self.config.get('machine', 'force_serialnumber', fallback=False):
-            return self.config.get('machine', 'force_serialnumber')
-
-        if not self.cape_infos:
-            return
-
-        sn = self.cape_infos['serialnumber'] if self.cape_infos \
-            else '000000000000'
-
-        return sn
-
-    @property
-    def osc_address(self):
-        try:
-            a = self.ip_address
-            p = self.config.getint('osc', 'listen_port')
-            return '{addr}:{port}'.format(addr=a, port=p)
-        except (IndexError, KeyError):
-            return '0.0.0.0:00'
-
-    @property
-    def ip_address(self):
-        return self.ethernet_interface.ips[-1]
 
     def get_address(self, driver):
         if driver.lower() is 'osc':
@@ -263,39 +309,39 @@ class Machine(AbstractMachine):
         else:
             return self.ip_address
 
-    def search_slaves(self):
-        slaves_cf = self.config['slaves']
-        slaves = []
+    def search_machines(self):
+        machines_cf = self.config['machines']
+        machines = []
 
-        for key, item in slaves_cf.items():
-            if key.startswith('slave_serialnumber_'):
-                slave_id = int(key.split('_')[2])
-                slave_sn = item
-                slave_ip = slaves_cf['slave_address_%d' % slave_id]
-                slave_md = slaves_cf['slave_mode_%d' % slave_id]
-                slave_dv = slaves_cf.get('slave_driver_%d' % slave_id,
-                                         fallback='Osc').title()
+        for key, item in machines_cf.items():
+            if key.startswith('machine_serialnumber_'):
+                machine_id = int(key.split('_')[2])
+                machine_sn = item
+                machine_ip = machines_cf['machine_address_%d' % machine_id]
+                machine_md = machines_cf['machine_mode_%d' % machine_id]
+                machine_dv = machines_cf.get('machine_driver_%d' % machine_id,
+                                         fallback='osc').title()
 
-                slave_cf = {}
-                if self.config.has_section('slave_%s' % slave_sn):
-                    slave_cf = self.config['slave_%s' % slave_sn]
-                    logging.info('Found config for slave with S/N {}'.format(
-                        slave_sn))
+                machine_cf = {}
+                if self.config.has_section('machine_%s' % machine_sn):
+                    machine_cf = self.config['machine_%s' % machine_sn]
+                    logging.info('Found config for machine with S/N {}'.format(
+                        machine_sn))
 
-                s = Slave(slave_sn, slave_ip, slave_dv, slave_md, slave_cf)
-                logging.info('Found {2} slave at {1} '
+                s = Slave(machine_sn, machine_ip, machine_dv, machine_md, machine_cf)
+                logging.info('Found {2} machine at {1} '
                              'with S/N {0}'.format(*s))
-                slaves.append(s)
+                machines.append(s)
 
-        if not slaves:
+        if not machines:
             return False
 
-        self.slave_machines = {}
-        for s in slaves:
+        self.machine_machines = {}
+        for s in machines:
             sm = SlaveMachine(s)
-            self.slave_machines[(s.serialnumber, s.address)] = sm
+            self.machine_machines[(s.serialnumber, s.address)] = sm
 
-        return self.slave_machines
+        return self.machine_machines
 
     @retry(SlaveMachineError, 20, 10, 1.5)
     def slave_block_ping(self, sm):
@@ -306,9 +352,9 @@ class Machine(AbstractMachine):
         if isinstance(p, float):
             return p
         else:
-            raise MachineError('Unexpected result while pinging {!s}'.format(sm))
+            raise MotionError('Unexpected result while pinging {!s}'.format(sm))
 
-    @retry(MachineError, 5, 5, 2)
+    @retry(MotionError, 5, 5, 2)
     def load_slaves(self):
         if not self.slave_machines:
             if not self.search_slaves():
@@ -338,8 +384,6 @@ class Machine(AbstractMachine):
                 self.slaves_channel.suscribe(sm)
 
     def add_slave(self, driver, address, mode, conf={}):
-        self._check_operating_mode()
-
         try:
             s = Slave(None, address, driver.title(), mode, conf)
             sm = SlaveMachine(s)
@@ -491,34 +535,57 @@ class Machine(AbstractMachine):
         self.activate_mode('standalone')
         self._running_event.set()
 
+
+    # Properties
     @property
-    def slave_mode(self):
-        return self._check_operating_mode('slave', raise_exception=False)
+    def infos(self):
+        rev = self.cape_infos['revision'] if self.cape_infos \
+            else '0000'
+        var = self.config['machine']['variant'].split('.')
+
+        return ('identify', var[0].upper(), var[1].upper(), rev)
 
     @property
-    def master_mode(self):
-        return self._check_operating_mode('master', raise_exception=False)
+    def serialnumber(self):
+        if self.config.get('machine', 'force_serialnumber', fallback=False):
+            return self.config.get('machine', 'force_serialnumber')
+
+        if not self.cape_infos:
+            return
+
+        sn = self.cape_infos['serialnumber'] if self.cape_infos \
+            else '000000000000'
+
+        return sn
 
     @property
-    def standalone_mode(self):
-        return self._check_operating_mode('standalone', raise_exception=False)
+    def osc_address(self):
+        try:
+            a, m = self.ethernet_interface.ips[-1].split('/')
+            p = self.config.getint('osc', 'listen_port')
+            return '{addr}/{mask}:{port}'.format(addr=a, mask=m, port=p)
+        except (IndexError, KeyError):
+            return '0.0.0.0/0:00'
 
     @property
-    def paramaters(self):
+    def ip_address(self):
+        ip, mask = self.ethernet_interface.ips[-1].split('/')
+        return ip
+
+    @property
+    def cidr_mask(self):
+        ip, mask = self.ethernet_interface.ips[-1].split('/')
+        return mask
+
+    @property
+    def parameters(self):
         p = {}
         p += self._profile_parameters
         if self.frontend:
             p += self.frontend.parameters
 
-    def _check_operating_mode(self, mode='slave', raise_exception=True):
-        if self.operating_mode == mode:
-            return True
 
-        if raise_exception:
-            raise MachineError('Slave mode %s isn\'t activated: %s' % (
-                mode, self.operating_mode))
-        return False
-
+    # Privates
     def _switch_cb(self, sw_state):
         if sw_state['function']:
             n, f, h = sw_state['name'], sw_state['function'], sw_state['hit']
