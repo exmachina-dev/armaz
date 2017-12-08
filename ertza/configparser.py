@@ -6,7 +6,8 @@ from glob import glob
 import struct
 import configparser
 from configparser import Error, NoSectionError, NoOptionError, ParsingError
-from collections import ChainMap, namedtuple
+import itertools
+from collections import ChainMap, namedtuple, OrderedDict
 
 logger = logging.getLogger('ertza.config')
 
@@ -88,10 +89,33 @@ class _ChainMap(ChainMap):
         except KeyError:
             return super().get(key)
 
+class MultiOrderedDict(OrderedDict):
+    def __setitem__(self, key, value):
+        if key.endswith('[]'):
+            if key in self:
+                self[key].append(value)
+            else:
+                super().__setitem__(key, [value,])
+        else:
+            super().__setitem__(key, value)
+
+class TupleInterpolation(configparser.ExtendedInterpolation):
+    def before_get(self, parser, section, option, value, defaults):
+        if option.endswith('[]'):
+            L = []
+            for v in value:
+                L.append(super().before_get(parser, section, option, ''.join(v), defaults))
+            return L
+        else:
+            return super().before_get(parser, section, option, value, defaults)
+
 
 class AbstractConfigParser(configparser.ConfigParser):
     def __init__(self, *args, **kwargs):
-        super().__init__(interpolation=configparser.ExtendedInterpolation(), **kwargs)
+        kwargs['strict'] = False
+        kwargs['dict_type'] = MultiOrderedDict
+        super().__init__(interpolation=TupleInterpolation(),
+                         **kwargs)
 
         self.config_files = []
         if args and not isinstance(args, (tuple, list)):
@@ -162,6 +186,19 @@ class AbstractConfigParser(configparser.ConfigParser):
             return super().__getitem__(key)
         else:
             return super().__getitem__(key)
+
+    def _join_multiline_values(self):
+        defaults = self.default_section, self._defaults
+        all_sections = itertools.chain((defaults,),
+                                       self._sections.items())
+        for section, options in all_sections:
+            for name, val in options.items():
+                if not name.endswith('[]'):
+                    if isinstance(val, list):
+                        val = '\n'.join(val).rstrip()
+                    options[name] = self._interpolation.before_read(self,
+                                                                    section,
+                                                                    name, val)
 
     def __contains__(self, key):
         """ Don't check DEFAULT section. """
