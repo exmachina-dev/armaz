@@ -22,52 +22,10 @@ from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
+from .filters import Filter
 from .exceptions import MotionError, FatalMotionError
 
 logging = logging.getLogger('ertza.motion')
-
-
-class Filter(object):
-    def __init__(self, *args, **kwargs):
-        self.is_exclusive = kwargs.pop('exclusive', False)
-        self.target = kwargs.pop('target', None)
-
-        # Filter kwargs
-        self.protocol = kwargs.pop('protocol', '').upper()
-        self.alias_mask = kwargs.pop('alias_mask', None)
-        self.args_length = kwargs.pop('args_length', None)
-        self.sender = kwargs.pop('sender', None)
-
-    def accepts(self, message, processor=None):
-        """
-            For a filter to accept a message,
-            the message must fulfill all conditions.
-        """
-        if self.protocol and \
-                message.protocol.upper() != self.protocol.upper():
-            return False
-        if self.alias_mask and \
-                not message.path.startswith(self.alias_mask):
-            return False
-        if self.args_length is not None and \
-                len(message.args) != self.args_length:
-            return False
-        if self.sender is not None and \
-                message.sender.hostname != self.sender:
-            return False
-
-        return True
-
-    def handle(self, m, p):
-        if self.target:
-            self.target(m)
-
-    def __str__(self):
-        return str(repr(self))
-
-    def __repr__(self):
-        return '%s: %s %s' % (self.__class__.__name__, self.protocol,
-                              self.alias_mask)
 
 
 class Channel(object):
