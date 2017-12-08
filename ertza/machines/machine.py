@@ -104,31 +104,12 @@ class Machine(AbstractMachine):
     def __init__(self, *args, **kwargs):
         print(kwargs)
 
-        SlaveMachine.machine = self
         self.fatal_event = Event()
-        SlaveMachine.fatal_event = self.fatal_event
-        FatalSlaveMachineError.fatal_event = self.fatal_event
 
+        self.config = kwargs.pop('config', ChainMap())
         self.version = None
 
-        self.config = None
-        self.driver = None
-        self.cape_infos = None
-        self.ethernet_interface = None
-
-        self.comms = {}
-        self.processors = {}
-        self.commands = None
-        self.synced_commands = None
-        self.unbuffered_commands = None
-
-        self.slave_machines = {}
-        self.slaves_channel = Channel('slave_machines', self._slaves_cb)
-        self._slaves_thread = None
-        self.alive_machines = {}
-        self.master = None
-        self.operating_mode = None
-        self._machine_keys = None
+        self._driver = None
 
         self._profile_parameters = {
             'ip_address': _p(str, None, self.set_ip_address),
@@ -159,7 +140,7 @@ class Machine(AbstractMachine):
                 logging.error("Unable to get config for %s driver" % drv)
 
             try:
-                self.driver = Driver().get_driver(drv)(driver_config)
+                self._driver = Driver().get_driver(drv)(driver_config)
             except KeyError:
                 logging.error("Unable to get %s driver, exiting." % drv)
                 sys.exit()
@@ -169,13 +150,13 @@ class Machine(AbstractMachine):
 
         logging.debug("%s driver loaded" % drv)
 
-        self.driver.frontend.load_config(self.config, 'motor')
+        self._driver.frontend.load_config(self.config, 'motor')
         return drv
 
     def start(self):
-        self.driver.connect()
+        self._driver.connect()
 
-        self.driver.send_default_values()
+        self._driver.send_default_values()
 
     def start_slaves_loop(self):
         if self._slaves_thread is not None:
@@ -190,7 +171,7 @@ class Machine(AbstractMachine):
         self._slaves_thread.start()
 
     def exit(self):
-        self.driver.exit()
+        self._driver.exit()
         self._running_event.set()
 
         if self.master_mode:
@@ -608,7 +589,7 @@ class Machine(AbstractMachine):
 
     def _get_destination(self, key):
         if key.startswith('drive:'):
-            return self.driver
+            return self._driver
         elif key.startswith('machine:'):
             return self
 

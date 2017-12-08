@@ -16,7 +16,7 @@ setup(
     name='ertza',
     version=__version__,
     packages = find_packages(),
-    description="Firmware found in Eisla product range by ExMachina SAS.",
+    description="Motion server software by ExMachina SAS.",
     long_description=file_content('README.md'),
     author="Benoit Rapidel, ExMachina SAS",
     author_email="benoit.rapidel+devs@exmachina.fr",
@@ -32,7 +32,7 @@ setup(
         ]
     },
     classifiers=(
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 2 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
