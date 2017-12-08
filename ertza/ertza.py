@@ -306,21 +306,22 @@ class Ertza(object):
         # Create external switches
         self.mu.switches = []
         esw_p = 0
-        while self.mu.config.has_option("switches",
-                                             "keycode_ESW%d" % esw_p):
-            esw_n = "ESW%d" % esw_p
-            esw_kc = self.mu.config.getint("switches",
-                                                "keycode_%s" % esw_n)
-            name = self.mu.config.get("switches",
-                                           "name_%s" % esw_n, fallback=esw_n)
-            esw = Switch(esw_kc, name)
-            esw.invert = self.mu.config.getboolean("switches",
-                                                        "invert_%s" % esw_n)
-            esw.function = self.mu.config.get("switches",
-                                                   "function_%s" % esw_n)
-            self.mu.switches.append(esw)
-            logger.debug("Found switch %s at keycode %d" % (name, esw_kc))
-            esw_p += 1
+        if self.mu.config.getboolean('switches', 'got_switches', fallback=True):
+            while self.mu.config.has_option("switches",
+                                                "keycode_ESW%d" % esw_p):
+                esw_n = "ESW%d" % esw_p
+                esw_kc = self.mu.config.getint("switches",
+                                                    "keycode_%s" % esw_n)
+                name = self.mu.config.get("switches",
+                                            "name_%s" % esw_n, fallback=esw_n)
+                esw = Switch(esw_kc, name)
+                esw.invert = self.mu.config.getboolean("switches",
+                                                            "invert_%s" % esw_n)
+                esw.function = self.mu.config.get("switches",
+                                                    "function_%s" % esw_n)
+                self.mu.switches.append(esw)
+                logger.debug("Found switch %s at keycode %d" % (name, esw_kc))
+                esw_p += 1
 
     def _config_leds(self):
 
