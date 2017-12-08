@@ -33,9 +33,9 @@ from .network_utils import EthernetInterface
 
 version = "2.1.0~Motion"
 
-_DEFAULT_CONF = "/etc/ertza/default.conf"
-_MACHINE_CONF = "/etc/ertza/machine.conf"
-_CUSTOM_CONF = "/etc/ertza/custom.conf"
+_DEFAULT_CONF = "default.conf"
+_MACHINE_CONF = "machine.conf"
+_CUSTOM_CONF = "custom.conf"
 
 console_logger = lg.StreamHandler()
 console_formatter = lg.Formatter('%(asctime)s %(name)-36s '
@@ -62,20 +62,20 @@ class Ertza(object):
         self.motion_unit = MotionUnit()
         self.mu.version = version
 
-        if not os.path.isfile(_DEFAULT_CONF):
-            logger.error(_DEFAULT_CONF + " does not exist, exiting.")
-            sys.exit(1)
-
-        c = None
-        if 'config' in kwargs:
-            c = kwargs['config']
-        custom_conf = c[0] if c else _CUSTOM_CONF
+        custom_conf = kwargs.pop('config', None)
+        if not custom_conf:
+            custom_conf = _CUSTOM_CONF
 
         logger.info('Custom file: %s' % custom_conf)
 
         self.mu.config = ConfigParser(_DEFAULT_CONF,
                                       _MACHINE_CONF,
-                                      custom_conf)
+                                      custom_conf,
+                                      **kwargs)
+
+        if not os.path.isfile(self.mu.config.config_files[0]):
+            logger.error('%s does not exist, exiting.', self.mu.config.config_files[0])
+            sys.exit(1)
 
         self._config_leds()
         for l in self.mu.leds:
@@ -350,7 +350,8 @@ def main(parent_args=None):
     import argparse
 
     parser = argparse.ArgumentParser(prog='ertza')
-    parser.add_argument('--config', nargs=1, help='use CONFIG as custom config file')
+    parser.add_argument('--config', type=str, help='use CONFIG as custom config file')
+    parser.add_argument('--config-dir', type=str, help='use CONFIG_DIR as base config directory')
 
     if parent_args:
         args, args_remaining = parser.parse_known_args(parent_args)

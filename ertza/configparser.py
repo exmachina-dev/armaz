@@ -224,6 +224,21 @@ class ConfigParser(AbstractConfigParser):
 
     PROFILE_OPTIONS = _PROFILE_OPTIONS
 
+    def __init__(self, *args, **kwargs):
+        self.config_dir = kwargs.pop('config_dir', None)
+        if not self.config_dir:
+            self.config_dir = '/etc/ertza'
+
+        afiles = []
+        for cf in args:
+            af = self.config_dir + '/' + cf if \
+                not (cf.startswith('/') and
+                     cf.startswith('./') and
+                     cf.startswith('../')) else cf
+            afiles.append(af)
+
+        super().__init__(*afiles, **kwargs)
+
     def load_config(self, config_file):
         """
         Load config file appending to *config_files*.
