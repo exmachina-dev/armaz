@@ -22,15 +22,9 @@ from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
+from .exceptions import MotionError, FatalMotionError
+
 logging = logging.getLogger('ertza.motion')
-
-
-class MotionError(Exception):
-    pass
-
-
-class FatalMotionError(MotionError):
-    pass
 
 
 class Filter(object):
