@@ -4,7 +4,7 @@ import logging
 import liblo as lo
 from threading import Thread
 
-from .message import OscMessage
+from .message import OscMessage, OscAddress
 
 logging = logging.getLogger('ertza.processors.osc.server')
 
@@ -21,6 +21,8 @@ class OscServer(lo.Server):
 
         super().__init__(port, lo.UDP)
         logging.info('Started OSC server on port %d' % port)
+
+        self.loopback = False
 
     def run(self):
         while self.running:
@@ -52,6 +54,10 @@ class OscServer(lo.Server):
 
     @lo.make_method(None, None)
     def dispatch(self, path, args, types, sender):
+        if not self.loopback and sender.hostname == self.machine.ip_address \
+                and sender.port == self.machine.osc_port:
+            return
+
         m = OscMessage(path, *args, types=types, sender=sender)
         logging.debug('Received %s from %s' % (m, m.sender))
         self.processor.enqueue(m)
