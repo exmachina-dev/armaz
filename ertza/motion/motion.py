@@ -17,6 +17,7 @@ from threading import Event, Thread, Lock
 from ..processors.osc.message import OscMessage
 from ..machines.machine import Machine
 from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
+from ..remotes import REMOTE_TYPES
 
 from ..drivers.utils import retry
 
@@ -26,7 +27,6 @@ from .filters import Filter
 from .exceptions import MotionError, FatalMotionError
 
 logging = logging.getLogger('ertza.motion')
-
 
 class Channel(object):
     _Channels = {}
@@ -111,6 +111,7 @@ class MotionUnit(object):
 
         self.machines = {}
         self.alive_machines = {}
+        self.alive_remotes = {}
         # self.machines_channel = Channel('machines', self._machines_cb)
         # self._machines_thread = None
 
@@ -136,6 +137,8 @@ class MotionUnit(object):
     def start(self):
         self.register_filter(alias_mask='/identify', protocol='OSC', exclusive=True, is_reply=True,
                              target=self.update_alive_machines, args_length=2)
+        self.register_filter(alias_mask='/identify', protocol='OSC', exclusive=True, is_reply=True,
+                             target=self.update_alive_units, args_length=3)
         self.discover_machines()
 
     def stop(self):
@@ -190,7 +193,32 @@ class MotionUnit(object):
             'cidr': nm,
         }
 
-        self.register_machine(sn, ip)
+        print('NMACHINE', self.alive_machines)
+
+    def update_alive_units(self, m):
+        if len(m.args) != 3:
+            return False
+        sn, ip, tp = m.args
+        ip, pt = ip.split(':')
+        if '/' in ip:
+            ip, nm = ip.split('/')
+        else:
+            nm = None
+
+        unit = {
+                'serialnumber': sn,
+                'ip_address': ip,
+                'port': pt,
+                'cidr': nm,
+                'type': tp,
+            }
+        if tp in REMOTE_TYPES:
+            self.alive_remotes[(sn, ip,)] = unit
+            print('NREMOTE', self.alive_remotes)
+        else:
+            self.alive_machines[(sn, ip,)] = unit
+            print('NMACHINE', self.alive_machines)
+
 
     def register_filter(self, new_filter=None, **kwargs):
         if new_filter:
@@ -518,6 +546,13 @@ class MotionUnit(object):
             return '{addr}/{mask}:{port}'.format(addr=a, mask=m, port=p)
         except (IndexError, KeyError):
             return '0.0.0.0/0:00'
+
+    @property
+    def osc_port(self):
+        try:
+            return int(self.config.get('osc', 'listen_port'))
+        except TypeError:
+            return 0
 
     @property
     def ip_address(self):
