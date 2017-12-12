@@ -58,12 +58,12 @@ class Filter(object):
         if self.targets:
             for t in self.targets:
                 t(m)
-                logging.debug('%s forwarded to %s', m, repr(t))
 
     def __str__(self):
         return str(repr(self))
 
     def __repr__(self):
-        return '%s: %s %s' % (self.__class__.__name__, self.protocol,
-                              self.alias_mask)
+        spec = (self.protocol, self.alias_mask, self.args_length, self.sender)
+        filters = ' '.join([str(x) for x in spec])
+        return '%s: %s' % (self.__class__.__name__, filters)
 

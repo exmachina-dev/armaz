@@ -15,7 +15,7 @@ import logging
 from threading import Event, Thread, Lock
 
 from ..processors.osc.message import OscMessage
-from ..machines.machine import Machine
+from ..machines import Machine
 from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 from ..remotes import REMOTE_TYPES
 
@@ -173,7 +173,7 @@ class MotionUnit(object):
         """
 
         self.alive_machines = {}
-        m = OscMessage('/identify', hostname='255.255.255.255')
+        m = OscMessage('/identify', hostname='10.255.255.255')
         self.send_message(m)
 
     def update_alive_machines(self, m):
@@ -194,6 +194,9 @@ class MotionUnit(object):
         }
 
         print('NMACHINE', self.alive_machines)
+
+        if sn in self.config.get('slaves', 'slave_serialnumber[]', fallback=list()):
+            self.register_machine(sn=sn)
 
     def update_alive_units(self, m):
         if len(m.args) != 3:
@@ -244,9 +247,14 @@ class MotionUnit(object):
             if ip and ip == k[1]:
                 ipi = i
 
-        i = sni or ipi
-        if i is None:
+        if sni is None and ipi is None:
             raise KeyError('Machine not found')
+
+        # Always prefer machines with serialnumber
+        if sni is None:
+            i = ipi
+        else:
+            i = sni
         m = self.alive_machines[alive_keys[i]]
 
         asn, aip = alive_keys[i]
@@ -256,6 +264,7 @@ class MotionUnit(object):
         self.register_filter(sender=aip, target=machine.handle, exclusive=True)
         self.machines[(asn, aip,)] = machine
 
+        machine.start()
 
     def start_slaves_loop(self):
         if self._slaves_thread is not None:
