@@ -22,23 +22,18 @@ class OscDriverTimeout(OscDriverError, AbstractTimeoutError):
 
 
 class OscDriver(AbstractDriver):
-    def __init__(self, config, machine):
+    def __init__(self, config):
         self.target_address = config.get("target_address")
-        self.target_port = int(config.get("target_port"))
+        self.target_port = int(config.get("target_port", 6969))
         self.target = OscAddress(hostname=self.target_address,
                                  port=self.target_port)
 
-        self.outlet, self.inlet = None, None
-        self.osc_pipe = None
         self.running = Event()
         self.timeout = config.get('timeout', 0.25)
 
         self._waiting_futures = []
 
-    def init_queue(self):
         self.queue = Queue(maxsize=45)
-
-        return self.queue
 
     def connect(self):
         self._thread = Thread(target=self.from_machine)
@@ -63,6 +58,12 @@ class OscDriver(AbstractDriver):
 
 
         self.running.set()
+
+    def send(path, *arg, **kwargs):
+
+        if kwargs.get('reply_expected', True):
+            f = Future(msg)
+            self.waiting_futures.append(f)
 
     def message(self, *args, **kwargs):
         return OscMessage(*args, receiver=self.target, **kwargs)
@@ -168,9 +169,9 @@ class OscDriver(AbstractDriver):
     def __setitem__(self, key, *args):
         return self.set(key, *args)
 
-    def _send(self, message, uid, *args, **kwargs):
+    def _send(self, message, *args, **kwargs):
         try:
-            m = self.message(message.path, uid, *message.args)
+            m = self.message(message.path, *message.args)
             m.receiver = self.target
             lo.send((m.receiver.hostname, m.receiver.port), m.message)
         except OSError as e:

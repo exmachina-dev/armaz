@@ -1,3 +1,8 @@
 from .abstract_driver import AbstractDriver, AbstractDriverError, AbstractTimeoutError
-from .driver import Driver
 from .frontend import DriverFrontend
+from importlib import import_module
+
+
+def get_driver(driver):
+    pkg = import_module("ertza.drivers.%s" % driver.lower())
+    return getattr(pkg, "%sDriver" % driver.title())
