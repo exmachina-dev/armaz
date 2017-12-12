@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import uuid
 from copy import copy
 from liblo import Message as OMessage
 
@@ -82,7 +83,8 @@ class OscMessage(AbstractMessage):
             for i in zip(self.types, self.args):
                 a.append(i)
             return OMessage(self.path, *a)
-        return OMessage(self.path, *self.args)
+        m = OMessage(self.path, *self.args)
+        return m
 
     @property
     def message(self):
@@ -90,8 +92,15 @@ class OscMessage(AbstractMessage):
 
     @property
     def uid(self):
-        uid = self.args[0]
-        return uid
+        try:
+            uid = self.args[0]
+            try:
+                uid = uuid.UUID(uid)
+            except ValueError:
+                return False
+            return uid
+        except IndexError:
+            return False
 
     def __repr__(self):
         args = [str(i) for i in self.args]
