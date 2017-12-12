@@ -11,7 +11,7 @@ import functools
 from .abstract_machine import AbstractMachine
 from .abstract_machine import AbstractMachineError, AbstractFatalMachineError
 
-from ..drivers import Driver
+from ..drivers import get_driver
 from ..drivers.abstract_driver import AbstractDriverError, AbstractTimeoutError
 
 logging = logging.getLogger('ertza.machine.slave')
