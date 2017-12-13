@@ -37,68 +37,6 @@ logging = logging.getLogger('ertza.machine')
 OPERATING_MODES = ('standalone', 'master', 'slave')
 
 
-class Channel(object):
-    _Channels = {}
-    _Lock = Lock()
-
-    def __init__(self, name, callback):
-        if name in self._Channels:
-            raise ValueError('Name already exists')
-
-        self._name = name
-        self._callback = callback
-        with self._Lock:
-            self._Channels[self.name] = {
-                'ids': [],
-                'objs': {},
-            }
-
-    def suscribe(self, obj):
-        if id(obj) in self.obj_ids:
-            raise ValueError('Object already subscribed.')
-
-        with self._Lock:
-            self.obj_ids.append(id(obj))
-            self.objs[id(obj)] = obj
-
-    def unsuscribe(self, obj):
-        with self._Lock:
-            if id(obj) not in self.obj_ids:
-                raise ValueError('Object not found.')
-
-            self.obj_ids.remove(id(obj))
-            self.objs.pop(id(obj))
-
-    def send(self, message):
-        with self._Lock:
-            objs = list(self.objs.values())
-
-        for obj in objs:
-            try:
-                obj.send(message, callback=self.callback)
-            except Exception:
-                raise
-
-    def close(self, end_message):
-        pass
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def callback(self):
-        return self._callback
-
-    @property
-    def obj_ids(self):
-        return self._Channels[self.name]['ids']
-
-    @property
-    def objs(self):
-        return self._Channels[self.name]['objs']
-
-
 class OscMachine(AbstractMachine):
     def __init__(self, *args, **kwargs):
         super().__init__()
