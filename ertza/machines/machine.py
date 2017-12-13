@@ -12,9 +12,11 @@ from .abstract_machine import AbstractMachine
 from .exceptions import MachineError, FatalMachineError
 from .exceptions import MachineCommunicationTimeout
 
+from .types import MachineType, get_machine_type, get_machine_class
 from .modes import StandaloneMachineMode
 from .modes import MasterMachineMode
 from .modes import SlaveMachineMode
+from .control_mode import ControlMode
 
 from ..drivers import get_driver
 from ..drivers import AbstractDriverError
@@ -113,6 +115,7 @@ class OscMachine(AbstractMachine):
 
         self.config = kwargs.pop('config', ChainMap())
         self.version = None
+        self.control_mode = ControlMode.Velocity
 
         self.waiting_futures = list()
         self.driver = None
@@ -120,6 +123,7 @@ class OscMachine(AbstractMachine):
 
         self._comms_thread = None
         self._machine_thread = None
+        self._local_status = dict()
 
         self.last_command_time = time.time()
 
@@ -168,7 +172,8 @@ class OscMachine(AbstractMachine):
             def cb(msg):
                 if len(msg.result.args):
                     print(msg.result.args)
-                    self.variant = msg.result.args[1]
+                    self.variant = str(msg.result.args[1])
+                    self.machine_type = get_machine_type(self.variant)
 
             f = self.send('/config/get', 'machine:variant')
             f.set_callback(cb)
@@ -226,7 +231,23 @@ class OscMachine(AbstractMachine):
         return future
 
     def update_local_status(self):
-        pass
+        self.request_machine_var('machine:error_code')
+
+        if self.control_mode == ControlMode.Velocity:
+            self.request_machine_var('machine:velocity')
+            self.request_machine_var('machine:acceleration')
+            self.request_machine_var('machine:deceleration')
+        elif self.control_mode == ControlMode.Torque:
+            pass
+        elif self.control_mode == ControlMode.Position:
+            pass
+
+    def request_machine_var(self, var):
+        f = self.send('/machine/get', var)
+        f.set_callback(self.update_machine_var)
+
+    def update_machine_var(self, f):
+        self._local_status[f.request.args[0]] = f.result.args[1]
 
     def reply(self, command):
         if command.answer is not None:
@@ -243,6 +264,7 @@ class OscMachine(AbstractMachine):
 
         return f
 
+    #Properties
 
     @property
     def infos(self):
@@ -256,13 +278,18 @@ class OscMachine(AbstractMachine):
     def port(self):
         return self._port
 
+    # Private methods
+
     def _machine_loop(self):
         """
         Handle machine logic
         """
         while not self.running_ev.is_set():
             try:
-                if self.version is None:
+                if self.machine_class is None:
+                    if self.machine_type is not MachineType.NONE:
+                        # Load corresponding class
+                        self.machine_class = get_machine_class(self.machine_type)
                     self.running_ev.wait(0.1)
                     continue
 
@@ -281,10 +308,17 @@ class OscMachine(AbstractMachine):
         """
         while not self.running_ev.is_set():
             try:
-                msg = self.messages_queue.get(block=True)
+                try:
+                    msg = self.messages_queue.get(block=True, timeout=1)
+                except queue.Empty:
+                    continue
+
                 future = self.find_matching_future(msg)
                 if future is None:
                     logging.info('No future for %s' % str(msg))
+                    # A command might be sent from the remote node (error,
+                    # event, etc)
+                    # TODO: Here should be a function to handle this case
                     self.messages_queue.task_done()
                     continue
 
@@ -336,25 +370,15 @@ class OscMachine(AbstractMachine):
     def setitem(self, key, value):
         setattr(self, key, value)
 
-    def _timeout_watcher(self):
-        self._running_event.clear()
-        while not self._running_event.is_set():
-            if self['machine:status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
-                continue
-
-            if time.time() - self._last_command_time > self._slave_timeout:
-                self._timeout_event.set()
-                self['machine:command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
-
-            self._running_event.wait(self._slave_timeout)
-
     def message(self, *args, **kwargs):
         return OscMessage(*args, receiver=self._target, **kwargs)
 
 
 class Future(object):
+    """
+    Holds a sent message waiting for a reply.
+    """
+
     def __init__(self, msg, uid=None):
         self._callback = None
         self._exception = None

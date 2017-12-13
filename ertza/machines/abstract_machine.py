@@ -28,6 +28,8 @@ class AbstractMachine(object):
 
     def __init__(self):
         self.machine_type = MachineType.NONE
+        self.machine_class = None
+        self.control_mode = ControlMode.NONE
 
         self._serialnumber = None
         self._ip_address = None
