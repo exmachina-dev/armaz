@@ -94,9 +94,9 @@ class OscMachine(AbstractMachine):
             self.send_configuration()
 
     def connect(self):
-        self._thread = Thread(target=self._communication_loop)
-        self._thread.daemon = True
-        self._thread.start()
+        self._comms_thread = Thread(target=self._communication_loop)
+        self._comms_thread.daemon = True
+        self._comms_thread.start()
 
         try:
 
@@ -133,6 +133,8 @@ class OscMachine(AbstractMachine):
     def exit(self):
         del self.driver
         self.running_ev.set()
+        self._machine_thread.join()
+        self._comms_thread.join()
 
     def handle(self, message, **kwargs):
         try:
