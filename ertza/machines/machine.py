@@ -187,6 +187,7 @@ class OscMachine(AbstractMachine):
         f.set_callback(self.update_machine_var)
 
     def update_machine_var(self, f):
+        # TODO: Add a check for error
         self._local_status[f.request.args[0]] = f.result.args[1]
 
     def reply(self, command):
@@ -334,16 +335,6 @@ class Future(object):
             raise ValueError('Callback is already defined')
         self._callback = cb
 
-    @property
-    def event(self):
-        if not self._event:
-            raise ValueError('Event is not defined')
-        return self._event
-
-    @property
-    def request(self):
-        return self._request
-
     def set_result(self, result):
         if self._result is not None:
             raise ValueError('Result is already defined')
@@ -358,12 +349,26 @@ class Future(object):
             self._callback(self)
 
     @property
+    def event(self):
+        if not self._event:
+            raise ValueError('Event is not defined')
+        return self._event
+
+    @property
+    def request(self):
+        return self._request
+
+    @property
     def result(self):
         if self._exception:
             raise self._exception
         if not self._result:
             raise ValueError('Result is not yet defined')
         return self._result
+
+    @property
+    def uid(self):
+        return self._uid
 
     def __eq__(self, other):
         try:
@@ -378,10 +383,6 @@ class Future(object):
         except AttributeError as e:
             raise TypeError('%s is not comparable with %s: %s' % (
                 self.__class__.__name__, other.__class__.__name__, str(e)))
-
-    @property
-    def uid(self):
-        return self._uid
 
     def __repr__(self):
         return 'WF {}'.format(self.uid)

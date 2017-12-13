@@ -40,7 +40,7 @@ class Filter(object):
             the message must fulfill all conditions.
         """
         if self.protocol and \
-                message.protocol.upper() != self.protocol.upper():
+                message.protocol.upper() != self.protocol:
             return False
         if self.alias_mask and \
                 not message.path.startswith(self.alias_mask):
