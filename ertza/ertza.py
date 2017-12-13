@@ -189,8 +189,6 @@ class Ertza(object):
                 except queue.Empty:
                     continue
 
-                logger.debug("Executing %s from %s" % (message.command, name))
-
                 try:
                     p = self.mu.processors[message.protocol]
                 except KeyError:
