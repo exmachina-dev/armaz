@@ -10,19 +10,15 @@
 
 """
 
-from enum import Enum, unique
+from .types import MachineType
+from .utils import get_machine_type
 
+from .armaz import *
+# from .wdy300 import *
 
-class AbstractMachineType(object):
-    TYPE = None
+def get_machine_class(mtype):
+    if not isinstance(mtype, MachineType):
+        raise TypeError('mtype must be a MachineType')
 
-    def __init__(self, *args, **kwargs):
-        pass
-
-@unique
-class MachineType(Enum):
-    NONE = 0
-    ArmazHeavy = 1
-    ArmazFast = 2
-    ArmazFlat = 3
+    return globals()[mtype.name]
 

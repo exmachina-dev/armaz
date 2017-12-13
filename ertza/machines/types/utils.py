@@ -10,14 +10,11 @@
 
 """
 
-from .abstract_type import AbstractMachineType
 from .types import MachineType
 
-class ArmazHeavy(AbstractMachineType):
-    TYPE = MachineType.ArmazHeavy
 
-class ArmazFast(AbstractMachineType):
-    TYPE = MachineType.ArmazFast
-
-class ArmazFlat(AbstractMachineType):
-    TYPE = MachineType.ArmazFlat
+def get_machine_type(str_type):
+    str_type = ''.join([x.title() for x in str_type.split('.')])
+    if str_type in MachineType.__members__:
+        return getattr(MachineType, str_type)
+    return MachineType.NONE
