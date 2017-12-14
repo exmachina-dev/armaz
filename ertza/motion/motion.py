@@ -17,7 +17,7 @@ from threading import Event, Thread, Lock
 from ..processors.osc.message import OscMessage
 from ..machines import Machine
 from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
-from ..remotes import REMOTE_TYPES
+from ..remotes import RemoteType, get_remote_class
 
 from ..drivers.utils import retry
 
@@ -111,16 +111,8 @@ class MotionUnit(object):
 
         self.machines = {}
         self.alive_machines = {}
+        self.remotes = {}
         self.alive_remotes = {}
-        # self.machines_channel = Channel('machines', self._machines_cb)
-        # self._machines_thread = None
-
-        # self._machine_keys = None
-
-        # self._profile_parameters = {
-        #     'ip_address': _p(str, None, self.set_ip_address),
-        #     'operating_mode': _p(str, None, self.set_operating_mode),
-        # }
 
         self._last_command_time = time.time()
         self._running_event = Event()
@@ -128,7 +120,6 @@ class MotionUnit(object):
 
         self.slave_refresh_interval = 1
 
-        self.remotes = {}
         self.switch_callback = self._switch_cb
         self.switch_states = {}
 
@@ -139,7 +130,10 @@ class MotionUnit(object):
                              target=self.update_alive_machines, args_length=2)
         self.register_filter(alias_mask='/identify', protocol='OSC', exclusive=True, is_reply=True,
                              target=self.update_alive_units, args_length=3)
-        self.discover_machines()
+        self.discover_nodes()
+
+        # Add a serial remote
+        self.register_remote(RemoteType.Varmo)
 
     def stop(self):
         "Stop all machines and motion server"
@@ -167,12 +161,13 @@ class MotionUnit(object):
 
         p.execute(m)
 
-    def discover_machines(self):
+    def discover_nodes(self):
         """
         Send a identify request to broadcast.
         """
 
         self.alive_machines = {}
+        self.alive_remotes = {}
         m = OscMessage('/identify', hostname='10.255.255.255')
         self.send_message(m)
 
@@ -222,7 +217,6 @@ class MotionUnit(object):
             self.alive_machines[(sn, ip,)] = unit
             print('NMACHINE', self.alive_machines)
 
-
     def register_filter(self, new_filter=None, **kwargs):
         if new_filter:
             if not isinstance(new_filter, Filter):
@@ -266,6 +260,55 @@ class MotionUnit(object):
 
         machine.start()
 
+    def register_remote(self, remote_type, sn=None, ip=None):
+        asn, aip = None, None
+
+        if sn is not None or ip is not None:
+            alive_keys = list(self.alive_remotes.keys())
+
+            sni = None
+            ipi = None
+            for i, k in enumerate(alive_keys):
+                if sn and sn == k[0]:
+                    sni = i
+
+                if ip and ip == k[1]:
+                    ipi = i
+
+            if sni is None and ipi is None:
+                raise KeyError('Machine not found')
+
+            # Always prefer remote with serialnumber
+            if sni is None:
+                i = ipi
+            else:
+                i = sni
+            m = self.alive_machines[alive_keys[i]]
+
+            asn, aip = alive_keys[i]
+
+        config = {
+            'ip': aip,
+            'serialnumber': asn,
+        }
+
+        remote_class = get_remote_class(remote_type)
+        if not remote_class:
+            logging.error('No remote for %s', str(remote_type))
+            return
+
+        remote = remote_class(**config)
+        print(remote.__class__.__name__)
+        # Redirect all trafic from this machine to its Machine
+        if remote.HAS_IP:
+            self.register_filter(sender=aip, target=remote.handle, exclusive=True)
+        else:
+            self.register_filter(protocol=remote.PROTOCOL, target=remote.handle, exclusive=True)
+
+        self.remotes[remote.uid] = remote
+
+        remote.start()
+
     def start_slaves_loop(self):
         if self._slaves_thread is not None:
             self._slaves_running_event.set()
@@ -284,245 +327,6 @@ class MotionUnit(object):
 
     def send_message(self, msg):
         self.comms[msg.protocol].send_message(msg)
-
-    @property
-    def machine_keys(self):
-        if not self._machine_keys:
-            raise MotionError('No machine keys yet')
-
-        return self._machine_keys
-
-    def get_address(self, driver):
-        if driver.lower() is 'osc':
-            return self.osc_address
-        else:
-            return self.ip_address
-
-    def search_machines(self):
-        machines_cf = self.config['machines']
-        machines = []
-
-        for key, item in machines_cf.items():
-            if key.startswith('machine_serialnumber_'):
-                machine_id = int(key.split('_')[2])
-                machine_sn = item
-                machine_ip = machines_cf['machine_address_%d' % machine_id]
-                machine_md = machines_cf['machine_mode_%d' % machine_id]
-                machine_dv = machines_cf.get('machine_driver_%d' % machine_id,
-                                         fallback='osc').title()
-
-                machine_cf = {}
-                if self.config.has_section('machine_%s' % machine_sn):
-                    machine_cf = self.config['machine_%s' % machine_sn]
-                    logging.info('Found config for machine with S/N {}'.format(
-                        machine_sn))
-
-                s = Slave(machine_sn, machine_ip, machine_dv, machine_md, machine_cf)
-                logging.info('Found {2} machine at {1} '
-                             'with S/N {0}'.format(*s))
-                machines.append(s)
-
-        if not machines:
-            return False
-
-        self.machine_machines = {}
-        for s in machines:
-            sm = SlaveMachine(s)
-            self.machine_machines[(s.serialnumber, s.address)] = sm
-
-        return self.machine_machines
-
-    @retry(SlaveMachineError, 20, 10, 1.5)
-    def slave_block_ping(self, sm):
-        p = sm.ping()
-        if isinstance(p, SlaveRequest):
-            raise SlaveMachineError('Unable to ping slave {!r} !'.format(sm))
-
-        if isinstance(p, float):
-            return p
-        else:
-            raise MotionError('Unexpected result while pinging {!s}'.format(sm))
-
-    @retry(MotionError, 5, 5, 2)
-    def load_slaves(self):
-        if not self.slave_machines:
-            if not self.search_slaves():
-                logging.info('No slaves found')
-                return
-
-        for sm in self.slave_machines.values():
-            logging.debug('Initializing {2} slave at {1} ({0})'.format(*sm.slave))
-            try:
-                self.init_slave(sm)
-                ping_time = self.slave_block_ping(sm)
-                logging.info('Slave at {2} took {0:.2} ms to respond'.format(
-                    ping_time, *sm.slave))
-            except AbstractMachineError as e:
-                logging.error('Unable to contact {3} slave at {2} ({1}) '
-                              '{0}'.format(str(e), *sm.slave))
-                return
-
-            sn = sm.get_from_remote('machine:serialnumber', block=True)
-            if type(sn) == str and sm.serialnumber != sn:
-                infos = sm.slave + (sm.get_serialnumber(),)
-                raise MachineError('S/N don\'t match for {2} slave '
-                                   'at {1} ({0} vs {4})'.format(*infos))
-
-            else:
-                sm.start(loop=True)
-                self.slaves_channel.suscribe(sm)
-
-    def add_slave(self, driver, address, mode, conf={}):
-        try:
-            s = Slave(None, address, driver.title(), mode, conf)
-            sm = SlaveMachine(s)
-            self.init_slave(sm)
-            sm.set_master(self.serialnumber, self.address(driver))
-            sm.enslave()
-            sm.ping()
-
-            existing_s = self.get_slave(serialnumber=sm.serialnumber)
-            if existing_s:
-                raise MachineError('Already existing {2} at {1} '
-                                   'with S/N {0}'.format(*existing_s.slave))
-
-            self.slaves[(sm.serialnumber, sm.address)] = sm
-            s = sm.slave
-            logging.info('New {2} slave at {1} '
-                         'with S/N {0}'.format(*s))
-            return s
-        except Exception as e:
-            raise MachineError('Unable to add slave: %s' % repr(e))
-
-    def remove_slave(self, sn):
-        self._check_operating_mode()
-
-        try:
-            sm = self.get_slave(sn)
-            if not sm:
-                raise MachineError('Slave with S/N %s not found' % sn)
-
-            sm.unslave()
-            sm.exit()
-            self.slave_machines.pop((sm.slave.serialnumber, sm.slave.address))
-        except Exception as e:
-            raise MachineError('Unable to remove slave: %s' % str(e))
-
-    def get_slave(self, serialnumber=None, address=None):
-        for sn, ad in self.slave_machines.keys():
-            if serialnumber == sn:
-                return self.slave_machines[(sn, ad)]
-            elif address == ad:
-                return self.slave_machines[(sn, ad)]
-        else:
-            if serialnumber is not None:
-                logging.error('Unable to find slave by S/N {}'.format(serialnumber))
-            else:
-                logging.error('Unable to find slave by address {}'.format(address))
-
-        return None
-
-    def init_slave(self, slave_machine):
-        try:
-            slave_machine.init_driver()
-            slave_machine.start()
-        except SlaveMachineError as e:
-            raise FatalMachineError('Couldn\'t initialize {2} slave at {1} '
-                                    'with S/N {0}: {exc}'
-                                    .format(*slave_machine.slave, exc=e))
-
-    def set_operating_mode(self, mode=None, **kwargs):
-        if mode is None:
-            logging.info('Deactivating %s mode' % self.operating_mode)
-
-            if self.operating_mode == 'slave':
-                self.free()
-            elif self.operating_mode == 'master':
-                pass
-            return
-
-        if mode not in OPERATING_MODES:
-            raise MachineError('Unexpected mode: {}'.format(mode))
-
-        if self._check_operating_mode(mode, raise_exception=False):
-            logging.info('Operating mode {} already active'.format(mode))
-            return
-
-        logging.info('Setting operating mode to {}'.format(mode))
-
-        if mode == 'master':
-            self.slave_refresh_interval = float(self.config.get(
-                'slaves', 'refresh_interval', fallback=0.5))
-            self.activate_mode(mode)
-        elif mode == 'slave':
-            master = kwargs.get('master')
-            if master is None:
-                raise MachineError('No master supplied')
-
-            if ':' in master:
-                master, port = master.split(':')
-            else:
-                port = None
-
-            self.master = master
-            self.master_port = port if port else \
-                self.config.get('osc', 'reply_port', fallback=6969)
-
-            self.activate_mode(mode)
-        elif mode == 'standalone':
-            self.activate_mode(mode)
-
-    def set_ip_address(self, new_ip):
-        if '/' not in new_ip:
-            new_ip += '/8'
-
-        self.ethernet_interface.add_ip(new_ip)
-        self.ethernet_interface.del_ip(self.ip_address)
-
-    def activate_mode(self, mode):
-        if mode not in ('standalone', 'master', 'slave'):
-            raise MachineError('Unexpected mode: {}'.format(mode))
-
-        if mode == 'standalone':
-            self._machine_keys = StandaloneMachineMode(self)
-            self.operating_mode = mode
-            self['machine:command:timeout_enable'] = False
-        elif mode == 'master':
-            if not self.slave_machines:
-                raise MachineError('No slaves found')
-
-            for s in self.slave_machines.values():
-                s.enslave()
-
-            self._machine_keys = MasterMachineMode(self)
-            self.operating_mode = mode
-            self['machine:command:timeout_enable'] = False
-
-            self.start_slaves_loop()
-        elif mode == 'slave':
-            if not self.master:
-                raise MachineError('No master specified')
-
-            if not self.master_port:
-                raise MachineError('No port specified for master')
-
-            self._machine_keys = SlaveMachineMode(self)
-            self.operating_mode = mode
-            self['machine:command:timeout_enable'] = True
-
-            self._slave_timeout = float(self.config.get('machine', 'timeout_as_slave', fallback=1.5))
-            self._timeout_thread = Thread(target=self._timeout_watcher)
-            self._timeout_thread.daemon = True
-            self._timeout_thread.start()
-
-    def free(self):
-        self.master = None
-        self.master_port = None
-
-        self['machine:command:enable'] = False
-
-        self.activate_mode('standalone')
-        self._running_event.set()
 
 
     # Properties
@@ -661,14 +465,6 @@ class MotionUnit(object):
                     sm.set_to_remote('machine:command:enable', True if value else False)
 
         self.machine_keys[key] = value
-
-    def _get_destination(self, key):
-        if key.startswith('drive:'):
-            return self.driver
-        elif key.startswith('machine:'):
-            return self
-
-        raise ValueError('Unable to find target %s' % key)
 
     def getitem(self, key):
         return getattr(self, key)
