@@ -10,8 +10,12 @@
 Provides remotes objects
 """
 
+from .types import RemoteType
 from .osc_remotes import OscGuiRemote
+from .serial_remotes import SerialVarmoRemote
 
-REMOTE_TYPES = (
-    'GUI',
-)
+def get_remote_class(remote_type):
+    try:
+        return globals()[remote_type.value + 'Remote']
+    except KeyError:
+        return None
