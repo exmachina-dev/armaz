@@ -59,7 +59,6 @@ class OscServer(lo.Server):
             return
 
         m = OscMessage(path, *args, types=types, sender=sender)
-        logging.debug('Received %s from %s' % (m, m.sender))
         self.processor.enqueue(m)
 
     def close(self):
