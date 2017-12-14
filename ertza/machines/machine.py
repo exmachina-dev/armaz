@@ -61,7 +61,9 @@ class OscMachine(AbstractMachine):
 
         self._comms_thread = None
         self._machine_thread = None
+
         self._local_status = dict()
+        self._local_requests = dict()
 
         self.last_command_time = time.time()
 
@@ -170,6 +172,11 @@ class OscMachine(AbstractMachine):
         del self.waiting_futures[findex]
         return future
 
+    def send_local_requests(self):
+        for k in self._local_requests.keys():
+            v = self._local_status.pop(k)
+            self.send_machine_var(k, v)
+
     def update_local_status(self):
         self.request_machine_var('machine:error_code')
 
@@ -184,6 +191,11 @@ class OscMachine(AbstractMachine):
 
     def request_machine_var(self, var):
         f = self.send('/machine/get', var)
+        f.set_callback(self.update_machine_var)
+
+    def send_machine_var(self, var):
+        f = self.send('/machine/set', var)
+        # FIXME: Should we can a separate dict for those ?
         f.set_callback(self.update_machine_var)
 
     def update_machine_var(self, f):
@@ -207,6 +219,9 @@ class OscMachine(AbstractMachine):
 
         return f
 
+    def message(self, *args, **kwargs):
+        return OscMessage(*args, receiver=self._target, **kwargs)
+
     #Properties
 
     @property
@@ -227,6 +242,7 @@ class OscMachine(AbstractMachine):
         """
         Handle machine logic
         """
+
         while not self.running_ev.is_set():
             try:
                 if self.machine_class is None:
@@ -237,6 +253,7 @@ class OscMachine(AbstractMachine):
                     continue
 
                 self.update_local_status()
+                self.send_local_requests()
 
                 self.running_ev.wait(self.refresh_interval)
             except MachineCommunicationTimeout as e:
@@ -249,6 +266,7 @@ class OscMachine(AbstractMachine):
         """
         Handle incoming messages from target
         """
+
         while not self.running_ev.is_set():
             try:
                 try:
@@ -270,51 +288,19 @@ class OscMachine(AbstractMachine):
             except Exception as e:
                 logging.exception(e)
 
-
+    # Special methods
 
     def __getitem__(self, key):
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            return dst[key]
-
-        if self.slave_mode:
-            self._last_command_time = time.time()
-
-        return self.machine_keys[key]
+        return self._local_status[key]
 
     def __setitem__(self, key, value):
-        if isinstance(value, (tuple, list)) and len(value) == 1:
-            value, = value
-
-        dst = self._get_destination(key)
-        key = key.split(':', maxsplit=1)[1]
-
-        if dst is not self:
-            dst[key] = value
-            return dst[key]
-
-        if self.slave_mode:
-            if self._timeout_event.is_set() and not self['machine:status:drive_enable']:
-                self.machine_keys['machine:command:enable'] = True
-                self._timeout_event.clear()
-            self._last_command_time = time.time()
-        elif self.master_mode:
-            if 'command:enable' in key:
-                for sm in self.slave_machines.values():
-                    sm.set_to_remote('machine:command:enable', True if value else False)
-
-        self.machine_keys[key] = value
+        self._local_requests[key] = value
 
     def getitem(self, key):
         return getattr(self, key)
 
     def setitem(self, key, value):
         setattr(self, key, value)
-
-    def message(self, *args, **kwargs):
-        return OscMessage(*args, receiver=self._target, **kwargs)
 
 
 class Future(object):

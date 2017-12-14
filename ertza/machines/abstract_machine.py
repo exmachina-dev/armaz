@@ -43,8 +43,8 @@ class AbstractMachine(object):
 
         self.fatal_error_ev = Event()   # A fatal error that will stop the movement
         self.warning_ev = Event()       # A warning issued by the attached machine
-        self.running_ev = Event()       # A warning issued by the attached machine
         self.timeout_ev = Event()       # A timeout occured
+        self.running_ev = Event()
 
         self.messages_queue = Queue()
 
@@ -64,10 +64,6 @@ class AbstractMachine(object):
         raise NotImplementedError
 
     def send_message(self, msg):
-        raise NotImplementedError
-
-    @property
-    def infos(self):
         raise NotImplementedError
 
     @property
