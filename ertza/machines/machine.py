@@ -187,8 +187,10 @@ class OscMachine(AbstractMachine):
         f.set_callback(self.update_machine_var)
 
     def update_machine_var(self, f):
-        # TODO: Add a check for error
-        self._local_status[f.request.args[0]] = f.result.args[1]
+        if not f.result.is_error:
+            if f.request.args[0] != f.result.args[0]:
+                print(f.request.args[0], f.result.args[0])
+            self._local_status[f.request.args[0]] = f.result.args[1]
 
     def reply(self, command):
         if command.answer is not None:

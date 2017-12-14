@@ -74,6 +74,10 @@ class OscMessage(AbstractMessage):
         return self.command.split('/')[0]
 
     @property
+    def is_error(self):
+        return self.path.levels[-1] == 'error'
+
+    @property
     def args(self):
         return tuple(self._args)
 
