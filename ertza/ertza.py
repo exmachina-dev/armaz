@@ -38,9 +38,9 @@ _MACHINE_CONF = "machine.conf"
 _CUSTOM_CONF = "custom.conf"
 
 console_logger = lg.StreamHandler()
-console_formatter = lg.Formatter('%(asctime)s %(name)-36s '
+console_formatter = lg.Formatter('%(asctime)s %(name)-27s '
                                  '%(levelname)-8s %(message)s',
-                                 datefmt='%Y%m%d %H:%M:%S')
+                                 datefmt='%H:%M:%S')
 
 logger = lg.getLogger('ertza')
 logger.addHandler(console_logger)
