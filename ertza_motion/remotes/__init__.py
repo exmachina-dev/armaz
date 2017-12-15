@@ -11,6 +11,7 @@ Provides remotes objects
 """
 
 from .types import RemoteType
+from .abstract_remote import AbstractRemote
 from .osc_remotes import OscGuiRemote
 from .serial_remotes import SerialVarmoRemote
 

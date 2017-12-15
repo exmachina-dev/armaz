@@ -40,6 +40,9 @@ class AbstractRemote(object):
     def handle(self, m):
         raise NotImplementedError
 
+    def send_message(self, m):
+        raise NotImplementedError
+
     @property
     def uid(self):
         raise NotImplementedError

@@ -17,7 +17,7 @@ from threading import Event, Thread, Lock
 from ..processors.osc.message import OscMessage
 from ..machines import Machine
 from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
-from ..remotes import RemoteType, get_remote_class
+from ..remotes import AbstractRemote, RemoteType, get_remote_class
 
 from ..drivers.utils import retry
 
@@ -32,6 +32,7 @@ logging = logging.getLogger('ertza.motion')
 
 class MotionUnit(object):
     def __init__(self, *args, **kwargs):
+        AbstractRemote.send_message = self.send_message
         # AbstractMachine.MOTIONSERVER = self
 
         self.fatal_event = Event()
