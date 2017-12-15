@@ -70,6 +70,10 @@ class MotionUnit(object):
                              target=self.update_alive_machines, args_length=2)
         self.register_filter(alias_mask='/identify', protocol='OSC', exclusive=True, is_reply=True,
                              target=self.update_alive_units, args_length=3)
+        self.register_filter(alias_mask='/alive', protocol='OSC', exclusive=True,
+                             target=self.update_alive_machines, args_length=2)
+        self.register_filter(alias_mask='/alive', protocol='OSC', exclusive=True,
+                             target=self.update_alive_units, args_length=3)
         self.discover_nodes()
 
         # Add a serial remote
