@@ -70,6 +70,8 @@ class OscMachine(AbstractMachine):
         self.init_communication()
 
     def init_communication(self):
+        "Loads the appropriate driver"
+
         drv = 'Osc'
         if self.serialnumber:
             drv = self.config.get('driver', fallback='Osc')
@@ -92,10 +94,17 @@ class OscMachine(AbstractMachine):
     init_driver = init_communication
 
     def start(self):
+        "Starts the underlying mechanism."
+
         if self.connect():
             self.send_configuration()
 
     def connect(self):
+        """
+        Starts communication thread and request basic informations like version
+        and variant.
+        """
+
         self._comms_thread = Thread(target=self._communication_loop)
         self._comms_thread.daemon = True
         self._comms_thread.start()
@@ -111,9 +120,9 @@ class OscMachine(AbstractMachine):
 
             def cb(msg):
                 if len(msg.result.args):
-                    print(msg.result.args)
                     self.variant = str(msg.result.args[1])
                     self.machine_type = get_machine_type(self.variant)
+                    logging.info('%s is a %s.', self.serialnumber, self.machine_type.name)
 
             f = self.send('/config/get', 'machine:variant')
             f.set_callback(cb)
@@ -128,17 +137,25 @@ class OscMachine(AbstractMachine):
         self._machine_thread.start()
 
     def wait_for_reply(self, future):
+        """
+        Wait for a reply in future and raise a MachineCommunicationTimeout
+        if the machine takes too long to respond.
+        """
+
         if future.event.wait(future.timeout):
             return future.result
         raise MachineCommunicationTimeout('Timeout in %s' % str(future))
 
     def exit(self):
+        "Close the communication and delete the driver"
+
         del self.driver
         self.running_ev.set()
         self._machine_thread.join()
         self._comms_thread.join()
 
     def handle(self, message, **kwargs):
+        "Handle an incoming message."
         try:
             self.messages_queue.put(message, block=False)
         except queue.Full as e:
@@ -301,6 +318,10 @@ class OscMachine(AbstractMachine):
 
     def setitem(self, key, value):
         setattr(self, key, value)
+
+    def __str__(self):
+        return '%s %s at %s' % (self.__class__.__name__, self.serialnumber,
+                                self.ip_address)
 
 
 class Future(object):
