@@ -88,22 +88,20 @@ class MotionUnit(object):
             for m in self.machines.values():
                 m.exit()
 
-    def handle(self, *args, **kwargs):
+    def handle(self, msg, **kwargs):
         """
         Filter a message coming from a processor, apply filters
         and decide what to do
         """
-        m, p = args
-        f = self.target_filters
 
         for f in self.target_filters:
-            if f.accepts(m, p):
-                f.handle(m, p)
-                logging.debug('%s handled by %s', repr(m), str(f))
+            if f.accepts(msg):
+                f.handle(msg)
+                logging.debug('%s handled by %s', repr(msg), str(f))
                 if f.is_exclusive:
                     return
 
-        p.execute(m)
+        # p.execute(m)
 
     def discover_nodes(self):
         """

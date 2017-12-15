@@ -195,7 +195,7 @@ class Ertza(object):
                     raise KeyError('Unable to get %s processor' % message.protocol)
 
                 try:
-                    self.mu.handle(message, p)
+                    self.mu.handle(message)
                 finally:
                     message_queue.task_done()
         except Exception as e:

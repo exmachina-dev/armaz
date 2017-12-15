@@ -34,7 +34,7 @@ class Filter(object):
         self.args_length = kwargs.pop('args_length', None)
         self.sender = kwargs.pop('sender', None)
 
-    def accepts(self, message, processor=None):
+    def accepts(self, message):
         """
             For a filter to accept a message,
             the message must fulfill all conditions.
@@ -54,7 +54,7 @@ class Filter(object):
 
         return True
 
-    def handle(self, m, p):
+    def handle(self, m):
         if self.targets:
             for t in self.targets:
                 t(m)
