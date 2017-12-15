@@ -130,7 +130,7 @@ class MotionUnit(object):
 
         logging.info('New machine %s found at %s.', sn, ip)
 
-        if sn in self.config.get('slaves', 'slave_serialnumber[]', fallback=list()):
+        if sn in self.config.get('motion', 'machine_serialnumber[]', fallback=list()):
             self.register_machine(sn=sn)
 
     def update_alive_units(self, m):

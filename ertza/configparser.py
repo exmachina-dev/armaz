@@ -315,7 +315,7 @@ class ConfigParser(AbstractConfigParser):
                     logger.warn('Got exception while decoding eeprom: {!s}'.format(e))
             if not variant:
                 logger.warn("Couldn't get variant from eeprom")
-                variant = self.get('machine', 'variant', fallback=False)
+                variant = self.get('server', 'variant', fallback=False)
 
             if not variant:
                 logger.warn("Couldn't get variant from eeprom or config")
@@ -339,16 +339,16 @@ class ConfigParser(AbstractConfigParser):
         """
         Load profile file.
 
-        If *profile* is not specified, load profile defined in config file with ``machine:profile``.
+        If *profile* is not specified, load profile defined in config file with ``server:profile``.
         Store the loaded profile in config.
 
         :param str profile: The profile file to load
-        :raises ProfileError: if no profile is given and machine:profile doesn't exist in config
+        :raises ProfileError: if no profile is given and server:profile doesn't exist in config
         """
 
         if not profile:
             try:
-                profile = self['machine']['profile']
+                profile = self['server']['profile']
             except KeyError:
                 raise ProfileError('No profile specified in config and none provided.')
 
@@ -361,19 +361,19 @@ class ConfigParser(AbstractConfigParser):
                 profile_config_path = os.path.join(_PROFILE_PATH, profile + ".conf")
 
             self._config_proxies[self.PROFILE_PRIORITY] = ProxyConfigParser(profile_config_path, profile)
-            self['machine']['profile'] = profile
+            self['server']['profile'] = profile
         except ParsingError as e:
             logger.warn("Couldn't load profile file {0}: {1!s}" % (self.profile_config_path, e))
 
     def unload_profile(self):
         try:
-            del self['machine']['profile']
+            del self['server']['profile']
             del self._config_proxies[self.PROFILE_PRIORITY]
         except (IndexError, NoSectionError, NoOptionError):
             pass
 
     def dump_profile(self, profile=None):
-        if not self.get('machine', 'profile', fallback=profile):
+        if not self.get('server', 'profile', fallback=profile):
             raise ProfileError('No profile loaded or provided')
 
         if profile:
