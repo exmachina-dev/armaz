@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ft=python
 
-from ertza.Daemon import Daemon
-from ertza import Ertza
+from ertza_motion.Daemon import Daemon
+from ertza_motion import Ertza
 
 
 class ErtzaDaemon(Daemon):
