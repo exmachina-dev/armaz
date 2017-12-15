@@ -154,10 +154,10 @@ class OscMachine(AbstractMachine):
     def exit(self):
         "Close the communication and delete the driver"
 
-        del self.driver
         self.running_ev.set()
         self._machine_thread.join()
         self._comms_thread.join()
+        del self.driver
 
     def handle(self, message, **kwargs):
         "Handle an incoming message."
