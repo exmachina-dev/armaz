@@ -190,6 +190,12 @@ class MotionUnit(object):
         else:
             i = sni
         m = self.alive_machines[alive_keys[i]]
+        try:
+            s = 'machine_' + alive_keys[i][0]
+            if self.config.has_section(s):
+                m['config'] = self.config[s]
+        except Exception as e:
+            logging.exception(e)
 
         asn, aip = alive_keys[i]
 

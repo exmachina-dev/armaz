@@ -53,7 +53,12 @@ class OscMachine(AbstractMachine):
 
         self.config = kwargs.pop('config', ChainMap())
         self.version = None
-        self.control_mode = ControlMode.Velocity
+
+        try:
+            self.control_mode = self.config.get('control_mode', fallback='velocity')
+            self.control_mode = ControlMode[self.control_mode.title()]
+        except KeyError as e:
+            logging.error('No such control mode: %s', e)
 
         self.waiting_futures = list()
         self.driver = None
