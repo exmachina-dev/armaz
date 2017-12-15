@@ -25,10 +25,9 @@ class SerialRemote(AbstractRemote):
 
     @property
     def uid(self):
-        return 'SerialRemote'
+        return self.__class__.__name__
 
 
 class SerialVarmoRemote(SerialRemote):
     HAS_FEEDBACK = False
     REFRESH_INTERVAL = 1.0
-
