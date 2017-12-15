@@ -13,7 +13,7 @@ def file_content(filename):
     return codecs.open(filename, 'r', 'utf-8').read()
 
 setup(
-    name='ertza',
+    name='ertza-motion',
     version=__version__,
     packages = find_packages(),
     description="Motion server software by ExMachina SAS.",
