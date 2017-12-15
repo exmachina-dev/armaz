@@ -23,6 +23,9 @@ class SerialRemote(AbstractRemote):
     def start(self):
         pass
 
+    def handle(self, m):
+        print(m)
+
     @property
     def uid(self):
         return self.__class__.__name__

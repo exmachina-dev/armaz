@@ -37,7 +37,7 @@ class AbstractRemote(object):
     def stop(self):
         raise NotImplementedError
 
-    def handle(self):
+    def handle(self, m):
         raise NotImplementedError
 
     @property
