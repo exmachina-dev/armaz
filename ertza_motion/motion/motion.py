@@ -18,12 +18,12 @@ from ..processors.osc.message import OscMessage
 from ..machines import Machine
 from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 from ..remotes import AbstractRemote, RemoteType, get_remote_class
+from ..filters import Filter
 
 from ..drivers.utils import retry
 
 from ..configparser import parameter as _p
 
-from .filters import Filter
 from .exceptions import MotionError, FatalMotionError
 
 
