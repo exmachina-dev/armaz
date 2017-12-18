@@ -42,5 +42,5 @@ class AbstractMessage(object):
 
     def __repr__(self):
         args = [str(i) for i in self.args]
-        return '%s: %s %s' % (self.__class__.__name__, self.path,
+        return '%s: %s %s' % (self.__class__.__name__, self.command,
                               ' '.join(args))
