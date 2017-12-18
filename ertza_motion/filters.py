@@ -43,7 +43,7 @@ class Filter(object):
                 message.protocol.upper() != self.protocol:
             return False
         if self.alias_mask and \
-                not message.path.startswith(self.alias_mask):
+                not message.command.startswith(self.alias_mask):
             return False
         if self.args_length is not None and \
                 len(message.args) != self.args_length:
