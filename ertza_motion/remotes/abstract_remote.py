@@ -50,7 +50,6 @@ class AbstractRemote(object):
         for f in self.filters:
             if f.accepts(msg):
                 f.handle(msg)
-                logging.debug('%s handled by %s', repr(msg), str(f))
                 if f.is_exclusive:
                     return
 
