@@ -21,6 +21,10 @@ class SerialRemote(AbstractRemote):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.register_filter(protocol=self.PROTOCOL, target=handle_get,
+                             alias_wask=':machine:get', args_length=1,
+                             exclusive=True)
+
     def start(self):
         pass
 
@@ -62,6 +66,15 @@ class SerialRemote(AbstractRemote):
     @property
     def uid(self):
         return self.__class__.__name__
+
+    def handle_get(self, m):
+        k = m.args[0]
+
+        try:
+            v = self._local_status[k]
+            self.reply_error(m, k, v)
+        except IndexError:
+            self.reply_error(m, k, 'No value for key.')
 
 
 class SerialVarmoRemote(SerialRemote):
