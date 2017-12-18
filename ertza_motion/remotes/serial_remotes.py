@@ -21,15 +21,12 @@ class SerialRemote(AbstractRemote):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.register_filter(protocol=self.PROTOCOL, target=handle_get,
+        self.register_filter(protocol=self.PROTOCOL, target=self.handle_get,
                              alias_wask=':machine:get', args_length=1,
                              exclusive=True)
 
     def start(self):
         pass
-
-    def handle(self, m):
-        self.reply_ok(m)
 
     def reply_ok(self, msg, *args, **kwargs):
         self.reply(msg, *args, add_path='ok', **kwargs)

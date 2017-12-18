@@ -27,6 +27,8 @@ class AbstractRemote(object):
 
         self.messages_queue = Queue()
 
+        self.filters = list()
+
     def init_communication(self):
         raise NotImplementedError
 
@@ -62,7 +64,7 @@ class AbstractRemote(object):
         else:
             new_filter = Filter(**kwargs)
 
-        self.target_filters.append(new_filter)
+        self.filters.append(new_filter)
 
     @property
     def uid(self):
