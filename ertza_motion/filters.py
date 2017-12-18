@@ -14,7 +14,7 @@ Filters are used to dispatch incoming messages
 
 import logging
 
-logging = logging.getLogger('ertza.motion.filter')
+logging = logging.getLogger('ertza.filter')
 
 
 class Filter(object):
