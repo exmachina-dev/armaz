@@ -7,11 +7,16 @@
 # Distributed under terms of the GPLv3+ license.
 
 """
-OSC remotes
+Serial remotes
 """
 
 from .abstract_remote import AbstractRemote
 from ..processors.serial import SerialMessage
+
+import logging
+
+
+logging = logging.getLogger('ertza.remotes.serial')
 
 
 class SerialRemote(AbstractRemote):
