@@ -57,6 +57,12 @@ class OscMessage(AbstractMessage):
         if self.types and len(self.types) != len(self._args):
             raise TypeError('Lenght of args and types must match')
 
+
+        s = kwargs.get('sender', None)
+        self.sender = OscAddress(s) if s else None
+        r = kwargs.get('receiver', None)
+        self.receiver = OscAddress(r) if r else None
+
         if not (self.sender or self.receiver):
             self.receiver = OscAddress(**kwargs)
 

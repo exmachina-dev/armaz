@@ -9,12 +9,7 @@ class AbstractMessage(object):
         self.sender, self.receiver = None, None
         self.answer = None
 
-        self.msg_type = kwargs['msg_type'] if 'msg_type' in kwargs else None
-
-        self.sender = OscAddress(kwargs['sender']) if 'sender' in kwargs \
-            else None
-        self.receiver = OscAddress(kwargs['receiver']) if 'receiver' in kwargs \
-            else None
+        self.msg_type = kwargs.get('msg_type', None)
 
     @property
     def command(self):
