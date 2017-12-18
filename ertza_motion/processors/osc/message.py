@@ -44,10 +44,12 @@ class OscAddress(object):
 
 class OscMessage(AbstractMessage):
     SEP = '/'
+    protocol = 'OSC'
 
     def __init__(self, path, *args, **kwargs):
+        super().__init__(**kwargs)
+
         self.path, self._args = OscPath(path), args
-        self.sender, self.receiver = None, None
         self._args = [str(a) if isinstance(a, Exception) else a for a in self._args]
 
         self.types = kwargs['types'] if 'types' in kwargs else None
@@ -55,30 +57,13 @@ class OscMessage(AbstractMessage):
         if self.types and len(self.types) != len(self._args):
             raise TypeError('Lenght of args and types must match')
 
-        self.sender = OscAddress(kwargs['sender']) if 'sender' in kwargs \
-            else None
-        self.receiver = OscAddress(kwargs['receiver']) if 'receiver' in kwargs \
-            else None
-
         if not (self.sender or self.receiver):
             self.receiver = OscAddress(**kwargs)
 
-        self.msg_type = kwargs['msg_type'] if 'msg_type' in kwargs else None
-
-        self.answer = None
-        self.protocol = 'OSC'
 
     @property
     def command(self):
         return str(self.path)
-
-    @property
-    def target(self):
-        return self.command.split(self.SEP)[0]
-
-    @property
-    def is_error(self):
-        return self.path.levels[-1] == 'error'
 
     @property
     def args(self):
@@ -109,10 +94,7 @@ class OscMessage(AbstractMessage):
         except IndexError:
             return False
 
-    def __repr__(self):
-        args = [str(i) for i in self.args]
-        return '%s: %s %s' % (self.__class__.__name__, self.path,
-                              ' '.join(args))
-
     def __add__(self, value):
         self._args.append(value)
+
+        return self

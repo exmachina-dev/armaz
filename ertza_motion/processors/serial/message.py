@@ -112,30 +112,18 @@ class SerialTarget(object):
 
 class SerialMessage(AbstractMessage):
     SEP = '.'
+    protocol = 'Serial'
 
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
         self.cmd_bytes = SerialCommandString(cmd_bytes=kwargs['cmd_bytes']) \
             if 'cmd_bytes' in kwargs else SerialCommandString()
 
-        self.sender, self.receiver = None, None
-
-        self.sender = SerialTarget(kwargs['sender']) if 'sender' in kwargs \
-            else None
-        self.receiver = SerialTarget(kwargs['receiver']) if 'receiver' in kwargs \
-            else None
-
-        self.msg_type = kwargs['msg_type'] if 'msg_type' in kwargs else None
-
-        self.answer = None
-        self.protocol = 'Serial'
 
     @property
     def command(self):
         return self.cmd_bytes.command.decode()
-
-    @property
-    def target(self):
-        return self.command.split(self.SEP)[0]
 
     @property
     def args(self):
@@ -156,5 +144,7 @@ class SerialMessage(AbstractMessage):
     def __len__(self):
         return len(self.cmd_bytes)
 
-    def __repr__(self):
-        return '%s: %s' % (self.__class__.__name__, self.cmd_bytes)
+    def __add__(self, value):
+        self.cmd_bytes += value
+
+        return self
