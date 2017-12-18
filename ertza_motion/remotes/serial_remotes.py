@@ -26,8 +26,15 @@ class SerialRemote(AbstractRemote):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._local_status = dict()
+        self._local_status['machine.torque'] = 0
+        self._local_status['machine.status.drive_enable'] = True
+
         self.register_filter(protocol=self.PROTOCOL, target=self.handle_get,
-                             alias_wask=':machine:get', args_length=1,
+                             alias_mask='machine.get', args_length=1,
+                             exclusive=True)
+        self.register_filter(protocol=self.PROTOCOL, target=self.handle_set,
+                             alias_mask='machine.set',
                              exclusive=True)
 
     def start(self):
@@ -46,8 +53,8 @@ class SerialRemote(AbstractRemote):
                 raise TypeError('add_path kwarg must be a string')
 
             full_path = msg.command + ap \
-                if ap.startswith(self.message.SEP) \
-                else '{0.command}{0.message.SEP}{1}'.format(self, ap)
+                if ap.startswith(msg.SEP) \
+                else '{0.command}{0.SEP}{1}'.format(msg, ap)
         else:
             full_path = self.command
 
@@ -70,13 +77,21 @@ class SerialRemote(AbstractRemote):
         return self.__class__.__name__
 
     def handle_get(self, m):
-        k = m.args[0]
+        k = m.args[0].decode()
 
         try:
             v = self._local_status[k]
-            self.reply_error(m, k, v)
+            if callable(v):
+                v = v()
+            self.reply_ok(m, k, v)
         except IndexError:
             self.reply_error(m, k, 'No value for key.')
+
+    def handle_set(self, m):
+        k, a, = m.args
+
+        print(k, a)
+        self.reply_ok(m, k, *a)
 
 
 class SerialVarmoRemote(SerialRemote):
