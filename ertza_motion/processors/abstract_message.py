@@ -2,6 +2,7 @@
 
 
 class AbstractMessage(object):
+    SEP = None
 
     @property
     def command(self):

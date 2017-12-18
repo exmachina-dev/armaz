@@ -8,15 +8,17 @@ from ..abstract_message import AbstractMessage
 
 
 class OscPath(str):
+    SEP = '/'
+
     def __init__(self, path):
         self._p = path
-        self.levels = self._p.split('/')
+        self.levels = self._p.split(self.SEP)
 
     def __repr__(self):
-        return "%s" % '/'.join(self.levels)
+        return "%s" % self.SEP.join(self.levels)
 
     def __str__(self):
-        return "%s" % '/'.join(self.levels)
+        return "%s" % self.SEP.join(self.levels)
 
 
 class OscAddress(object):
@@ -41,6 +43,7 @@ class OscAddress(object):
 
 
 class OscMessage(AbstractMessage):
+    SEP = '/'
 
     def __init__(self, path, *args, **kwargs):
         self.path, self._args = OscPath(path), args
@@ -71,7 +74,7 @@ class OscMessage(AbstractMessage):
 
     @property
     def target(self):
-        return self.command.split('/')[0]
+        return self.command.split(self.SEP)[0]
 
     @property
     def is_error(self):

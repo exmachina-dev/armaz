@@ -111,6 +111,7 @@ class SerialTarget(object):
 
 
 class SerialMessage(AbstractMessage):
+    SEP = '.'
 
     def __init__(self, **kwargs):
         self.cmd_bytes = SerialCommandString(cmd_bytes=kwargs['cmd_bytes']) \
@@ -134,7 +135,7 @@ class SerialMessage(AbstractMessage):
 
     @property
     def target(self):
-        return self.command.split('.')[0]
+        return self.command.split(self.SEP)[0]
 
     @property
     def args(self):
