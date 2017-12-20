@@ -26,9 +26,7 @@ class SerialRemote(AbstractRemote):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._local_status = dict()
-        self._local_status['machine.torque'] = 0
-        self._local_status['machine.status.drive_enable'] = True
+        self.local_status = dict()
 
         self.register_filter(protocol=self.PROTOCOL, target=self.handle_get,
                              alias_mask='machine.get', args_length=1,
@@ -80,11 +78,11 @@ class SerialRemote(AbstractRemote):
         k = m.args[0].decode()
 
         try:
-            v = self._local_status[k]
+            v = self.local_status[k]
             if callable(v):
                 v = v()
             self.reply_ok(m, k, v)
-        except IndexError:
+        except KeyError:
             self.reply_error(m, k, 'No value for key.')
 
     def handle_set(self, m):
