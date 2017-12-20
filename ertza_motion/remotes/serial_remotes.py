@@ -12,6 +12,7 @@ Serial remotes
 
 from .abstract_remote import AbstractRemote
 from ..processors.serial import SerialMessage
+from ..motion.request import MotionRequest
 
 import logging
 
@@ -86,10 +87,21 @@ class SerialRemote(AbstractRemote):
             self.reply_error(m, k, 'No value for key.')
 
     def handle_set(self, m):
-        k, a, = m.args
+        try:
+            k, a, = m.args
+            nk = k.decode()
+            if nk.startswith('machine.'):
+                nk = nk[7:] # Strip machine. from key
 
-        print(k, a)
-        self.reply_ok(m, k, *a)
+            if nk in MotionRequest.TYPES:
+                mr = MotionRequest(nk, *a)
+                self.command_queue.put(mr)
+                mr.done_ev.wait()
+                self.reply_ok(m, k, *a)
+            else:
+                print(k, a)
+        except Exception as e:
+            logging.exception(e)
 
 
 class SerialVarmoRemote(SerialRemote):
