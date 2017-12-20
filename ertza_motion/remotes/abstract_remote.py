@@ -25,6 +25,8 @@ class AbstractRemote(object):
         self.running_ev = Event()
         self.timeount_ev = Event()      # Timeout event when the remote doesn't respond
 
+        self.request_timeout = 1.0
+
         self.messages_queue = Queue()
 
         self.filters = list()
