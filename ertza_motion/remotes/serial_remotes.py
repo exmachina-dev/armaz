@@ -42,6 +42,41 @@ class SerialRemote(AbstractRemote):
     def start(self):
         pass
 
+    def main_loop(self, *args, **kwargs):
+        while not self.running_ev.is_set():
+            self.running_ev.wait(self.INTERVAL)
+
+    def handle_get(self, m):
+        k = m.args[0].decode()
+
+        try:
+            v = self.local_status[k]
+            if callable(v):
+                v = v()
+            self.reply_ok(m, k, v)
+        except KeyError:
+            self.reply_error(m, k, 'No value for key.')
+
+    def handle_set(self, m):
+        try:
+            k, a, = m.args
+            nk = k.decode()
+            if nk.startswith('machine.'):
+                nk = nk[7:] # Strip machine. from key
+
+            if nk in MotionRequest.TYPES:
+                mr = MotionRequest(nk, *a)
+                self.command_queue.put(mr)
+                mr.done_ev.wait(self.request_timeout)
+                if mr.done:
+                    self.reply_ok(m, k, *a)
+                else:
+                    self.reply_error(m, k, *a)
+            else:
+                print(k, a)
+        except Exception as e:
+            logging.exception(e)
+
     def timeout_reset(self, m):
         self._last_message_time = time.time()
 
@@ -80,37 +115,6 @@ class SerialRemote(AbstractRemote):
     @property
     def uid(self):
         return self.__class__.__name__
-
-    def handle_get(self, m):
-        k = m.args[0].decode()
-
-        try:
-            v = self.local_status[k]
-            if callable(v):
-                v = v()
-            self.reply_ok(m, k, v)
-        except KeyError:
-            self.reply_error(m, k, 'No value for key.')
-
-    def handle_set(self, m):
-        try:
-            k, a, = m.args
-            nk = k.decode()
-            if nk.startswith('machine.'):
-                nk = nk[7:] # Strip machine. from key
-
-            if nk in MotionRequest.TYPES:
-                mr = MotionRequest(nk, *a)
-                self.command_queue.put(mr)
-                mr.done_ev.wait(self.request_timeout)
-                if mr.done:
-                    self.reply_ok(m, k, *a)
-                else:
-                    self.reply_error(m, k, *a)
-            else:
-                print(k, a)
-        except Exception as e:
-            logging.exception(e)
 
 
 class SerialVarmoRemote(SerialRemote):
