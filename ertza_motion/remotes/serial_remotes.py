@@ -39,9 +39,6 @@ class SerialRemote(AbstractRemote):
                              alias_mask='machine.set',
                              exclusive=True)
 
-    def start(self):
-        pass
-
     def main_loop(self, *args, **kwargs):
         while not self.running_ev.is_set():
             self.running_ev.wait(self.INTERVAL)

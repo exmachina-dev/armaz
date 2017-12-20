@@ -10,7 +10,7 @@
 Provides abstract remote, a base remote
 """
 
-from threading import Event
+from threading import Event, Thread
 from queue import Queue
 
 from ..filters import Filter
@@ -21,26 +21,44 @@ class AbstractRemote(object):
     Represent a connected remote.
     """
 
+    INTERVAL = 0.250
+
     def __init__(self, *args, **kwargs):
         self.running_ev = Event()
-        self.timeount_ev = Event()      # Timeout event when the remote doesn't respond
+        self.timeount_ev = Event()      # Timeout event when the remote
+                                        # doesn't respond for more than timeout
 
+        self.timeout = .5               # 500ms timeout by default
         self.request_timeout = 1.0
 
         self.messages_queue = Queue()
 
         self.filters = list()
 
+        self._main_thread = None
+
     def init_communication(self):
         raise NotImplementedError
 
     def start(self):
-        raise NotImplementedError
+        if self._main_thread:
+            raise RemoteError('Remote already started')
+
+        self._main_thread = Thread(target=self.main_loop)
+        self._main_thread.daemon = True
+        self._main_thread.start()
 
     def connect(self):
         raise NotImplementedError
 
     def stop(self):
+        self.running_ev.set()
+        self._main_thread.join()
+
+    def exit(self):
+        self.stop()
+
+    def main_loop(self, *args, **kwargs):
         raise NotImplementedError
 
     def handle(self, msg, **kwargs):
@@ -61,7 +79,8 @@ class AbstractRemote(object):
     def register_filter(self, new_filter=None, **kwargs):
         if new_filter:
             if not isinstance(new_filter, Filter):
-                raise TypeError('Unexpected type %s for new_filter' % type(new_filter))
+                raise TypeError('Unexpected type %s for new_filter'
+                                % type(new_filter))
         else:
             new_filter = Filter(**kwargs)
 
