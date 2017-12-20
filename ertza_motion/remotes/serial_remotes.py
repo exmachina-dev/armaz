@@ -29,6 +29,9 @@ class SerialRemote(AbstractRemote):
 
         self.local_status = dict()
 
+        # Order is miportant here because the handle will stop filtering in an
+        # exclusive filter accepts the message
+        self.register_filter(protocol=self.PROTOCOL, target=self.timeout_reset)
         self.register_filter(protocol=self.PROTOCOL, target=self.handle_get,
                              alias_mask='machine.get', args_length=1,
                              exclusive=True)
@@ -38,6 +41,9 @@ class SerialRemote(AbstractRemote):
 
     def start(self):
         pass
+
+    def timeout_reset(self, m):
+        self._last_message_time = time.time()
 
     def reply_ok(self, msg, *args, **kwargs):
         self.reply(msg, *args, add_path='ok', **kwargs)
