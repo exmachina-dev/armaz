@@ -96,7 +96,7 @@ class Ertza(object):
         if self.mu.cape_infos:
             name = self.mu.cape_infos['name']
             logger.info('Found cape %s with S/N %s' % (name, self.mu.serialnumber))
-            SerialCommandString.SerialNumber = self.mu.serialnumber
+        SerialCommandString.SerialNumber = self.mu.serialnumber
 
         try:
             self.mu.config.load_profile()
