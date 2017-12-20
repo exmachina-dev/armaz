@@ -10,3 +10,4 @@ Motion module
 """
 
 from .motion import MotionUnit, MotionError
+from .request import MotionRequest
