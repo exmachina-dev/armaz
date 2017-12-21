@@ -11,6 +11,7 @@ Serial remotes
 """
 
 from .exceptions import RemoteError, RemoteTimeoutError
+from ..motion.exceptions import MotionError
 from .abstract_remote import AbstractRemote
 from ..processors.serial import SerialMessage
 from ..motion.request import MotionRequest
@@ -69,7 +70,10 @@ class SerialRemote(AbstractRemote):
                 if mr.done:
                     self.reply_ok(m, k, *a)
                 else:
-                    self.reply_error(m, k, *a)
+                    e = MotionError('Timeout while setting %s to %s' %
+                                            str(k), ', '.join([str(sa) for si in a]))
+                    self.reply_error(m, k, e)
+                    raise e
             else:
                 print(k, a)
         except Exception as e:
