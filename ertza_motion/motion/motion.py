@@ -65,6 +65,7 @@ class MotionUnit(object):
         self.switch_states = {}
 
         self.target_filters = list()
+        self.local_status = dict()
 
     def start(self):
         self.register_filter(alias_mask='/identify', protocol='OSC', exclusive=True, is_reply=True,
@@ -258,6 +259,7 @@ class MotionUnit(object):
 
         self.remotes[remote.uid] = remote
 
+        remote.local_status = self.local_status     # Connect remote local status to local status
         remote.start()
 
     def start_slaves_loop(self):
