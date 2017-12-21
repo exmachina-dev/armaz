@@ -56,8 +56,8 @@ class MotionUnit(object):
         self.alive_remotes = {}
 
         self._last_command_time = time.time()
-        self._running_event = Event()
-        self._timeout_event = Event()
+        self.running_ev = Event()
+        self.timeout_ev = Event()
 
         self.slave_refresh_interval = 1
 
@@ -83,7 +83,7 @@ class MotionUnit(object):
     def stop(self):
         "Stop all machines and motion server"
 
-        self._running_event.set()
+        self.running_ev.set()
 
         if self.machines:
             for m in self.machines.values():
@@ -424,10 +424,10 @@ class MotionUnit(object):
         setattr(self, key, value)
 
     def _timeout_watcher(self):
-        self._running_event.clear()
-        while not self._running_event.is_set():
+        self.running_ev.clear()
+        while not self.running_ev.is_set():
             if self['machine:status:drive_enable'] is False:
-                self._running_event.wait(self._slave_timeout)
+                self.running_ev.wait(self._slave_timeout)
                 continue
 
             if time.time() - self._last_command_time > self._slave_timeout:
@@ -435,4 +435,4 @@ class MotionUnit(object):
                 self['machine:command:enable'] = False
                 logging.error('Timeout detected, disabling drive')
 
-            self._running_event.wait(self._slave_timeout)
+            self.running_ev.wait(self._slave_timeout)
