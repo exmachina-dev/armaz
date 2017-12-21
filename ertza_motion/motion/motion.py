@@ -90,6 +90,10 @@ class MotionUnit(object):
             for m in self.machines.values():
                 m.exit()
 
+        if self.remotes:
+            for r in self.remotes.values():
+                r.exit()
+
     def handle(self, msg, **kwargs):
         """
         Filter a message coming from a processor, apply filters
