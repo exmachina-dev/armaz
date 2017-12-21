@@ -10,6 +10,7 @@
 Serial remotes
 """
 
+from .exceptions import RemoteError, RemoteTimeoutError
 from .abstract_remote import AbstractRemote
 from ..processors.serial import SerialMessage
 from ..motion.request import MotionRequest

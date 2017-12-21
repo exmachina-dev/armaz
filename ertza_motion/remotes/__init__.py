@@ -10,7 +10,9 @@
 Provides remotes objects
 """
 
+from .exceptions import RemoteError, FatalRemoteError, RemoteTimeoutError
 from .types import RemoteType
+
 from .abstract_remote import AbstractRemote
 from .osc_remotes import OscGuiRemote
 from .serial_remotes import SerialVarmoRemote
