@@ -291,11 +291,11 @@ class MotionUnit(object):
 
     @property
     def serialnumber(self):
-        if self.config.get('machine', 'force_serialnumber', fallback=False):
-            return self.config.get('machine', 'force_serialnumber')
+        if self.config.get('server', 'force_serialnumber', fallback=False):
+            return self.config.get('server', 'force_serialnumber')
 
         if not self.cape_infos:
-            return
+            return '000000000000'
 
         sn = self.cape_infos['serialnumber'] if self.cape_infos \
             else '000000000000'
