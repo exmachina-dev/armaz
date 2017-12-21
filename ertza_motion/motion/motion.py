@@ -361,33 +361,6 @@ class MotionUnit(object):
                     logging.info('Switch: {0} toggled ({1}) with {2}'.format(
                         f, 'on' if not sw_st else 'off', n))
 
-    def _slaves_loop(self):
-        while not self._slaves_running_event.is_set():
-            if not self.slaves_channel:
-                logging.error('Missing channel for slaves')
-
-            keys_to_send = []
-            for sm in self.slave_machines.values():
-                for key in sm.forward_keys:
-                    if key not in keys_to_send:
-                        keys_to_send.append(key)
-
-            for key in keys_to_send:
-                try:
-                    v = self[key.source or key.dest]
-                    rq = SlaveRequest(key.dest, v,
-                                      source=key.source, setitem=True)
-                    self.slaves_channel.send(rq)
-                except AbstractDriverError:
-                    pass
-                except AbstractMachineError as e:
-                    logging.error(repr(e))
-
-            self._slaves_running_event.wait(self.slave_refresh_interval)
-
-    def _slaves_cb(self, rq):
-        pass
-
     def __getitem__(self, key):
         dst = self._get_destination(key)
         key = key.split(':', maxsplit=1)[1]
