@@ -16,7 +16,6 @@ from threading import Event, Thread, Lock
 
 from ..processors.osc.message import OscMessage
 from ..machines import Machine
-from ..machines.slave import SlaveMachineError, FatalSlaveMachineError, SlaveRequest
 from ..remotes import AbstractRemote, RemoteType, get_remote_class
 from ..filters import Filter
 
@@ -58,8 +57,6 @@ class MotionUnit(object):
         self._last_command_time = time.time()
         self.running_ev = Event()
         self.timeout_ev = Event()
-
-        self.slave_refresh_interval = 1
 
         self.switch_callback = self._switch_cb
         self.switch_states = {}
@@ -266,18 +263,6 @@ class MotionUnit(object):
         remote.local_status = self.local_status     # Connect remote local status to local status
         remote.start()
 
-    def start_slaves_loop(self):
-        if self._slaves_thread is not None:
-            self._slaves_running_event.set()
-            self._slaves_thread.join()
-            self._slaves_thread = None
-
-        self._slaves_running_event.clear()
-        self._slaves_thread = Thread(target=self._slaves_loop)
-        self._slaves_thread.daemon = True
-
-        self._slaves_thread.start()
-
     def reply(self, command):
         if command.answer is not None:
             self.send_message(command.protocol, command.answer)
@@ -368,9 +353,6 @@ class MotionUnit(object):
         if dst is not self:
             return dst[key]
 
-        if self.slave_mode:
-            self._last_command_time = time.time()
-
         return self.machine_keys[key]
 
     def __setitem__(self, key, value):
@@ -401,17 +383,3 @@ class MotionUnit(object):
 
     def setitem(self, key, value):
         setattr(self, key, value)
-
-    def _timeout_watcher(self):
-        self.running_ev.clear()
-        while not self.running_ev.is_set():
-            if self['machine:status:drive_enable'] is False:
-                self.running_ev.wait(self._slave_timeout)
-                continue
-
-            if time.time() - self._last_command_time > self._slave_timeout:
-                self._timeout_event.set()
-                self['machine:command:enable'] = False
-                logging.error('Timeout detected, disabling drive')
-
-            self.running_ev.wait(self._slave_timeout)
